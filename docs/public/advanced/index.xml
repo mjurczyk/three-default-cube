@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Advanceds on Docs</title>
+    <link>/advanced/</link>
+    <description>Recent content in Advanceds on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/advanced/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Custom Properties List</title>
+      <link>/advanced/custom-properties/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/custom-properties/</guid>
+      <description>action Value: action id (string)
+Assign a click action. See Actions &amp;amp; UI.
+aiNode Value: node id (string)
+Declare mesh to be an AI node. This removes the mesh from the scene. See AI.
+aiSpawn Value: none
+Declare mesh to be an AI spawn. This removes the mesh from the scene. See AI.
+align Values: left, right.
+Align mesh to a side of the screen. This effect is continuous and may affect performance.</description>
+    </item>
+    
+    <item>
+      <title>Mobile Platforms</title>
+      <link>/advanced/mobile-platforms/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/mobile-platforms/</guid>
+      <description>Android To release a game on Android, consider following Ionic / Capacitor release process.
+General overview:
+ Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ cordova-res ios --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
+    </item>
+    
+    <item>
+      <title>Controlling Animations</title>
+      <link>/advanced/animations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/animations/</guid>
+      <description>Animation Wrappers Apply an AnimationWrapper to a mesh to parse its animations:
+const animations = new AnimationWrapper(characterModel); Use the animation wrapper to play and blend the animations on the mesh:
+animations.playAnimation(&amp;#39;idle&amp;#39;); animations.blendInAnimation(&amp;#39;run&amp;#39;, 0.5); </description>
+    </item>
+    
+    <item>
+      <title>Particles</title>
+      <link>/advanced/particles/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/particles/</guid>
+      <description>Creating Particle Emitters Particles are created using ParticleService.
+The goal of using a particle emitter is to spawn a higher amount of similarly looking / behaving objects, from an approximately same spot.
+Note: Particles can be emitted from any Object3D - it can be either a game object defined in the parsed scene, or a manually created Three Object3D.
+Note: You can use emitter.play() and emitter.stop() to spawn particles only when necessary.</description>
+    </item>
+    
+  </channel>
+</rss>

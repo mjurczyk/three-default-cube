@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Game-objects on Docs</title>
+    <link>/game-objects/</link>
+    <description>Recent content in Game-objects on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/game-objects/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AiWrapper</title>
+      <link>/game-objects/ai-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/ai-wrapper/</guid>
+      <description>registerBehaviour () registerBehaviour(callback)
+Stores an AI decision making callback. callback is called without any arguments and should return an AI decision based on object position, surroundings, and state. See AI.
+getAiBehaviour () getAiBehaviour()
+Retrieves AI decision for the current object state. Returns decision based on registerBehaviour callback.
+hasTargetNode () hasTargetNode()
+Returns true if object currently has a target aiNode. See aiNode in Custom Properties List.
+setTargetNode () setTargetNode(nodeObject)
+Sets node as a current target node.</description>
+    </item>
+    
+    <item>
+      <title>AnimationWrapper</title>
+      <link>/game-objects/animation-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/animation-wrapper/</guid>
+      <description>playAnimation () playAnimation(name, tweenDuration)
+Starts playing specific animation on the model.
+stopAnimation () stopAnimation(name, tweenDuration)
+Stops playing specific animation on the model.
+blendInAnimation () blendInAnimation(name, blendWeight)
+Blends in specific animation on the model. 0.0 weight disables the blending.
+playAllAnimations () playAllAnimations(tweenDuration)
+Plays all animations on the model at once.
+stopAllAnimations () stopAllAnimations(tweenDuration)
+Stops all animations on the model at once.</description>
+    </item>
+    
+    <item>
+      <title>PhysicsWrapper</title>
+      <link>/game-objects/physics-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/physics-wrapper/</guid>
+      <description>enableNavmaps () enableNavmaps()
+Makes the object responsive to navmaps and physical surfaces. Must be called in order for navmaps to have an effect.
+getSimpleVelocity () getSimpleVelocity()
+Returns current velocity of the object.
+setSimpleVelocity () getSimpleVelocity(vector)
+Sets new velocity of the object.</description>
+    </item>
+    
+    <item>
+      <title>Preloader</title>
+      <link>/game-objects/preloader/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/preloader/</guid>
+      <description>Overview Preloader object helps setting up views and loading models before displaying them.
+new Preloader({ requireAssets: [ AssetsService.getModel(GameInfoService.config.models.world), AssetsService.getModel(GameInfoService.config.models.hero), ], onComplete: ([ worldModel, heroModel ]) =&amp;gt; { // NOTE Both models can be assumed to be fully ready at this point.  } }); constructor Preloader({ requireAssets, onComplete, spinnerTexture })
+Creates a new preloader. onComplete is called only when all requireAssets are ready. If one or more assets fail or error, preloader will not display the scene.</description>
+    </item>
+    
+  </channel>
+</rss>

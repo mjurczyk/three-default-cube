@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Docs</title>
+    <link>/</link>
+    <description>Recent content on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Getting Started</title>
+      <link>/intro/getting-started/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/getting-started/</guid>
+      <description>Culling crazy expectations  Default Cube projects have to be started using a boilerplate.  The entire framework is dependent on Ionic and Capacitor. It will not work without them - since it&amp;rsquo;s using a lot of their features to make your life easier. The boilerplate setup is described later on.
+ Why is there a React dependency?  Default Cube isn&amp;rsquo;t really using React, but react-scripts makes deployment a bit faster.</description>
+    </item>
+    
+    <item>
+      <title>I: Views &amp; Scenes</title>
+      <link>/intro/views-and-scenes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/views-and-scenes/</guid>
+      <description>General Idea Default Cube uses Three.js, JavaScript, and Blender files (exported as .glb) to create games.
+To build a game with as little issues as possible, you should focus on creating as much content as possible in Blender. That way, Default Cube will be able to properly swap and dispose whichever assets you serve it.
+Note: You can still use basic Three.js API to generate meshes and objects - but you should remember to manually dispose them.</description>
+    </item>
+    
+    <item>
+      <title>II: Camera</title>
+      <link>/intro/camera/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/camera/</guid>
+      <description>Default Cube vs Three.js Camera While Three.js allows you to use multiple cameras on the scene, Default Cube uses always only a single camera.
+That camera can dynamically switch and tween between positions and orientations. It can also follow objects around the game world.
+Switching Cameras Cameras are defined per-view. You can define any object to act as a camera using a custom property:
+camera: [cameraId] When the scene is loaded, you can then find cameras using the CameraService:</description>
+    </item>
+    
+    <item>
+      <title>III: Actions &amp; UI</title>
+      <link>/intro/actions-and-ui/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/actions-and-ui/</guid>
+      <description>Key Inputs You can add keyboard interactions using a combination of InputService and TimeService:
+TimeService.registerFrameListener(() =&amp;gt; { const keyUp = InputService.key(&amp;#39;w&amp;#39;); if (keyUp) { hero.position.z += 1.0; } }); Note: Keyboard controls do not work on mobile devices in most cases. Be sure to add touch fallbacks to allow people to play on mobile.
+Touch &amp;amp; Mouse Inputs Default Cube combines both touch and click inputs into actions. Actions are declared per-scene in the SceneService.</description>
+    </item>
+    
+    <item>
+      <title>IV: Game Objects</title>
+      <link>/intro/game-objects/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/game-objects/</guid>
+      <description>Building Scenes Default Cube scenes are generally built with only 2 things: static meshes and game objects.
+Game object declaration allows you to assign any kind of logic to a specific object exported from Blender.
+gameObject: [gameObjectId] SceneService parses and initializes each object separately:
+Since each object is initialized only once - you can use TimeService.registerFrameListener to assign continuous logic to it.
+SceneService.parseScene({ target: sceneModel, gameObjects: { &amp;#39;gameObjectId&amp;#39;: (object) =&amp;gt; { TimeService.</description>
+    </item>
+    
+    <item>
+      <title>V: Physics</title>
+      <link>/intro/physics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/physics/</guid>
+      <description>Overview Default Cube does give a few world-navigation helpers, but does not come with an actual physics engine. You are free to integrate any engine compatible with Three.js though.
+Navmeshes You can limit the walkable area of every scene using navmeshes. When, for example, a character is moving around - PhysicsService will the check whether the character is within the allowed area. This allows you to easily create floors, walls, and doors.</description>
+    </item>
+    
+    <item>
+      <title>VI: Audio</title>
+      <link>/intro/audio/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/audio/</guid>
+      <description>Howler vs Three.js Audio Note: Default Cube does not support Three.PositionalAudio or Howler equivalent.
+Three.js Audio, while an amazing API, does cause issues on specific Android devices after switching audio contexts. To prevent that, Default Cube uses Howler audio library.
+Independent Audio To play a sound or music, use AudioService.playAudio without specifying the first argument (channel):
+AssetsService.getAudio(GameInfo.audio.bikeEngine).then(audio =&amp;gt; { const audioContext = AudioService.playAudio( null, // NOTE Do not assign this audio clip to any channel  audio, true // NOTE Specify whether the audio should loop  ); // NOTE You can control audio context directly using Howler API  audioContext.</description>
+    </item>
+    
+    <item>
+      <title>VII: Debugging</title>
+      <link>/intro/debugging/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/debugging/</guid>
+      <description>DummyDebugger DummyDebugger is the main debugging tool of Default Cube games. To enable it, turn DEBUG_ENABLE flag on:
+DummyDebug.on(DebugFlags.DEBUG_ENABLE); Afterwards, you can toggle various feature flags on and off to see different stats.
+Note: 🅇 sign next to specific elements shows you how many resources could not be disposed. These numbers should stay low - but it&amp;rsquo;s alright if they do not reach 0.
+Next: Persistence</description>
+    </item>
+    
+    <item>
+      <title>IX: AI</title>
+      <link>/intro/ai/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/ai/</guid>
+      <description>Overview Default Cube AI system contains 2 elements: AI game objects (wrapped in AiWrapper) and AI nodes.
+AI Nodes AI nodes are static meshes with assigned custom property:
+aiNode: [aiNodeId] AI Maps AI maps are an extension of AI nodes.
+aiMap: [aiMapId] Each vertex of a static mesh with an assigned AI map custom property will become an independent AI node. This makes creating complex routing and behaviour a bit easier.</description>
+    </item>
+    
+    <item>
+      <title>VIII: Persistence</title>
+      <link>/intro/persistence/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/persistence/</guid>
+      <description>Saving Variables Default Cube uses Ionic native storage to save variables locally. To register a permanent variable, request it at the beginning of the game (using the VarService):
+await VarService.registerPersistentVar(&amp;#39;playerName&amp;#39;, &amp;#39;Banjer&amp;#39;); VarService.setVar(&amp;#39;playerName&amp;#39;, &amp;#39;Finn&amp;#39;); Whenever the specific variable is updated, it will also be saved locally.
+Next: AI</description>
+    </item>
+    
+    <item>
+      <title>Custom Properties List</title>
+      <link>/advanced/custom-properties/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/custom-properties/</guid>
+      <description>action Value: action id (string)
+Assign a click action. See Actions &amp;amp; UI.
+aiNode Value: node id (string)
+Declare mesh to be an AI node. This removes the mesh from the scene. See AI.
+aiSpawn Value: none
+Declare mesh to be an AI spawn. This removes the mesh from the scene. See AI.
+align Values: left, right.
+Align mesh to a side of the screen. This effect is continuous and may affect performance.</description>
+    </item>
+    
+    <item>
+      <title>Mobile Platforms</title>
+      <link>/advanced/mobile-platforms/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/mobile-platforms/</guid>
+      <description>Android To release a game on Android, consider following Ionic / Capacitor release process.
+General overview:
+ Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ cordova-res ios --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
+    </item>
+    
+    <item>
+      <title>Controlling Animations</title>
+      <link>/advanced/animations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/animations/</guid>
+      <description>Animation Wrappers Apply an AnimationWrapper to a mesh to parse its animations:
+const animations = new AnimationWrapper(characterModel); Use the animation wrapper to play and blend the animations on the mesh:
+animations.playAnimation(&amp;#39;idle&amp;#39;); animations.blendInAnimation(&amp;#39;run&amp;#39;, 0.5); </description>
+    </item>
+    
+    <item>
+      <title>Particles</title>
+      <link>/advanced/particles/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/particles/</guid>
+      <description>Creating Particle Emitters Particles are created using ParticleService.
+The goal of using a particle emitter is to spawn a higher amount of similarly looking / behaving objects, from an approximately same spot.
+Note: Particles can be emitted from any Object3D - it can be either a game object defined in the parsed scene, or a manually created Three Object3D.
+Note: You can use emitter.play() and emitter.stop() to spawn particles only when necessary.</description>
+    </item>
+    
+    <item>
+      <title>AiService</title>
+      <link>/services/ai-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/ai-service/</guid>
+      <description>getAiNodeById () getAiNodeById(nodeId)
+Returns ai node. See aiNode in Custom Properties List.</description>
+    </item>
+    
+    <item>
+      <title>AnimationService</title>
+      <link>/services/animation-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/animation-service/</guid>
+      <description>registerAnimation () registerAnimation({ target, onCreate, onStep, onDispose, interval, override = AnimationOverrideType.default, randomSeed = 0.0 }) Create new animation on target (similar to TimeService.registerFrameListener.)
+onCreate is called with: { target } onStep is called with: { target, dt, animationTime, intervalTime } onDispose is called with { target }. Allows to implement custom disposal.
+interval is optional, must be in miliseconds (JavaScript default.)
+AnimationOverrideType { noOverride, overrideIfExists, ignoreIfExists } </description>
+    </item>
+    
+    <item>
+      <title>AssetsService</title>
+      <link>/services/assets-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/assets-service/</guid>
+      <description>getDefaultCube () Returns a cube.
+getAmbientLight () getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0)
+Returns a new hemisphere light, acting as an ambient light.
+getImage () getImage(path)
+Fetches an image as a Three.Texture.
+getImageSync () See getImage. Synchronous.
+getHDRI () getHDRI(path)
+Fetches a HDRI texture.
+getModel () getModel( path, { internalAllowPreloaded = true, forceUniqueMaterials = false } ) Fetches a glTF model.
+preloadModel () preloadModel( path, { forceUniqueMaterials = false } ) Fetches a glTF model and stores it in the service.</description>
+    </item>
+    
+    <item>
+      <title>AudioService</title>
+      <link>/services/audio-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/audio-service/</guid>
+      <description>AudioChannelEnums { ambientChannel, globalChannel, } Ambient channel automatically loops the played sound.
+playAudio () playAudio( channel = null, audioOrPromised, loop = false ) Plays Howler audio. If channel is not specified, plays the audio independently. Returns an audio reference.
+stopAudio () stopAudio(audio)
+setMasterVolume () setMasterVolume(volume = 1.0)
+getMasterVolume () getMasterVolume()
+setAudioVolume () setAudioVolume(audio, volume = 1.0)
+setAudioPlaybackRate () setAudioPlaybackRate(audio, playbackRate = 1.0)
+setChannelVolume () setChannelVolume(channel, volume = 1.0, tweenDuration = 0.</description>
+    </item>
+    
+    <item>
+      <title>CameraService</title>
+      <link>/services/camera-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/camera-service/</guid>
+      <description>getCamera () getCamera(id)
+Returns a camera. See camera in Custom Properties List.
+useCamera () useCamera(camera, instant = false)
+Moves viewport to a specific camera. If instant is not specified, camera is tweened according to CameraService.tween.
+follow () follow(object, onReachTarget)
+Moves viewport to follow a specific mesh. onReachTarget is optionally called when camera reaches the target.
+getFollowPivot () getFollowPivot(), CameraService.followPivotPosition
+Requires follow() to be enabled. Returns a follow pivot. Use followPivotPosition to specify the distance camera should keep from the target.</description>
+    </item>
+    
+    <item>
+      <title>DummyDebug</title>
+      <link>/services/dummy-debug/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/dummy-debug/</guid>
+      <description>DebugFlags DebugFlags = { DEBUG_ENABLE, DEBUG_LIVE, DEBUG_LOG_MEMORY, DEBUG_LOG_POOLS, DEBUG_LOG_ASSETS, DEBUG_ORBIT_CONTROLS, DEBUG_SCROLL_VISIBLE, DEBUG_TIME_LISTENERS, DEBUG_SKINNING_SKELETONS, DEBUG_ADS, DEBUG_DISABLE_ADS, DEBUG_STORAGE, DEBUG_AI_NODES, DEBUG_AI_TARGETS, DEBUG_PHYSICS, DEBUG_PHYSICS_DYNAMIC, } on () on(flag)
+Enables specific debugging flag. Cannot be called after game is initialized.
+off () off(flag)
+Disables specific debugging flag. Cannot be called after game is initialized.</description>
+    </item>
+    
+    <item>
+      <title>GameInfoService</title>
+      <link>/services/game-info-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/game-info-service/</guid>
+      <description>system () system( fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, ) camera () camera( fov = 50, near = 0.1, far = 2000.0, ) vars () vars({ varKey: varValue, ... })
+Adds variables to the system config.
+labels () labels(language = &#39;en&#39;, vars)
+Adds localized string variables to the system config. Similar to vars.
+animation () animation(id, animation)
+Registers a system animation. See animation in Custom Properties List.</description>
+    </item>
+    
+    <item>
+      <title>InputService</title>
+      <link>/services/input-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/input-service/</guid>
+      <description>key () key(keyName)
+Returns key state. See MDN KeyboardEvent.key.</description>
+    </item>
+    
+    <item>
+      <title>InteractionsService</title>
+      <link>/services/interactions-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/interactions-service/</guid>
+      <description>InteractionEnums { eventClick, eventDrag, eventHold, eventRelease, eventLeave, } registerListener () registerListener(target, interactionEnum, callback)</description>
+    </item>
+    
+    <item>
+      <title>MathService</title>
+      <link>/services/math-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/math-service/</guid>
+      <description>getVec2 () getVec2(x = 0.0, y = 0.0)
+Creates a pooled Three.Vector2.
+releaseVec2 () releaseVec2(vector)
+Releases vector to the pool.
+getQuaternion () getQuaternion()
+Creates a pooled Three.Quaternion.
+releaseQuaternion () releaseQuaternion(quaternion)
+Releases quaternion to the pool.
+getVec3 () getVec3(x = 0.0, y = 0.0, z = 0.0)
+Creates a pooled Three.Vector3.
+cloneVec3 () cloneVec3(vector)
+Returns a clone of Three.Vector3.
+releaseVec3 () releaseVec3(vector)
+Releases vector to the pool.</description>
+    </item>
+    
+    <item>
+      <title>ParticleService</title>
+      <link>/services/particle-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/particle-service/</guid>
+      <description>registerParticleEmitter () registerParticleEmitter(object, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset }); Creates new particle emitter. Returns emitter information and reference. See Particles.</description>
+    </item>
+    
+    <item>
+      <title>PhysicsService</title>
+      <link>/services/physics-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/physics-service/</guid>
+      <description>enableNavmap () enableNavmap(object)
+Declares object as a navmap.
+disableNavmap () disableNavmap(object)
+Disabled object as a navmap.
+registerSurfaceHandler () registerSurfaceHandler(surfaceType, handlerClass, interactionHandler = &#39;onInteraction&#39;)
+Registers a new surface handler. Second argument should be a class, not an object. interactionHandler is called with default Three ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See Physics.</description>
+    </item>
+    
+    <item>
+      <title>RenderService</title>
+      <link>/services/render-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/render-service/</guid>
+      <description>getScene () getScene()
+Return native Three.Scene.
+getNativeCamera () getNativeCamera()
+Return native Three.PerspectiveCamera.
+getRenderer () getRenderer()
+Return native Three.WebGLRenderer.
+pauseRendering () pauseRendering(callback)
+Pauses the renderer. callback is called on the first paused frame.
+resumeRendering () resumeRendering(callback)
+Resumes the renderer. callback is called on the first rendered frame.</description>
+    </item>
+    
+    <item>
+      <title>SceneService</title>
+      <link>/services/scene-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/scene-service/</guid>
+      <description>parseScene () parseScene({ target, navpath = null, actions = {}, gameObjects = {}, onCreate, }) Parse model as a Default Cube scene using parsers. actions and gameObjects are used to parse respective Custom Properties.
+gameObject parsers can use gameObjectRefs to access other game objects, before entire scene is parsed.
+If navpath is specified, meshes with different value of navpath custom property are not added to the scene.
+onCreate is called with:</description>
+    </item>
+    
+    <item>
+      <title>StorageService</title>
+      <link>/services/storage-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/storage-service/</guid>
+      <description>set () set(key, value)
+Saves value locally using native or local storage.
+get () get(key)
+Returns value saved locally.</description>
+    </item>
+    
+    <item>
+      <title>SystemService</title>
+      <link>/services/system-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/system-service/</guid>
+      <description>init () init({ statusBar })
+Starts Default Cube. If statusBar is set to true, status bar will not be hidden on mobile.
+lockOrientation () lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE)
+Ionic. Locks device orientation.
+onReady () onReady(callback)
+Calls callback when the system is fully ready.</description>
+    </item>
+    
+    <item>
+      <title>TimeService</title>
+      <link>/services/time-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/time-service/</guid>
+      <description>registerFrameListener () registerFrameListener(callback)
+Creates a continuous loop. Calls callback on each frame. Frame listeners are cancelled when view is disposed.</description>
+    </item>
+    
+    <item>
+      <title>UiService</title>
+      <link>/services/ui-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/ui-service/</guid>
+      <description>registerUiElement () registerUiElement(object)
+Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.</description>
+    </item>
+    
+    <item>
+      <title>UtilsService</title>
+      <link>/services/utils-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/utils-service/</guid>
+      <description>getRaycaster () getRaycaster()
+Creates a pooled Three.Raycaster.
+releaseRaycaster () releaseRaycaster(raycaster)
+Releases raycaster to the pool.
+getBox3 () getBox3()
+Creates a pooled Three.Box3.
+releaseBox3 () releaseBox3(box)
+Releases box to the pool.
+getCamera () getCamera()
+Creates a pooled Three.PerspectiveCamera.
+releaseCamera () releaseCamera(camera)
+Releases camera to the pool.
+getEmpty () getEmpty()
+Creates a pooled Three.Object3D.
+releaseEmpty () releaseEmpty(empty)
+Releases empty to the pool.
+getBlankMaterial () getBlankMaterial()
+Creates a pooled Three.MeshBasicMaterial.
+releaseBlankMaterial () releaseBlankMaterial()</description>
+    </item>
+    
+    <item>
+      <title>VarService</title>
+      <link>/services/var-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/var-service/</guid>
+      <description>setVar () setVar(key, value)
+Sets a system variable.
+getVar () getVar(key, onUpdate, onCreate)
+Returns system variable value immediately.
+onUpdate is called immediately, and on each update of the variable, with variable value. onCreate is called immediately with a change listener reference.
+removeVar () removeVar(key)
+Removes a system variable and its listeners.
+registerPersistentVar () registerPersistentVar(id, defaultValue)
+Registers a system variable as persistent. Persistent variables are automatically saved locally when changed.
+If variable was not saved locally earlier, defaultValue is assigned.</description>
+    </item>
+    
+    <item>
+      <title>AiWrapper</title>
+      <link>/game-objects/ai-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/ai-wrapper/</guid>
+      <description>registerBehaviour () registerBehaviour(callback)
+Stores an AI decision making callback. callback is called without any arguments and should return an AI decision based on object position, surroundings, and state. See AI.
+getAiBehaviour () getAiBehaviour()
+Retrieves AI decision for the current object state. Returns decision based on registerBehaviour callback.
+hasTargetNode () hasTargetNode()
+Returns true if object currently has a target aiNode. See aiNode in Custom Properties List.
+setTargetNode () setTargetNode(nodeObject)
+Sets node as a current target node.</description>
+    </item>
+    
+    <item>
+      <title>AnimationWrapper</title>
+      <link>/game-objects/animation-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/animation-wrapper/</guid>
+      <description>playAnimation () playAnimation(name, tweenDuration)
+Starts playing specific animation on the model.
+stopAnimation () stopAnimation(name, tweenDuration)
+Stops playing specific animation on the model.
+blendInAnimation () blendInAnimation(name, blendWeight)
+Blends in specific animation on the model. 0.0 weight disables the blending.
+playAllAnimations () playAllAnimations(tweenDuration)
+Plays all animations on the model at once.
+stopAllAnimations () stopAllAnimations(tweenDuration)
+Stops all animations on the model at once.</description>
+    </item>
+    
+    <item>
+      <title>PhysicsWrapper</title>
+      <link>/game-objects/physics-wrapper/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/physics-wrapper/</guid>
+      <description>enableNavmaps () enableNavmaps()
+Makes the object responsive to navmaps and physical surfaces. Must be called in order for navmaps to have an effect.
+getSimpleVelocity () getSimpleVelocity()
+Returns current velocity of the object.
+setSimpleVelocity () getSimpleVelocity(vector)
+Sets new velocity of the object.</description>
+    </item>
+    
+    <item>
+      <title>Preloader</title>
+      <link>/game-objects/preloader/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/game-objects/preloader/</guid>
+      <description>Overview Preloader object helps setting up views and loading models before displaying them.
+new Preloader({ requireAssets: [ AssetsService.getModel(GameInfoService.config.models.world), AssetsService.getModel(GameInfoService.config.models.hero), ], onComplete: ([ worldModel, heroModel ]) =&amp;gt; { // NOTE Both models can be assumed to be fully ready at this point.  } }); constructor Preloader({ requireAssets, onComplete, spinnerTexture })
+Creates a new preloader. onComplete is called only when all requireAssets are ready. If one or more assets fail or error, preloader will not display the scene.</description>
+    </item>
+    
+    <item>
+      <title>Built-in Utils</title>
+      <link>/utils/utils/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/utils/utils/</guid>
+      <description>Math 𝛑 Helpers Math.PI shorthands - math2Pi, mathPi2, mathPi4, mathPi8.
+removePlaceholder () removePlaceholder(mesh)
+Remove mesh from the scene.
+replacePlaceholder () replacePlaceholder(mesh, replacement)
+Replace mesh with another one. Original mesh is removed.
+cloneValue () cloneValue(object)
+Return a deep-clone of a JavaScript value. Does not preserve prototypes.
+getRandomColor () getRandomColor()
+Returns a random Three.Color.
+getRandomElement () getRandomElement(array)
+Returns a random element from an array.
+spliceRandomElement () spliceRandomElement(array)
+Splices and returns a random element from an array.</description>
+    </item>
+    
+    <item>
+      <title>TODO</title>
+      <link>/todo/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/todo/</guid>
+      <description>Active Issues Some or all of the things below may or may not be 100% working / are inconsistent / missing documentation.
+[ParserService] Remove var- prefix from labels Originally labels were supposed to always use text read from VarService - but that&amp;rsquo;s not necessary for static text. Also, var- prefix is inconsistent in terms of when it fetches a value from VarService and when it just uses direct value from Blender.</description>
+    </item>
+    
+  </channel>
+</rss>

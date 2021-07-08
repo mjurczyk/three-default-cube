@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Intros on Docs</title>
+    <link>/intro/</link>
+    <description>Recent content in Intros on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/intro/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Getting Started</title>
+      <link>/intro/getting-started/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/getting-started/</guid>
+      <description>Culling crazy expectations  Default Cube projects have to be started using a boilerplate.  The entire framework is dependent on Ionic and Capacitor. It will not work without them - since it&amp;rsquo;s using a lot of their features to make your life easier. The boilerplate setup is described later on.
+ Why is there a React dependency?  Default Cube isn&amp;rsquo;t really using React, but react-scripts makes deployment a bit faster.</description>
+    </item>
+    
+    <item>
+      <title>I: Views &amp; Scenes</title>
+      <link>/intro/views-and-scenes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/views-and-scenes/</guid>
+      <description>General Idea Default Cube uses Three.js, JavaScript, and Blender files (exported as .glb) to create games.
+To build a game with as little issues as possible, you should focus on creating as much content as possible in Blender. That way, Default Cube will be able to properly swap and dispose whichever assets you serve it.
+Note: You can still use basic Three.js API to generate meshes and objects - but you should remember to manually dispose them.</description>
+    </item>
+    
+    <item>
+      <title>II: Camera</title>
+      <link>/intro/camera/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/camera/</guid>
+      <description>Default Cube vs Three.js Camera While Three.js allows you to use multiple cameras on the scene, Default Cube uses always only a single camera.
+That camera can dynamically switch and tween between positions and orientations. It can also follow objects around the game world.
+Switching Cameras Cameras are defined per-view. You can define any object to act as a camera using a custom property:
+camera: [cameraId] When the scene is loaded, you can then find cameras using the CameraService:</description>
+    </item>
+    
+    <item>
+      <title>III: Actions &amp; UI</title>
+      <link>/intro/actions-and-ui/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/actions-and-ui/</guid>
+      <description>Key Inputs You can add keyboard interactions using a combination of InputService and TimeService:
+TimeService.registerFrameListener(() =&amp;gt; { const keyUp = InputService.key(&amp;#39;w&amp;#39;); if (keyUp) { hero.position.z += 1.0; } }); Note: Keyboard controls do not work on mobile devices in most cases. Be sure to add touch fallbacks to allow people to play on mobile.
+Touch &amp;amp; Mouse Inputs Default Cube combines both touch and click inputs into actions. Actions are declared per-scene in the SceneService.</description>
+    </item>
+    
+    <item>
+      <title>IV: Game Objects</title>
+      <link>/intro/game-objects/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/game-objects/</guid>
+      <description>Building Scenes Default Cube scenes are generally built with only 2 things: static meshes and game objects.
+Game object declaration allows you to assign any kind of logic to a specific object exported from Blender.
+gameObject: [gameObjectId] SceneService parses and initializes each object separately:
+Since each object is initialized only once - you can use TimeService.registerFrameListener to assign continuous logic to it.
+SceneService.parseScene({ target: sceneModel, gameObjects: { &amp;#39;gameObjectId&amp;#39;: (object) =&amp;gt; { TimeService.</description>
+    </item>
+    
+    <item>
+      <title>V: Physics</title>
+      <link>/intro/physics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/physics/</guid>
+      <description>Overview Default Cube does give a few world-navigation helpers, but does not come with an actual physics engine. You are free to integrate any engine compatible with Three.js though.
+Navmeshes You can limit the walkable area of every scene using navmeshes. When, for example, a character is moving around - PhysicsService will the check whether the character is within the allowed area. This allows you to easily create floors, walls, and doors.</description>
+    </item>
+    
+    <item>
+      <title>VI: Audio</title>
+      <link>/intro/audio/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/audio/</guid>
+      <description>Howler vs Three.js Audio Note: Default Cube does not support Three.PositionalAudio or Howler equivalent.
+Three.js Audio, while an amazing API, does cause issues on specific Android devices after switching audio contexts. To prevent that, Default Cube uses Howler audio library.
+Independent Audio To play a sound or music, use AudioService.playAudio without specifying the first argument (channel):
+AssetsService.getAudio(GameInfo.audio.bikeEngine).then(audio =&amp;gt; { const audioContext = AudioService.playAudio( null, // NOTE Do not assign this audio clip to any channel  audio, true // NOTE Specify whether the audio should loop  ); // NOTE You can control audio context directly using Howler API  audioContext.</description>
+    </item>
+    
+    <item>
+      <title>VII: Debugging</title>
+      <link>/intro/debugging/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/debugging/</guid>
+      <description>DummyDebugger DummyDebugger is the main debugging tool of Default Cube games. To enable it, turn DEBUG_ENABLE flag on:
+DummyDebug.on(DebugFlags.DEBUG_ENABLE); Afterwards, you can toggle various feature flags on and off to see different stats.
+Note: 🅇 sign next to specific elements shows you how many resources could not be disposed. These numbers should stay low - but it&amp;rsquo;s alright if they do not reach 0.
+Next: Persistence</description>
+    </item>
+    
+    <item>
+      <title>IX: AI</title>
+      <link>/intro/ai/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/ai/</guid>
+      <description>Overview Default Cube AI system contains 2 elements: AI game objects (wrapped in AiWrapper) and AI nodes.
+AI Nodes AI nodes are static meshes with assigned custom property:
+aiNode: [aiNodeId] AI Maps AI maps are an extension of AI nodes.
+aiMap: [aiMapId] Each vertex of a static mesh with an assigned AI map custom property will become an independent AI node. This makes creating complex routing and behaviour a bit easier.</description>
+    </item>
+    
+    <item>
+      <title>VIII: Persistence</title>
+      <link>/intro/persistence/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/intro/persistence/</guid>
+      <description>Saving Variables Default Cube uses Ionic native storage to save variables locally. To register a permanent variable, request it at the beginning of the game (using the VarService):
+await VarService.registerPersistentVar(&amp;#39;playerName&amp;#39;, &amp;#39;Banjer&amp;#39;); VarService.setVar(&amp;#39;playerName&amp;#39;, &amp;#39;Finn&amp;#39;); Whenever the specific variable is updated, it will also be saved locally.
+Next: AI</description>
+    </item>
+    
+  </channel>
+</rss>
