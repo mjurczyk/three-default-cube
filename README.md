@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <a href="#">Getting Started</a>
+  <a href="https://defaultcube.wtlstudio.com/intro/getting-started/">Getting Started</a>
   |
-  <a href="#">Docs</a>
+  <a href="https://defaultcube.wtlstudio.com/">Docs</a>
   |
-  <a href="#">Three.js</a>
+  <a href="https://github.com/mrdoob/three.js">Three.js</a>
 </p>
 
 ## Way less. In way more time.
