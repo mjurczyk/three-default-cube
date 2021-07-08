@@ -1,0 +1,744 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/css/index.css">
+
+    <title>Getting Started - Default Cube</title>
+    <link rel="icon" type="image/jpeg" href="/images/favicon.jpg" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="body-wrapper">
+      <div class="utils">
+        <div class="utils-theme util active">
+          🔆
+        </div>
+      </div>
+      <div class="overview">
+        <div class="list">
+          <div class="list-bundle">
+            <div class="list-category">
+              <a href="/">Documentation</a>
+            </div>
+            <ul>
+              <li>
+                <a href="/downloads">Downloads</a>
+              </li>
+              <li>
+                <a href="#">Github</a>
+              </li>
+              <li>
+                <a href="#">Contact</a>
+              </li>
+            </ul>
+          </div>
+          <div class="list-bundle">
+            <div class="list-search">
+              <script>
+                function filterSearch() {
+                  const searchElement = document.querySelector('#search');
+                  const filterableLists = Array.from(document.querySelectorAll('.list-filterable'));
+
+                  const searchTerm = (searchElement.value || '').toLowerCase();
+
+                  if (!searchTerm || searchTerm.length <= 1) {
+                    filterableLists.forEach(list => {
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        element.style.display = '';
+                      });
+
+                      list.style.display = '';
+                    });
+                  } else {
+                    filterableLists.forEach(list => {
+                      let isEmpty = true;
+
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        if (element.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                          element.style.display = 'none';
+                        } else {
+                          element.style.display = '';
+
+                          isEmpty = false;
+                        }
+                      });
+
+                      if (isEmpty && list.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                        list.style.display = 'none';
+                      } else {
+                        list.style.display = '';
+                      }
+                    });
+                  }
+                }
+              </script>
+              <input id="search" type="text" placeholder="Search..." onkeyup="filterSearch()" onblur="filterSearch()" />
+            </div>
+          </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/getting-started/">Getting Started</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/getting-started/#"culling-crazy-expectations">Culling crazy expectations</a></li>
+    <li><a href="/intro/getting-started/#"setting-up-a-default-cube-game">Setting up a Default Cube game</a></li>
+    <li><a href="/intro/getting-started/#"learning-default-cube">Learning Default Cube</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/views-and-scenes/">I: Views &amp; Scenes</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/views-and-scenes/#"general-idea">General Idea</a></li>
+    <li><a href="/intro/views-and-scenes/#"views--scenes">Views &amp; Scenes</a></li>
+    <li><a href="/intro/views-and-scenes/#"quick-glossary">Quick Glossary</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/camera/">II: Camera</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/camera/#"default-cube-vs-threejs-camera">Default Cube vs Three.js Camera</a></li>
+    <li><a href="/intro/camera/#"switching-cameras">Switching Cameras</a></li>
+    <li><a href="/intro/camera/#"following-objects">Following Objects</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/actions-and-ui/">III: Actions &amp; UI</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/actions-and-ui/#"key-inputs">Key Inputs</a></li>
+    <li><a href="/intro/actions-and-ui/#"touch--mouse-inputs">Touch &amp; Mouse Inputs</a></li>
+    <li><a href="/intro/actions-and-ui/#"user-interface">User Interface</a></li>
+    <li><a href="/intro/actions-and-ui/#"user-interface-text">User Interface Text</a></li>
+    <li><a href="/intro/actions-and-ui/#"camera-facing-user-interface">Camera-facing User Interface</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/game-objects/">IV: Game Objects</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/game-objects/#"building-scenes">Building Scenes</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/physics/">V: Physics</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/physics/#"overview">Overview</a></li>
+    <li><a href="/intro/physics/#"navmeshes">Navmeshes</a></li>
+    <li><a href="/intro/physics/#"hit-testing">Hit-testing</a></li>
+    <li><a href="/intro/physics/#"surfaces">Surfaces</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/audio/">VI: Audio</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/audio/#"howler-vs-threejs-audio">Howler vs Three.js Audio</a></li>
+    <li><a href="/intro/audio/#"independent-audio">Independent Audio</a></li>
+    <li><a href="/intro/audio/#"channels">Channels</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/debugging/">VII: Debugging</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/debugging/#"dummydebugger">DummyDebugger</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/ai/">IX: AI</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/ai/#"overview">Overview</a></li>
+    <li><a href="/intro/ai/#"ai-nodes">AI Nodes</a></li>
+    <li><a href="/intro/ai/#"ai-maps">AI Maps</a></li>
+    <li><a href="/intro/ai/#"aiwrapper--ai-behaviours">AiWrapper &amp; AI Behaviours</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/intro/persistence/">VIII: Persistence</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/intro/persistence/#"saving-variables">Saving Variables</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/advanced/custom-properties/">Custom Properties List</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/custom-properties/#"action">action</a></li>
+    <li><a href="/advanced/custom-properties/#"ainode">aiNode</a></li>
+    <li><a href="/advanced/custom-properties/#"aispawn">aiSpawn</a></li>
+    <li><a href="/advanced/custom-properties/#"align">align</a></li>
+    <li><a href="/advanced/custom-properties/#"animation">animation</a></li>
+    <li><a href="/advanced/custom-properties/#"cachematerial">cacheMaterial</a></li>
+    <li><a href="/advanced/custom-properties/#"camera">camera</a></li>
+    <li><a href="/advanced/custom-properties/#"fullscreen">fullscreen</a></li>
+    <li><a href="/advanced/custom-properties/#"fullscreenoffset">fullscreenOffset</a></li>
+    <li><a href="/advanced/custom-properties/#"fullscreenpreserveratio">fullscreenPreserveRatio</a></li>
+    <li><a href="/advanced/custom-properties/#"gameobject">gameObject</a></li>
+    <li><a href="/advanced/custom-properties/#"label">label</a></li>
+    <li><a href="/advanced/custom-properties/#"labelfont">labelFont</a></li>
+    <li><a href="/advanced/custom-properties/#"labelsize">labelSize</a></li>
+    <li><a href="/advanced/custom-properties/#"labelalign">labelAlign</a></li>
+    <li><a href="/advanced/custom-properties/#"labelcolor">labelColor</a></li>
+    <li><a href="/advanced/custom-properties/#"labeloutlinecolor">labelOutlineColor</a></li>
+    <li><a href="/advanced/custom-properties/#"material">material</a></li>
+    <li><a href="/advanced/custom-properties/#"navmap">navmap</a></li>
+    <li><a href="/advanced/custom-properties/#"navpath">navpath</a></li>
+    <li><a href="/advanced/custom-properties/#"rotatex--y--z">rotateX / Y / Z</a></li>
+    <li><a href="/advanced/custom-properties/#"scroll">scroll</a></li>
+    <li><a href="/advanced/custom-properties/#"shader">shader</a></li>
+    <li><a href="/advanced/custom-properties/#"shading">shading</a></li>
+    <li><a href="/advanced/custom-properties/#"slideshow">slideshow</a></li>
+    <li><a href="/advanced/custom-properties/#"slidesx">slidesX</a></li>
+    <li><a href="/advanced/custom-properties/#"slidesy">slidesY</a></li>
+    <li><a href="/advanced/custom-properties/#"surface">surface</a></li>
+    <li><a href="/advanced/custom-properties/#"if">if</a></li>
+    <li><a href="/advanced/custom-properties/#"ifnot">ifNot</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/advanced/mobile-platforms/">Mobile Platforms</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/mobile-platforms/#"android">Android</a></li>
+    <li><a href="/advanced/mobile-platforms/#"android---bundling-game-asseets">Android - Bundling Game Asseets</a></li>
+    <li><a href="/advanced/mobile-platforms/#"ios">iOS</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/advanced/animations/">Controlling Animations</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/animations/#"animation-wrappers">Animation Wrappers</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/advanced/particles/">Particles</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/particles/#"creating-particle-emitters">Creating Particle Emitters</a></li>
+    <li><a href="/advanced/particles/#"particleobject-object3d">particleObject: Object3D</a></li>
+    <li><a href="/advanced/particles/#"particledensity-number">particleDensity: number</a></li>
+    <li><a href="/advanced/particles/#"positionbase--rotationbase--scalebase-x-y-z--number">positionBase / rotationBase / scaleBase: [x, y, z] | number</a></li>
+    <li><a href="/advanced/particles/#"positionjitter--rotationjitter--scalejitter-x-y-z--number">positionJitter / rotationJitter / scaleJitter: [x, y, z] | number</a></li>
+    <li><a href="/advanced/particles/#"spawnjitter-number">spawnJitter: number</a></li>
+    <li><a href="/advanced/particles/#"globaltransforms-boolean">globalTransforms: boolean</a></li>
+    <li><a href="/advanced/particles/#"oncreate-function--target-">onCreate: function ({ target })</a></li>
+    <li><a href="/advanced/particles/#"onframe-function--target-random-lifetime-">onFrame: function ({ target, random, lifeTime })</a></li>
+    <li><a href="/advanced/particles/#"onreset-function--target-">onReset: function ({ target })</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/ai-service/">AiService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/ai-service/#"getainodebyid-">getAiNodeById ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/animation-service/">AnimationService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/animation-service/#"registeranimation-">registerAnimation ()</a></li>
+    <li><a href="/services/animation-service/#"animationoverridetype">AnimationOverrideType</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/assets-service/">AssetsService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/assets-service/#"getdefaultcube-">getDefaultCube ()</a></li>
+    <li><a href="/services/assets-service/#"getambientlight-">getAmbientLight ()</a></li>
+    <li><a href="/services/assets-service/#"getimage-">getImage ()</a></li>
+    <li><a href="/services/assets-service/#"getimagesync-">getImageSync ()</a></li>
+    <li><a href="/services/assets-service/#"gethdri-">getHDRI ()</a></li>
+    <li><a href="/services/assets-service/#"getmodel-">getModel ()</a></li>
+    <li><a href="/services/assets-service/#"preloadmodel-">preloadModel ()</a></li>
+    <li><a href="/services/assets-service/#"preloadfont-">preloadFont ()</a></li>
+    <li><a href="/services/assets-service/#"preloadaudio-">preloadAudio ()</a></li>
+    <li><a href="/services/assets-service/#"getaudio-">getAudio ()</a></li>
+    <li><a href="/services/assets-service/#"getmaterial-">getMaterial ()</a></li>
+    <li><a href="/services/assets-service/#"savematerial-">saveMaterial ()</a></li>
+    <li><a href="/services/assets-service/#"clonematerial-">cloneMaterial ()</a></li>
+    <li><a href="/services/assets-service/#"clonetexture-">cloneTexture ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/audio-service/">AudioService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/audio-service/#"audiochannelenums">AudioChannelEnums</a></li>
+    <li><a href="/services/audio-service/#"playaudio-">playAudio ()</a></li>
+    <li><a href="/services/audio-service/#"stopaudio-">stopAudio ()</a></li>
+    <li><a href="/services/audio-service/#"setmastervolume-">setMasterVolume ()</a></li>
+    <li><a href="/services/audio-service/#"getmastervolume-">getMasterVolume ()</a></li>
+    <li><a href="/services/audio-service/#"setaudiovolume-">setAudioVolume ()</a></li>
+    <li><a href="/services/audio-service/#"setaudioplaybackrate-">setAudioPlaybackRate ()</a></li>
+    <li><a href="/services/audio-service/#"setchannelvolume-">setChannelVolume ()</a></li>
+    <li><a href="/services/audio-service/#"setchannelplaybackrate-">setChannelPlaybackRate ()</a></li>
+    <li><a href="/services/audio-service/#"stopchannel-">stopChannel ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/camera-service/">CameraService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/camera-service/#"getcamera-">getCamera ()</a></li>
+    <li><a href="/services/camera-service/#"usecamera-">useCamera ()</a></li>
+    <li><a href="/services/camera-service/#"follow-">follow ()</a></li>
+    <li><a href="/services/camera-service/#"getfollowpivot-">getFollowPivot ()</a></li>
+    <li><a href="/services/camera-service/#"stopfollowing-">stopFollowing ()</a></li>
+    <li><a href="/services/camera-service/#"getcameraastexture-">getCameraAsTexture ()</a></li>
+    <li><a href="/services/camera-service/#"preventocclusion-">preventOcclusion ()</a></li>
+    <li><a href="/services/camera-service/#"allowocclusion-">allowOcclusion ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/dummy-debug/">DummyDebug</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/dummy-debug/#"debugflags">DebugFlags</a></li>
+    <li><a href="/services/dummy-debug/#"on-">on ()</a></li>
+    <li><a href="/services/dummy-debug/#"off-">off ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/game-info-service/">GameInfoService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/game-info-service/#"system-">system ()</a></li>
+    <li><a href="/services/game-info-service/#"camera-">camera ()</a></li>
+    <li><a href="/services/game-info-service/#"vars-">vars ()</a></li>
+    <li><a href="/services/game-info-service/#"labels-">labels ()</a></li>
+    <li><a href="/services/game-info-service/#"animation-">animation ()</a></li>
+    <li><a href="/services/game-info-service/#"font-">font ()</a></li>
+    <li><a href="/services/game-info-service/#"texture-">texture ()</a></li>
+    <li><a href="/services/game-info-service/#"model-">model ()</a></li>
+    <li><a href="/services/game-info-service/#"audio-">audio ()</a></li>
+    <li><a href="/services/game-info-service/#"shader-">shader ()</a></li>
+    <li><a href="/services/game-info-service/#"custom-">custom ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/input-service/">InputService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/input-service/#"key-">key ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/interactions-service/">InteractionsService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
+    <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/math-service/">MathService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/math-service/#"getvec2-">getVec2 ()</a></li>
+    <li><a href="/services/math-service/#"releasevec2-">releaseVec2 ()</a></li>
+    <li><a href="/services/math-service/#"getquaternion-">getQuaternion ()</a></li>
+    <li><a href="/services/math-service/#"releasequaternion-">releaseQuaternion ()</a></li>
+    <li><a href="/services/math-service/#"getvec3-">getVec3 ()</a></li>
+    <li><a href="/services/math-service/#"clonevec3-">cloneVec3 ()</a></li>
+    <li><a href="/services/math-service/#"releasevec3-">releaseVec3 ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/particle-service/">ParticleService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/particle-service/#"registerparticleemitter-">registerParticleEmitter ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/physics-service/">PhysicsService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/physics-service/#"enablenavmap-">enableNavmap ()</a></li>
+    <li><a href="/services/physics-service/#"disablenavmap-">disableNavmap ()</a></li>
+    <li><a href="/services/physics-service/#"registersurfacehandler-">registerSurfaceHandler ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/render-service/">RenderService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/render-service/#"getscene-">getScene ()</a></li>
+    <li><a href="/services/render-service/#"getnativecamera-">getNativeCamera ()</a></li>
+    <li><a href="/services/render-service/#"getrenderer-">getRenderer ()</a></li>
+    <li><a href="/services/render-service/#"pauserendering-">pauseRendering ()</a></li>
+    <li><a href="/services/render-service/#"resumerendering-">resumeRendering ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/scene-service/">SceneService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/scene-service/#"parsescene-">parseScene ()</a></li>
+    <li><a href="/services/scene-service/#"setbackgroundimage-">setBackgroundImage ()</a></li>
+    <li><a href="/services/scene-service/#"setbackground-">setBackground ()</a></li>
+    <li><a href="/services/scene-service/#"getbackground-">getBackground ()</a></li>
+    <li><a href="/services/scene-service/#"setenvironment-">setEnvironment ()</a></li>
+    <li><a href="/services/scene-service/#"getenvironment-">getEnvironment ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/storage-service/">StorageService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/storage-service/#"set-">set ()</a></li>
+    <li><a href="/services/storage-service/#"get-">get ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/system-service/">SystemService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/system-service/#"init-">init ()</a></li>
+    <li><a href="/services/system-service/#"lockorientation-">lockOrientation ()</a></li>
+    <li><a href="/services/system-service/#"onready-">onReady ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/time-service/">TimeService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/time-service/#"registerframelistener-">registerFrameListener ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/ui-service/">UiService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/ui-service/#"registeruielement-">registerUiElement ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/utils-service/">UtilsService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/utils-service/#"getraycaster-">getRaycaster ()</a></li>
+    <li><a href="/services/utils-service/#"releaseraycaster-">releaseRaycaster ()</a></li>
+    <li><a href="/services/utils-service/#"getbox3-">getBox3 ()</a></li>
+    <li><a href="/services/utils-service/#"releasebox3-">releaseBox3 ()</a></li>
+    <li><a href="/services/utils-service/#"getcamera-">getCamera ()</a></li>
+    <li><a href="/services/utils-service/#"releasecamera-">releaseCamera ()</a></li>
+    <li><a href="/services/utils-service/#"getempty-">getEmpty ()</a></li>
+    <li><a href="/services/utils-service/#"releaseempty-">releaseEmpty ()</a></li>
+    <li><a href="/services/utils-service/#"getblankmaterial-">getBlankMaterial ()</a></li>
+    <li><a href="/services/utils-service/#"releaseblankmaterial-">releaseBlankMaterial ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/services/var-service/">VarService</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/services/var-service/#"setvar-">setVar ()</a></li>
+    <li><a href="/services/var-service/#"getvar-">getVar ()</a></li>
+    <li><a href="/services/var-service/#"removevar-">removeVar ()</a></li>
+    <li><a href="/services/var-service/#"registerpersistentvar-">registerPersistentVar ()</a></li>
+    <li><a href="/services/var-service/#"resolvevar-">resolveVar ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/game-objects/ai-wrapper/">AiWrapper</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/game-objects/ai-wrapper/#"registerbehaviour-">registerBehaviour ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"getaibehaviour-">getAiBehaviour ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"hastargetnode-">hasTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"settargetnode-">setTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"getdistancetotargetnode-">getDistanceToTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"getgroundangletotargetnode-">getGroundAngleToTargetNode ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/game-objects/animation-wrapper/">AnimationWrapper</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/game-objects/animation-wrapper/#"playanimation-">playAnimation ()</a></li>
+    <li><a href="/game-objects/animation-wrapper/#"stopanimation-">stopAnimation ()</a></li>
+    <li><a href="/game-objects/animation-wrapper/#"blendinanimation-">blendInAnimation ()</a></li>
+    <li><a href="/game-objects/animation-wrapper/#"playallanimations-">playAllAnimations ()</a></li>
+    <li><a href="/game-objects/animation-wrapper/#"stopallanimations-">stopAllAnimations ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/game-objects/physics-wrapper/">PhysicsWrapper</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/game-objects/physics-wrapper/#"enablenavmaps-">enableNavmaps ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"getsimplevelocity-">getSimpleVelocity ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"setsimplevelocity-">setSimpleVelocity ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/game-objects/preloader/">Preloader</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/game-objects/preloader/#"overview">Overview</a></li>
+    <li><a href="/game-objects/preloader/#"constructor">constructor</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/utils/utils/">Built-in Utils</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/utils/utils/#"math-𝛑-helpers">Math 𝛑 Helpers</a></li>
+    <li><a href="/utils/utils/#"removeplaceholder-">removePlaceholder ()</a></li>
+    <li><a href="/utils/utils/#"replaceplaceholder-">replacePlaceholder ()</a></li>
+    <li><a href="/utils/utils/#"clonevalue-">cloneValue ()</a></li>
+    <li><a href="/utils/utils/#"getrandomcolor-">getRandomColor ()</a></li>
+    <li><a href="/utils/utils/#"getrandomelement-">getRandomElement ()</a></li>
+    <li><a href="/utils/utils/#"splicerandomelement-">spliceRandomElement ()</a></li>
+    <li><a href="/utils/utils/#"moduloangle-">moduloAngle ()</a></li>
+    <li><a href="/utils/utils/#"defaultto-">defaultTo ()</a></li>
+    <li><a href="/utils/utils/#"swapvectors-">swapVectors ()</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/todo/">TODO</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/todo/#"parserservice-remove-var--prefix-from-labels">[ParserService] Remove var- prefix from labels</a></li>
+    <li><a href="/todo/#"parserservice-add-variable-notation">[ParserService] Add variable notation</a></li>
+    <li><a href="/todo/#"parserservice-flatshade-ie-shading">[ParserService] flatshade (ie. shading)</a></li>
+    <li><a href="/todo/#"assetsservice-rename-getimage-to-gettexture">[AssetsService] Rename getImage to getTexture</a></li>
+    <li><a href="/todo/#"general-uniform-axes">[General] Uniform axes</a></li>
+    <li><a href="/todo/#"aiservice-geometry-ai-nodes">[AiService] Geometry AI nodes</a></li>
+    <li><a href="/todo/#"audioservice-audiomapping">[AudioService] AudioMapping</a></li>
+    <li><a href="/todo/#"utils-replacement-should-inherit-original-transforms">[Utils] Replacement should inherit original transforms</a></li>
+    <li><a href="/todo/#"renderservice-add-pre-compile-helper">[RenderService] Add pre-compile helper</a></li>
+    <li><a href="/todo/#"assetsservice-improve-raycasting-by-using-bvh">[AssetsService] Improve raycasting by using BVH</a></li>
+    <li><a href="/todo/#"sceneservice-setbackgroundimage-and-setbackground-naming">[SceneService] setBackgroundImage and setBackground naming</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="/todo/#"rename-physics-wrapper-to-physics-game-object">Rename <code>physics-wrapper</code> to <code>physics-game-object</code></a></li>
+    <li><a href="/todo/#"rename-ai-wrapper-to-ai-game-object-kept--wrapper-for-consitency">Rename <code>ai-wrapper</code> to <code>ai-game-object</code> (Kept <code>-wrapper</code> for consitency.)</a></li>
+    <li><a href="/todo/#"general-add-configservice">[General] Add ConfigService</a></li>
+    <li><a href="/todo/#"gameinfo-gameinfo-and-varsservice-clarity">[GameInfo] GameInfo and VarsService clarity</a></li>
+    <li><a href="/todo/#"gameinfo-add-automatic-gameinfo-parsing">[GameInfo] Add automatic GameInfo parsing</a></li>
+    <li><a href="/todo/#"assetsservice-add-userdata-flag-signifying-whether-object-was-registered-for-disposal-to-prevent-multiple-disposals">[AssetsService] Add userData flag signifying whether object was registered for disposal to prevent multiple disposals</a></li>
+  </ul>
+</nav>
+            </div>
+          
+        </div>
+      </div>
+      <div class="content">
+        <div class="scale-wrapper">
+          <div class="breadcrumbs">
+            <a href="/">⇠ Documentation</a>
+          </div>
+          <div class="title">
+            Getting Started <span class="trinket">⌘</span>
+          </div>
+          <div class="body">
+            
+            <h2 id="culling-crazy-expectations">Culling crazy expectations</h2>
+<ul>
+<li>Default Cube projects have to be started using a boilerplate.</li>
+</ul>
+<p>The entire framework is dependent on <a href="https://ionicframework.com/docs/react/your-first-app">Ionic</a> and <a href="https://capacitorjs.com/docs/basics/workflow">Capacitor</a>. It will not work without them - since it&rsquo;s using a lot of their features to make your life easier. The boilerplate setup is described later on.</p>
+<ul>
+<li>Why is there a React dependency?</li>
+</ul>
+<p>Default Cube isn&rsquo;t really using React, but <code>react-scripts</code> makes deployment a bit faster. In the future it may be removed (the size of the dependency is quite negligable compared to size of game assets anyway.)</p>
+<ul>
+<li>Do I need to know Three.js?</li>
+</ul>
+<p>Yep. Default Cube may make the most annoying parts of gamedev easier - but still heavily depends on your Three.js knowledge.</p>
+<h2 id="setting-up-a-default-cube-game">Setting up a Default Cube game</h2>
+<p>First, download the [boilerplate]. Create a directory for it, then install the necessary dependencies (remember to also install the <code>three-default-cube</code> library itself):</p>
+<pre><code class="language-cli" data-lang="cli">$ cd ./my-game-directory
+$ npm install
+$ npm install three-default-cube
+</code></pre><p>Boilerplate contains a sample scene and a general setup. To start the development server use:</p>
+<pre><code class="language-cli" data-lang="cli">$ npm run start
+</code></pre><p>When your game is ready, you can build the web release version using:</p>
+<pre><code class="language-cli" data-lang="cli">$ npm run build:web
+</code></pre><p>Releasing games on other platforms is described <a href="/advanced/mobile-platforms">here</a>.</p>
+<p><strong>Note:</strong> The framework is built mostly using directory-independent singletons (ie. classes that are created only once.) Thanks to that you can structure the game files which ever way you desire.</p>
+<h2 id="learning-default-cube">Learning Default Cube</h2>
+<p>Each intro section in the documentation contains an interactive preview of described features. For every preview you can also download the source files and run them locally (this may be especially useful for Blender files, which are the core of Default Cube.)</p>
+<p>Next: <a href="/intro/views-and-scenes/">Views &amp; Scenes</a></p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="/js/index.js"></script>
+</html>

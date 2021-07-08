@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Utils on Docs</title>
+    <link>/utils/</link>
+    <description>Recent content in Utils on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/utils/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Built-in Utils</title>
+      <link>/utils/utils/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/utils/utils/</guid>
+      <description>Math 𝛑 Helpers Math.PI shorthands - math2Pi, mathPi2, mathPi4, mathPi8.
+removePlaceholder () removePlaceholder(mesh)
+Remove mesh from the scene.
+replacePlaceholder () replacePlaceholder(mesh, replacement)
+Replace mesh with another one. Original mesh is removed.
+cloneValue () cloneValue(object)
+Return a deep-clone of a JavaScript value. Does not preserve prototypes.
+getRandomColor () getRandomColor()
+Returns a random Three.Color.
+getRandomElement () getRandomElement(array)
+Returns a random element from an array.
+spliceRandomElement () spliceRandomElement(array)
+Splices and returns a random element from an array.</description>
+    </item>
+    
+  </channel>
+</rss>

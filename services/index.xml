@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Services on Docs</title>
+    <link>/services/</link>
+    <description>Recent content in Services on Docs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="/services/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AiService</title>
+      <link>/services/ai-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/ai-service/</guid>
+      <description>getAiNodeById () getAiNodeById(nodeId)
+Returns ai node. See aiNode in Custom Properties List.</description>
+    </item>
+    
+    <item>
+      <title>AnimationService</title>
+      <link>/services/animation-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/animation-service/</guid>
+      <description>registerAnimation () registerAnimation({ target, onCreate, onStep, onDispose, interval, override = AnimationOverrideType.default, randomSeed = 0.0 }) Create new animation on target (similar to TimeService.registerFrameListener.)
+onCreate is called with: { target } onStep is called with: { target, dt, animationTime, intervalTime } onDispose is called with { target }. Allows to implement custom disposal.
+interval is optional, must be in miliseconds (JavaScript default.)
+AnimationOverrideType { noOverride, overrideIfExists, ignoreIfExists } </description>
+    </item>
+    
+    <item>
+      <title>AssetsService</title>
+      <link>/services/assets-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/assets-service/</guid>
+      <description>getDefaultCube () Returns a cube.
+getAmbientLight () getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0)
+Returns a new hemisphere light, acting as an ambient light.
+getImage () getImage(path)
+Fetches an image as a Three.Texture.
+getImageSync () See getImage. Synchronous.
+getHDRI () getHDRI(path)
+Fetches a HDRI texture.
+getModel () getModel( path, { internalAllowPreloaded = true, forceUniqueMaterials = false } ) Fetches a glTF model.
+preloadModel () preloadModel( path, { forceUniqueMaterials = false } ) Fetches a glTF model and stores it in the service.</description>
+    </item>
+    
+    <item>
+      <title>AudioService</title>
+      <link>/services/audio-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/audio-service/</guid>
+      <description>AudioChannelEnums { ambientChannel, globalChannel, } Ambient channel automatically loops the played sound.
+playAudio () playAudio( channel = null, audioOrPromised, loop = false ) Plays Howler audio. If channel is not specified, plays the audio independently. Returns an audio reference.
+stopAudio () stopAudio(audio)
+setMasterVolume () setMasterVolume(volume = 1.0)
+getMasterVolume () getMasterVolume()
+setAudioVolume () setAudioVolume(audio, volume = 1.0)
+setAudioPlaybackRate () setAudioPlaybackRate(audio, playbackRate = 1.0)
+setChannelVolume () setChannelVolume(channel, volume = 1.0, tweenDuration = 0.</description>
+    </item>
+    
+    <item>
+      <title>CameraService</title>
+      <link>/services/camera-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/camera-service/</guid>
+      <description>getCamera () getCamera(id)
+Returns a camera. See camera in Custom Properties List.
+useCamera () useCamera(camera, instant = false)
+Moves viewport to a specific camera. If instant is not specified, camera is tweened according to CameraService.tween.
+follow () follow(object, onReachTarget)
+Moves viewport to follow a specific mesh. onReachTarget is optionally called when camera reaches the target.
+getFollowPivot () getFollowPivot(), CameraService.followPivotPosition
+Requires follow() to be enabled. Returns a follow pivot. Use followPivotPosition to specify the distance camera should keep from the target.</description>
+    </item>
+    
+    <item>
+      <title>DummyDebug</title>
+      <link>/services/dummy-debug/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/dummy-debug/</guid>
+      <description>DebugFlags DebugFlags = { DEBUG_ENABLE, DEBUG_LIVE, DEBUG_LOG_MEMORY, DEBUG_LOG_POOLS, DEBUG_LOG_ASSETS, DEBUG_ORBIT_CONTROLS, DEBUG_SCROLL_VISIBLE, DEBUG_TIME_LISTENERS, DEBUG_SKINNING_SKELETONS, DEBUG_ADS, DEBUG_DISABLE_ADS, DEBUG_STORAGE, DEBUG_AI_NODES, DEBUG_AI_TARGETS, DEBUG_PHYSICS, DEBUG_PHYSICS_DYNAMIC, } on () on(flag)
+Enables specific debugging flag. Cannot be called after game is initialized.
+off () off(flag)
+Disables specific debugging flag. Cannot be called after game is initialized.</description>
+    </item>
+    
+    <item>
+      <title>GameInfoService</title>
+      <link>/services/game-info-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/game-info-service/</guid>
+      <description>system () system( fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, ) camera () camera( fov = 50, near = 0.1, far = 2000.0, ) vars () vars({ varKey: varValue, ... })
+Adds variables to the system config.
+labels () labels(language = &#39;en&#39;, vars)
+Adds localized string variables to the system config. Similar to vars.
+animation () animation(id, animation)
+Registers a system animation. See animation in Custom Properties List.</description>
+    </item>
+    
+    <item>
+      <title>InputService</title>
+      <link>/services/input-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/input-service/</guid>
+      <description>key () key(keyName)
+Returns key state. See MDN KeyboardEvent.key.</description>
+    </item>
+    
+    <item>
+      <title>InteractionsService</title>
+      <link>/services/interactions-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/interactions-service/</guid>
+      <description>InteractionEnums { eventClick, eventDrag, eventHold, eventRelease, eventLeave, } registerListener () registerListener(target, interactionEnum, callback)</description>
+    </item>
+    
+    <item>
+      <title>MathService</title>
+      <link>/services/math-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/math-service/</guid>
+      <description>getVec2 () getVec2(x = 0.0, y = 0.0)
+Creates a pooled Three.Vector2.
+releaseVec2 () releaseVec2(vector)
+Releases vector to the pool.
+getQuaternion () getQuaternion()
+Creates a pooled Three.Quaternion.
+releaseQuaternion () releaseQuaternion(quaternion)
+Releases quaternion to the pool.
+getVec3 () getVec3(x = 0.0, y = 0.0, z = 0.0)
+Creates a pooled Three.Vector3.
+cloneVec3 () cloneVec3(vector)
+Returns a clone of Three.Vector3.
+releaseVec3 () releaseVec3(vector)
+Releases vector to the pool.</description>
+    </item>
+    
+    <item>
+      <title>ParticleService</title>
+      <link>/services/particle-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/particle-service/</guid>
+      <description>registerParticleEmitter () registerParticleEmitter(object, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset }); Creates new particle emitter. Returns emitter information and reference. See Particles.</description>
+    </item>
+    
+    <item>
+      <title>PhysicsService</title>
+      <link>/services/physics-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/physics-service/</guid>
+      <description>enableNavmap () enableNavmap(object)
+Declares object as a navmap.
+disableNavmap () disableNavmap(object)
+Disabled object as a navmap.
+registerSurfaceHandler () registerSurfaceHandler(surfaceType, handlerClass, interactionHandler = &#39;onInteraction&#39;)
+Registers a new surface handler. Second argument should be a class, not an object. interactionHandler is called with default Three ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See Physics.</description>
+    </item>
+    
+    <item>
+      <title>RenderService</title>
+      <link>/services/render-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/render-service/</guid>
+      <description>getScene () getScene()
+Return native Three.Scene.
+getNativeCamera () getNativeCamera()
+Return native Three.PerspectiveCamera.
+getRenderer () getRenderer()
+Return native Three.WebGLRenderer.
+pauseRendering () pauseRendering(callback)
+Pauses the renderer. callback is called on the first paused frame.
+resumeRendering () resumeRendering(callback)
+Resumes the renderer. callback is called on the first rendered frame.</description>
+    </item>
+    
+    <item>
+      <title>SceneService</title>
+      <link>/services/scene-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/scene-service/</guid>
+      <description>parseScene () parseScene({ target, navpath = null, actions = {}, gameObjects = {}, onCreate, }) Parse model as a Default Cube scene using parsers. actions and gameObjects are used to parse respective Custom Properties.
+gameObject parsers can use gameObjectRefs to access other game objects, before entire scene is parsed.
+If navpath is specified, meshes with different value of navpath custom property are not added to the scene.
+onCreate is called with:</description>
+    </item>
+    
+    <item>
+      <title>StorageService</title>
+      <link>/services/storage-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/storage-service/</guid>
+      <description>set () set(key, value)
+Saves value locally using native or local storage.
+get () get(key)
+Returns value saved locally.</description>
+    </item>
+    
+    <item>
+      <title>SystemService</title>
+      <link>/services/system-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/system-service/</guid>
+      <description>init () init({ statusBar })
+Starts Default Cube. If statusBar is set to true, status bar will not be hidden on mobile.
+lockOrientation () lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE)
+Ionic. Locks device orientation.
+onReady () onReady(callback)
+Calls callback when the system is fully ready.</description>
+    </item>
+    
+    <item>
+      <title>TimeService</title>
+      <link>/services/time-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/time-service/</guid>
+      <description>registerFrameListener () registerFrameListener(callback)
+Creates a continuous loop. Calls callback on each frame. Frame listeners are cancelled when view is disposed.</description>
+    </item>
+    
+    <item>
+      <title>UiService</title>
+      <link>/services/ui-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/ui-service/</guid>
+      <description>registerUiElement () registerUiElement(object)
+Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.</description>
+    </item>
+    
+    <item>
+      <title>UtilsService</title>
+      <link>/services/utils-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/utils-service/</guid>
+      <description>getRaycaster () getRaycaster()
+Creates a pooled Three.Raycaster.
+releaseRaycaster () releaseRaycaster(raycaster)
+Releases raycaster to the pool.
+getBox3 () getBox3()
+Creates a pooled Three.Box3.
+releaseBox3 () releaseBox3(box)
+Releases box to the pool.
+getCamera () getCamera()
+Creates a pooled Three.PerspectiveCamera.
+releaseCamera () releaseCamera(camera)
+Releases camera to the pool.
+getEmpty () getEmpty()
+Creates a pooled Three.Object3D.
+releaseEmpty () releaseEmpty(empty)
+Releases empty to the pool.
+getBlankMaterial () getBlankMaterial()
+Creates a pooled Three.MeshBasicMaterial.
+releaseBlankMaterial () releaseBlankMaterial()</description>
+    </item>
+    
+    <item>
+      <title>VarService</title>
+      <link>/services/var-service/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/services/var-service/</guid>
+      <description>setVar () setVar(key, value)
+Sets a system variable.
+getVar () getVar(key, onUpdate, onCreate)
+Returns system variable value immediately.
+onUpdate is called immediately, and on each update of the variable, with variable value. onCreate is called immediately with a change listener reference.
+removeVar () removeVar(key)
+Removes a system variable and its listeners.
+registerPersistentVar () registerPersistentVar(id, defaultValue)
+Registers a system variable as persistent. Persistent variables are automatically saved locally when changed.
+If variable was not saved locally earlier, defaultValue is assigned.</description>
+    </item>
+    
+  </channel>
+</rss>
