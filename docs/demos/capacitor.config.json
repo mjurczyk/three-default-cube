@@ -1,0 +1,6 @@
+{
+	"appId": "com.defaultcube.gamestarter",
+	"appName": "game-starter",
+	"webDir": "build",
+	"bundledWebRuntime": false
+}

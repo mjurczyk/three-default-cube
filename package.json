@@ -1,0 +1,31 @@
+{
+  "name": "three-default-cube",
+  "version": "0.1.1",
+  "description": "Way less. In way more time.",
+  "main": "./three-default-cube.js",
+  "files": [
+    "three-default-cube.js",
+    "three-default-cube.module.js"
+  ],
+  "scripts": {
+    "build": "rollup --config ./rollup-config/cjs.config.js",
+    "build:module": "rollup --config ./rollup-config/es.config.js",
+    "build:docs": "cd ./docs && hugo && cd ../",
+    "docs": "cd docs && hugo server -D",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "three",
+    "webgl",
+    "game",
+    "engine"
+  ],
+  "author": "wtlstudio",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/plugin-proposal-class-properties": "7.14.5",
+    "@rollup/plugin-babel": "5.3.0",
+    "rollup": "2.52.3"
+  }
+}

@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/css/index.css">
+
+    <title>{{ .Title }} - Default Cube</title>
+    <link rel="icon" type="image/jpeg" href="/images/favicon.jpg" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="body-wrapper">
+      <div class="utils">
+        <div class="utils-theme util active">
+          🔆
+        </div>
+      </div>
+      <div class="overview">
+        <div class="list">
+          <div class="list-bundle">
+            <div class="list-category">
+              <a href="/">Documentation</a>
+            </div>
+            <ul>
+              <li>
+                <a href="/downloads">Downloads</a>
+              </li>
+              <li>
+                <a href="#">Github</a>
+              </li>
+              <li>
+                <a href="#">Contact</a>
+              </li>
+            </ul>
+          </div>
+          <div class="list-bundle">
+            <div class="list-search">
+              <script>
+                function filterSearch() {
+                  const searchElement = document.querySelector('#search');
+                  const filterableLists = Array.from(document.querySelectorAll('.list-filterable'));
+
+                  const searchTerm = (searchElement.value || '').toLowerCase();
+
+                  if (!searchTerm || searchTerm.length <= 1) {
+                    filterableLists.forEach(list => {
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        element.style.display = '';
+                      });
+
+                      list.style.display = '';
+                    });
+                  } else {
+                    filterableLists.forEach(list => {
+                      let isEmpty = true;
+
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        if (element.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                          element.style.display = 'none';
+                        } else {
+                          element.style.display = '';
+
+                          isEmpty = false;
+                        }
+                      });
+
+                      if (isEmpty && list.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                        list.style.display = 'none';
+                      } else {
+                        list.style.display = '';
+                      }
+                    });
+                  }
+                }
+              </script>
+              <input id="search" type="text" placeholder="Search..." onkeyup="filterSearch()" onblur="filterSearch()" />
+            </div>
+          </div>
+          {{ range .Site.RegularPages }}
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="{{ .Permalink }}">{{ .Title }}</a>
+              </div>
+              {{ replace .TableOfContents `href="#` (printf `href="%s#"` .Permalink) | safeHTML }}
+            </div>
+          {{ end }}
+        </div>
+      </div>
+      <div class="content">
+        <div class="scale-wrapper">
+          <div class="breadcrumbs">
+            <a href="/">⇠ Documentation</a>
+          </div>
+          <div class="title">
+            {{ .Title }} <span class="trinket">⌘</span>
+          </div>
+          <div class="body">
+            {{ if .Params.demoId }}
+              <div class="webgl-preview">
+                <iframe 
+                  src="/static/index.html?demoId={{ .Params.demoId }}"
+                  loading="lazy"
+                ></iframe>
+              </div>
+            {{ end }}
+            {{ .Content }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="/js/index.js"></script>
+</html>

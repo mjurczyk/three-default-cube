@@ -1,0 +1,12 @@
+# General
+
+node_modules/
+three-default-cube.js
+three-default-cube.module.js
+*.tgz
+
+# Docs
+
+docs/static/
+docs/demos/node_modules/
+docs/demos/build/

@@ -1,0 +1,250 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/css/index.css">
+
+    <title>{{ .Title }} - Default Cube</title>
+    <link rel="icon" type="image/jpeg" href="/images/favicon.jpg" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="body-wrapper">
+      <div class="utils">
+        <div class="utils-theme util active">
+          🔆
+        </div>
+      </div>
+      <div class="overview">
+        <div class="list">
+          <div class="list-bundle">
+            <div class="list-category">
+              <a href="/">Documentation</a>
+            </div>
+            <ul>
+              <li>
+                <a href="/downloads">Downloads</a>
+              </li>
+              <li>
+                <a href="#">Github</a>
+              </li>
+              <li>
+                <a href="#">Contact</a>
+              </li>
+            </ul>
+          </div>
+          <div class="list-bundle">
+            <div class="list-search">
+              <script>
+                function filterSearch() {
+                  const searchElement = document.querySelector('#search');
+                  const filterableLists = Array.from(document.querySelectorAll('.list-filterable'));
+
+                  const searchTerm = (searchElement.value || '').toLowerCase();
+
+                  if (!searchTerm || searchTerm.length <= 1) {
+                    filterableLists.forEach(list => {
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        element.style.display = '';
+                      });
+
+                      list.style.display = '';
+                    });
+                  } else {
+                    filterableLists.forEach(list => {
+                      let isEmpty = true;
+
+                      Array.from(list.querySelectorAll('li')).forEach(element => {
+                        if (element.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                          element.style.display = 'none';
+                        } else {
+                          element.style.display = '';
+
+                          isEmpty = false;
+                        }
+                      });
+
+                      if (isEmpty && list.textContent.toLowerCase().indexOf(searchTerm) === -1) {
+                        list.style.display = 'none';
+                      } else {
+                        list.style.display = '';
+                      }
+                    });
+                  }
+                }
+              </script>
+              <input id="search" type="text" placeholder="Search..." onkeyup="filterSearch()" onblur="filterSearch()" />
+            </div>
+          </div>
+          {{ range .Site.RegularPages }}
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="{{ .Permalink }}">{{ .Title }}</a>
+              </div>
+              {{ replace .TableOfContents `href="#` (printf `href="%s#"` .Permalink) | safeHTML }}
+            </div>
+          {{ end }}
+        </div>
+      </div>
+      <div class="content">
+        <div class="scale-wrapper">
+          <div class="title">
+            Default Cube <sup>v0.1.1</sup>
+          </div>
+          <div class="category-grid">
+            <a href="/intro/getting-started">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/getting-started.png" />
+                <div class="category-label">
+                  Getting Started
+                </div>
+              </div>
+            </a>
+
+            <a href="https://play.google.com/store/apps/details?id=wtl.games.daylightsquad" target="_tab">
+              <div class="category two">
+                <img class="category-gif" src="./images/category-gifs/daylight-squad.png" />
+                <div class="category-label">
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/views-and-scenes">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/views-and-scenes.png" />
+                <div class="category-label">
+                  I: Views & Scenes
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/camera">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/camera.png" />
+                <div class="category-label">
+                  II: Camera
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/actions-and-ui">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/actions-and-ui.png" />
+                <div class="category-label">
+                  III: Actions & UI
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/game-objects">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/game-objects.png" />
+                <div class="category-label">
+                  IV: Game Objects
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/physics">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/physics.png" />
+                <div class="category-label">
+                  V: Physics
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/audio">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/audio.png" />
+                <div class="category-label">
+                  VI: Audio
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/debugging">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/debugging.png" />
+                <div class="category-label">
+                  VII: Debugging
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/persistence">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/persistence.png" />
+                <div class="category-label">
+                  VIII: Persistence
+                </div>
+              </div>
+            </a>
+
+            <a href="/intro/ai">
+              <div class="category">
+                <img class="category-gif" src="./images/category-gifs/ai.png" />
+                <div class="category-label">
+                  IX: AI
+                </div>
+              </div>
+            </a>
+          </div>
+          <div class="body">
+            <div class="collapsible">
+              <div class="collapsible-title" onclick="document.querySelector('#collapsible-show-more').className += ' expanded';">
+                Show More
+              </div>
+              <div class="collapsible-body" id="collapsible-show-more">
+                <ul>
+                  <li><a href="/advanced/custom-properties">Custom Properties List</a></li>
+                  <li><a href="/advanced/mobile-platforms">Mobile Platforms</a></li>
+                  <li><a href="/advanced/animations">Controlling Animations</a></li>
+                  <li><a href="/advanced/particles">Particles</a></li>
+                  <li><a href="/utils/utils">Built-in Utils</a></li>
+                </ul>
+              </div>
+            </div>
+            <h2>
+              Way less. In way more time.
+            </h2>
+
+            <p>Discover the robust gamedev solution that is the Default Cube. Built from the ground-up
+            to not support React, not support memory leaks, and also not support other things.</p>
+            
+            <h2>
+              Outstanding features beyond science.
+            </h2>
+            <p>
+              • Works on Android, iOS, and Web (if available, also multi-touch.)<br/>
+              • Absolutely painless workflow - transforming Blender into an actual game engine.<br/>
+              • Convert Blender files into playable prototypes literally within a hours.<br/>
+              • Dynamic team and free office fruits on Thursdays.<br/>
+              • 100% focused on making gamedev as easy as possible.<br/>
+              • Seamless interaction controls. This one is actually pretty cool - you can change cameras on the fly, follow characters without a million lines of code, all the cool stuff.<br/>
+              • Support for ads and IAPs, because money.<br/>
+            </p>
+
+            <h2>
+              Hard things that Default Cube may make less hard.
+            </h2>
+            <p>
+              • Three.js animations. Never worry about implementing blending - just play the animations.<br/>
+              • Audio system. Howler API ensures as wide platform support as it gets.<br/>
+              • Culling WebGL memory leaks. Or any kind of memory leaks for that matter.<br/>
+              • Scene, state, and asset management. No more manual disposals, just load that glTF and live a carefree life.<br/>
+              • Multi-touch and pan gestures.<br/>
+              • Collisions and AI.<br/>
+              • UI rendering.<br/>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="/js/index.js"></script>
+</html>
