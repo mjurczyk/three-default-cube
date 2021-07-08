@@ -7,6 +7,8 @@
   |
   <a href="https://defaultcube.wtlstudio.com/">Docs</a>
   |
+  <a href="https://github.com/mjurczyk/three-default-cube-boilerplate">Boilerplate</a>
+  |
   <a href="https://github.com/mrdoob/three.js">Three.js</a>
 </p>
 
