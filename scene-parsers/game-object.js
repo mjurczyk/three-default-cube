@@ -7,14 +7,15 @@ export const registerGameObject = (object, { gameObjectRefs }) => {
   }
 };
 
-export const parseGameObject = (object, { scene, gameObjects }) => {
+export const parseGameObject = (object, parserPayload) => {
   const { userData } = object;
+  const { gameObjects } = parserPayload;
 
   if (userData.gameObject) {
     const gameObjectMap = gameObjects[userData.gameObject];
 
     if (gameObjectMap) {
-      gameObjectMap(object, { scene });
+      gameObjectMap(object, parserPayload);
     } else {
       console.info('parseGameObject', 'game object type not recognised', userData.gameObject);
     }

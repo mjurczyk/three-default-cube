@@ -1,8 +1,9 @@
 import { AssetsService } from "../services/assets-service";
 import { InteractionEnums, InteractionsService } from "../services/interactions-service";
 
-export const parseAction = (object, { actions, scene }) => {
+export const parseAction = (object, parserPayload) => {
   const { userData } = object;
+  const { actions } = parserPayload;
 
   if (userData.action) {
     const actionCallback = actions[userData.action];
@@ -12,7 +13,7 @@ export const parseAction = (object, { actions, scene }) => {
         object,
         InteractionEnums.eventClick,
         ({ stopPropagation } = {}) => {
-          actionCallback(object, { scene, stopPropagation });
+          actionCallback(object, { ...parserPayload, stopPropagation });
         }
       );
 
