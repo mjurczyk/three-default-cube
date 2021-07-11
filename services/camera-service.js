@@ -28,6 +28,8 @@ class CameraServiceClass {
   occlusionSettings = {};
   occlusionStep = OcclusionStepEnum.progressive;
   occlusionSphere = 0.1;
+  translationLocked = false;
+  rotationLocked = false;
 
   init({ camera } = {}) {
     this.camera = camera;
@@ -86,8 +88,13 @@ class CameraServiceClass {
       }
     }
 
-    this.camera.position.lerp(this.cameraPosition, this.tween);
-    this.camera.quaternion.slerp(this.cameraQuaternion, this.tween);
+    if (!this.translationLocked) {
+      this.camera.position.lerp(this.cameraPosition, this.tween);
+    }
+
+    if (!this.rotationLocked) {
+      this.camera.quaternion.slerp(this.cameraQuaternion, this.tween);
+    }
   }
 
   setCameraPosition(x, y, z) {
@@ -394,6 +401,22 @@ class CameraServiceClass {
 
     this.detachedControls.dispose();
     this.detachedControls = null;
+  }
+
+  lockTranslation() {
+    this.translationLocked = true;
+  }
+
+  lockRotation() {
+    this.rotationLocked = true;
+  }
+
+  unlockTranslation() {
+    this.translationLocked = false;
+  }
+
+  unlockRotation() {
+    this.rotationLocked = false;
   }
 
   disposeCamera(id) {

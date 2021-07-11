@@ -58,3 +58,28 @@ Experimental.
 `allowOcclusion()`
 
 Disables `preventOcclusion()`.
+
+## lockTranslation ()
+
+`lockTranslation()`
+
+Locks camera translation.
+
+## lockRotation ()
+
+`lockRotation()`
+
+Locks camera rotation.
+
+## unlockTranslation ()
+
+`unlockTranslation()`
+
+Unlocks camera translation.
+
+## unlockRotation ()
+
+`unlockRotation()`
+
+Unlocks camera rotation.
+
