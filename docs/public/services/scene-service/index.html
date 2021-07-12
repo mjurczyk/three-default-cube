@@ -374,6 +374,10 @@
     <li><a href="/services/camera-service/#"getcameraastexture-">getCameraAsTexture ()</a></li>
     <li><a href="/services/camera-service/#"preventocclusion-">preventOcclusion ()</a></li>
     <li><a href="/services/camera-service/#"allowocclusion-">allowOcclusion ()</a></li>
+    <li><a href="/services/camera-service/#"locktranslation-">lockTranslation ()</a></li>
+    <li><a href="/services/camera-service/#"lockrotation-">lockRotation ()</a></li>
+    <li><a href="/services/camera-service/#"unlocktranslation-">unlockTranslation ()</a></li>
+    <li><a href="/services/camera-service/#"unlockrotation-">unlockRotation ()</a></li>
   </ul>
 </nav>
             </div>
@@ -716,8 +720,16 @@
   onCreate,
 })
 </code></pre><p>Parse model as a Default Cube scene using parsers. <code>actions</code> and <code>gameObjects</code> are used to parse respective <a href="/advanced/custom-properties/">Custom Properties</a>.</p>
-<p><code>gameObject</code> parsers can use <code>gameObjectRefs</code> to access other game objects, before entire scene is parsed.</p>
-<p>If <code>navpath</code> is specified, meshes with different value of <code>navpath</code> custom property are not added to the scene.</p>
+<p><code>gameObject</code> and <code>action</code> parsers are called with the target object as the first argument and parsing payload as the second one (<code>gameObjectRefs</code> stores all existing game objects before the parsing is started):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+    <span style="color:#a6e22e">scrollLists</span>,
+    <span style="color:#a6e22e">actions</span>,
+    <span style="color:#a6e22e">gameObjectRefs</span>,
+    <span style="color:#a6e22e">aiNodes</span>,
+    <span style="color:#a6e22e">aiSpawns</span>,
+    <span style="color:#a6e22e">children</span>,
+  }
+</code></pre></div><p>If <code>navpath</code> is specified, meshes with different value of <code>navpath</code> custom property are not added to the scene.</p>
 <p><code>onCreate</code> is called with:</p>
 <pre><code>{
   scene: target,

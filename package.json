@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Way less. In way more time.",
   "main": "./three-default-cube.js",
   "files": [
@@ -26,6 +26,7 @@
     "@babel/core": "^7.14.6",
     "@babel/plugin-proposal-class-properties": "7.14.5",
     "@rollup/plugin-babel": "5.3.0",
-    "rollup": "2.52.3"
+    "rollup": "2.52.3",
+    "three-pathfinding": "0.14.1"
   }
 }

@@ -374,6 +374,10 @@
     <li><a href="/services/camera-service/#"getcameraastexture-">getCameraAsTexture ()</a></li>
     <li><a href="/services/camera-service/#"preventocclusion-">preventOcclusion ()</a></li>
     <li><a href="/services/camera-service/#"allowocclusion-">allowOcclusion ()</a></li>
+    <li><a href="/services/camera-service/#"locktranslation-">lockTranslation ()</a></li>
+    <li><a href="/services/camera-service/#"lockrotation-">lockRotation ()</a></li>
+    <li><a href="/services/camera-service/#"unlocktranslation-">unlockTranslation ()</a></li>
+    <li><a href="/services/camera-service/#"unlockrotation-">unlockRotation ()</a></li>
   </ul>
 </nav>
             </div>
@@ -714,8 +718,9 @@
 <p><code>disableNavmap(object)</code></p>
 <p>Disabled object as a navmap.</p>
 <h2 id="registersurfacehandler-">registerSurfaceHandler ()</h2>
-<p><code>registerSurfaceHandler(surfaceType, handlerClass, interactionHandler = 'onInteraction')</code></p>
-<p>Registers a new surface handler. Second argument should be a class, not an object. <code>interactionHandler</code> is called with default <code>Three</code> ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See <a href="/intro/physics/">Physics</a>.</p>
+<p><code>registerSurfaceHandler(surfaceType, handlerClass, onInteraction, onEnter, onLeave)</code></p>
+<p>Registers a new surface handler. Second argument should be a class, not an object. <code>onInteraction</code> is called with default <code>Three</code> ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See <a href="/intro/physics/">Physics</a>.</p>
+<p><code>onEnter</code> and <code>onLeave</code> are optional listeners which work similarly to <code>onInteraction</code> - but are called only once at a time.</p>
 
           </div>
         </div>

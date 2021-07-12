@@ -12,6 +12,8 @@ export class PhysicsWrapper {
   dynamicCollisions = false;
   boundingBox = null;
 
+  surfaceCollisions = {};
+
   constructor(target) {
     this.target = target;
 
@@ -81,5 +83,7 @@ export class PhysicsWrapper {
     if (this.target) {
       delete this.target;
     }
+
+    delete this.surfaceCollisions;
   }
 }

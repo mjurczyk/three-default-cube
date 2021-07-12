@@ -80,21 +80,36 @@ class PhysicsServiceClass {
 
         // Surfaces
         let collisions = raycaster.intersectObjects(this.surfaces, true);
+        let cachedCollisions = Object.keys(body.surfaceCollisions || {});
 
         collisions.forEach(collision => {
           const { surface: surfaceType, surfaceRef } = collision.object.userData;
-          const { interactionHandler } = this.surfaceHandlers[surfaceType];
+          const { onInteraction, onEnter, onLeave } = this.surfaceHandlers[surfaceType];
 
-          if (!interactionHandler) {
-            console.warn('PhysicsService', `interactionHandler "${interactionHandler}" does not exist`);
-
-            return;
+          if (surfaceRef[onEnter] && !body.surfaceCollisions[collision.object.uuid]) {
+            surfaceRef[onEnter]({
+              body,
+              hit: collision
+            });
           }
 
-          surfaceRef[interactionHandler]({
-            body,
-            hit: collision
-          });
+          if (surfaceRef[onInteraction]) {
+            surfaceRef[onInteraction]({
+              body,
+              hit: collision
+            });
+          }
+
+          body.surfaceCollisions[collision.object.uuid] = { onLeave: surfaceRef[onLeave] };
+          cachedCollisions = cachedCollisions.filter(uuid => uuid !== collision.object.uuid);
+        });
+
+        cachedCollisions.forEach(collisionUuid => {
+          if (body.surfaceCollisions[collisionUuid].onLeave) {
+            body.surfaceCollisions[collisionUuid].onLeave({ body, hit: null });
+          }
+
+          delete body.surfaceCollisions[collisionUuid];
         });
 
         MathService.releaseVec3(slopeVector);
@@ -274,10 +289,18 @@ class PhysicsServiceClass {
     this.navmaps = this.navmaps.filter(match => match !== object);
   }
 
-  registerSurfaceHandler(surfaceType, handlerClass, interactionHandler = 'onInteraction') {
+  registerSurfaceHandler(
+    surfaceType,
+    handlerClass,
+    onInteraction = 'onInteraction',
+    onEnter = 'onEnter',
+    onLeave = 'onLeave'
+  ) {
     this.surfaceHandlers[surfaceType] = {
       cls: handlerClass,
-      interactionHandler
+      onInteraction,
+      onEnter,
+      onLeave
     };
   }
 

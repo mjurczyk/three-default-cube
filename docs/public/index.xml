@@ -328,8 +328,9 @@ Releases vector to the pool.</description>
 Declares object as a navmap.
 disableNavmap () disableNavmap(object)
 Disabled object as a navmap.
-registerSurfaceHandler () registerSurfaceHandler(surfaceType, handlerClass, interactionHandler = &#39;onInteraction&#39;)
-Registers a new surface handler. Second argument should be a class, not an object. interactionHandler is called with default Three ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See Physics.</description>
+registerSurfaceHandler () registerSurfaceHandler(surfaceType, handlerClass, onInteraction, onEnter, onLeave)
+Registers a new surface handler. Second argument should be a class, not an object. onInteraction is called with default Three ray intersection payload, whenever a dynamic game object touches the surface on Y-axis. See Physics.
+onEnter and onLeave are optional listeners which work similarly to onInteraction - but are called only once at a time.</description>
     </item>
     
     <item>
@@ -357,9 +358,8 @@ Resumes the renderer. callback is called on the first rendered frame.</descripti
       
       <guid>/services/scene-service/</guid>
       <description>parseScene () parseScene({ target, navpath = null, actions = {}, gameObjects = {}, onCreate, }) Parse model as a Default Cube scene using parsers. actions and gameObjects are used to parse respective Custom Properties.
-gameObject parsers can use gameObjectRefs to access other game objects, before entire scene is parsed.
-If navpath is specified, meshes with different value of navpath custom property are not added to the scene.
-onCreate is called with:</description>
+gameObject and action parsers are called with the target object as the first argument and parsing payload as the second one (gameObjectRefs stores all existing game objects before the parsing is started):
+{ scrollLists, actions, gameObjectRefs, aiNodes, aiSpawns, children, } If navpath is specified, meshes with different value of navpath custom property are not added to the scene.</description>
     </item>
     
     <item>
