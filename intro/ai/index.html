@@ -30,10 +30,13 @@
                 <a href="/downloads">Downloads</a>
               </li>
               <li>
-                <a href="#">Github</a>
+                <a href="https://github.com/mjurczyk/three-default-cube">Github</a>
               </li>
               <li>
-                <a href="#">Contact</a>
+                <a href="https://www.npmjs.com/package/three-default-cube">NPM</a>
+              </li>
+              <li>
+                <a href="/contact">Contact</a>
               </li>
             </ul>
           </div>
@@ -194,6 +197,7 @@
     <li><a href="/intro/ai/#"ai-nodes">AI Nodes</a></li>
     <li><a href="/intro/ai/#"ai-maps">AI Maps</a></li>
     <li><a href="/intro/ai/#"aiwrapper--ai-behaviours">AiWrapper &amp; AI Behaviours</a></li>
+    <li><a href="/intro/ai/#"pathfinding">Pathfinding</a></li>
   </ul>
 </nav>
             </div>
@@ -476,6 +480,7 @@
     <li><a href="/services/physics-service/#"enablenavmap-">enableNavmap ()</a></li>
     <li><a href="/services/physics-service/#"disablenavmap-">disableNavmap ()</a></li>
     <li><a href="/services/physics-service/#"registersurfacehandler-">registerSurfaceHandler ()</a></li>
+    <li><a href="/services/physics-service/#"updatepathfinder-">updatePathfinder ()</a></li>
   </ul>
 </nav>
             </div>
@@ -603,8 +608,11 @@
     <li><a href="/game-objects/ai-wrapper/#"getaibehaviour-">getAiBehaviour ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"hastargetnode-">hasTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"settargetnode-">setTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"gettargetnode-">getTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"getdistancetotargetnode-">getDistanceToTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"getgroundangletotargetnode-">getGroundAngleToTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"findpathtotargetnode-">findPathToTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"getpathlength-">getPathLength ()</a></li>
   </ul>
 </nav>
             </div>
@@ -633,6 +641,8 @@
     <li><a href="/game-objects/physics-wrapper/#"enablenavmaps-">enableNavmaps ()</a></li>
     <li><a href="/game-objects/physics-wrapper/#"getsimplevelocity-">getSimpleVelocity ()</a></li>
     <li><a href="/game-objects/physics-wrapper/#"setsimplevelocity-">setSimpleVelocity ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"enablenoclip-">enableNoClip ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"disablenoclip-">disableNoClip ()</a></li>
   </ul>
 </nav>
             </div>
@@ -671,13 +681,24 @@
           
             <div class="list-bundle list-filterable">
               <div class="list-category">
+                <a href="/contact/">Contact</a>
+              </div>
+              <nav id="TableOfContents"></nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/downloads/">Downloads</a>
+              </div>
+              <nav id="TableOfContents"></nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
                 <a href="/todo/">TODO</a>
               </div>
               <nav id="TableOfContents">
   <ul>
-    <li><a href="/todo/#"parserservice-remove-var--prefix-from-labels">[ParserService] Remove var- prefix from labels</a></li>
-    <li><a href="/todo/#"parserservice-add-variable-notation">[ParserService] Add variable notation</a></li>
-    <li><a href="/todo/#"parserservice-flatshade-ie-shading">[ParserService] flatshade (ie. shading)</a></li>
     <li><a href="/todo/#"assetsservice-rename-getimage-to-gettexture">[AssetsService] Rename getImage to getTexture</a></li>
     <li><a href="/todo/#"general-uniform-axes">[General] Uniform axes</a></li>
     <li><a href="/todo/#"aiservice-geometry-ai-nodes">[AiService] Geometry AI nodes</a></li>
@@ -686,15 +707,6 @@
     <li><a href="/todo/#"renderservice-add-pre-compile-helper">[RenderService] Add pre-compile helper</a></li>
     <li><a href="/todo/#"assetsservice-improve-raycasting-by-using-bvh">[AssetsService] Improve raycasting by using BVH</a></li>
     <li><a href="/todo/#"sceneservice-setbackgroundimage-and-setbackground-naming">[SceneService] setBackgroundImage and setBackground naming</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="/todo/#"rename-physics-wrapper-to-physics-game-object">Rename <code>physics-wrapper</code> to <code>physics-game-object</code></a></li>
-    <li><a href="/todo/#"rename-ai-wrapper-to-ai-game-object-kept--wrapper-for-consitency">Rename <code>ai-wrapper</code> to <code>ai-game-object</code> (Kept <code>-wrapper</code> for consitency.)</a></li>
-    <li><a href="/todo/#"general-add-configservice">[General] Add ConfigService</a></li>
-    <li><a href="/todo/#"gameinfo-gameinfo-and-varsservice-clarity">[GameInfo] GameInfo and VarsService clarity</a></li>
-    <li><a href="/todo/#"gameinfo-add-automatic-gameinfo-parsing">[GameInfo] Add automatic GameInfo parsing</a></li>
-    <li><a href="/todo/#"assetsservice-add-userdata-flag-signifying-whether-object-was-registered-for-disposal-to-prevent-multiple-disposals">[AssetsService] Add userData flag signifying whether object was registered for disposal to prevent multiple disposals</a></li>
   </ul>
 </nav>
             </div>
@@ -710,6 +722,13 @@
             IX: AI <span class="trinket">⌘</span>
           </div>
           <div class="body">
+            
+              <div class="webgl-preview">
+                <iframe 
+                  src="/static/index.html?demoId=ai"
+                  loading="lazy"
+                ></iframe>
+              </div>
             
             <h2 id="overview">Overview</h2>
 <p>Default Cube AI system contains 2 elements: AI game objects (wrapped in <code>AiWrapper</code>) and AI nodes.</p>
@@ -729,7 +748,7 @@
     <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">setTargetNode</span>(<span style="color:#a6e22e">AiService</span>.<span style="color:#a6e22e">getAiNodeById</span>(<span style="color:#e6db74">&#39;start&#39;</span>));
   }
 
-  <span style="color:#75715e">// NOTE advice object can, for example, tell which direction should the character move next
+  <span style="color:#75715e">// NOTE Advice object can, for example, tell which direction should the character move next
 </span><span style="color:#75715e"></span>  <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">advice</span> <span style="color:#f92672">=</span> {
     <span style="color:#a6e22e">w</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
     <span style="color:#a6e22e">a</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
@@ -770,6 +789,61 @@
 </span><span style="color:#75715e"></span>      });
     }
   }
+  <span style="color:#a6e22e">onCreate</span><span style="color:#f92672">:</span> () =&gt; {
+    <span style="color:#75715e">// NOTE Rest of the code
+</span><span style="color:#75715e"></span>  }
+});
+</code></pre></div><h2 id="pathfinding">Pathfinding</h2>
+<p>Using Default Cube navmaps and <code>AiWrapper</code> you can find a path between two points on the scene. This allows you to plan a path an object should move along:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+  <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
+  <span style="color:#a6e22e">gameObjects</span><span style="color:#f92672">:</span> {
+    <span style="color:#a6e22e">heroObject</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">object</span>) =&gt; {
+      <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">physics</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">PhysicsWrapper</span>(<span style="color:#a6e22e">object</span>);
+      <span style="color:#a6e22e">physics</span>.<span style="color:#a6e22e">enableNavmaps</span>();
+
+      <span style="color:#75715e">// NOTE Pathfinding can sometimes move the object to the edge of a navmesh
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">//      which PhysicsService will consider leaving a navmap. To prevent annoying
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">//      stutter - consider disabling navmap clipping when using pathfinding.
+</span><span style="color:#75715e"></span>      <span style="color:#a6e22e">physics</span>.<span style="color:#a6e22e">enableNoClip</span>();
+
+      <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">ai</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">AiWrapper</span>(<span style="color:#a6e22e">object</span>);
+
+      <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">registerBehaviour</span>(() =&gt; {
+        <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">hasTargetNode</span>() <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">getDistanceToTargetNode</span>() <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0.5</span>) {
+          <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">setTargetNode</span>(<span style="color:#66d9ef">null</span>);
+        }
+
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">hasTargetNode</span>() <span style="color:#f92672">||</span> <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">path</span>.<span style="color:#a6e22e">length</span> <span style="color:#f92672">===</span> <span style="color:#ae81ff">0</span>) {
+          <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">setTargetNode</span>(<span style="color:#a6e22e">AiService</span>.<span style="color:#a6e22e">getAiNodeById</span>(<span style="color:#e6db74">&#39;targetNode&#39;</span>));
+          <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">findPathToTargetNode</span>();
+        }
+
+        <span style="color:#66d9ef">return</span> { <span style="color:#a6e22e">targetNode</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">getTargetNode</span>() };
+      });
+
+      <span style="color:#a6e22e">TimeService</span>.<span style="color:#a6e22e">registerFrameListener</span>(() =&gt; {
+        <span style="color:#66d9ef">const</span> { <span style="color:#a6e22e">targetNode</span> } <span style="color:#f92672">=</span> <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">getAiBehaviour</span>();
+
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">targetNode</span>) {
+          <span style="color:#66d9ef">return</span>;
+        }
+
+        <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">targetNodePosition</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">MathService</span>.<span style="color:#a6e22e">getVec3</span>();
+        <span style="color:#a6e22e">targetNode</span>.<span style="color:#a6e22e">getWorldPosition</span>(<span style="color:#a6e22e">targetNodePosition</span>);
+
+        <span style="color:#a6e22e">object</span>.<span style="color:#a6e22e">lookAt</span>(<span style="color:#a6e22e">targetNodePosition</span>);
+
+        <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">heroDirection</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">MathService</span>.<span style="color:#a6e22e">getVec3</span>();
+        <span style="color:#a6e22e">object</span>.<span style="color:#a6e22e">getWorldDirection</span>(<span style="color:#a6e22e">heroDirection</span>);
+
+        <span style="color:#a6e22e">object</span>.<span style="color:#a6e22e">setSimpleVelocity</span>(<span style="color:#a6e22e">heroDirection</span>);
+
+        <span style="color:#a6e22e">MathService</span>.<span style="color:#a6e22e">releaseVec3</span>(<span style="color:#a6e22e">targetNodePosition</span>);
+        <span style="color:#a6e22e">MathService</span>.<span style="color:#a6e22e">releaseVec3</span>(<span style="color:#a6e22e">heroDirection</span>);
+      });
+    }
+  },
   <span style="color:#a6e22e">onCreate</span><span style="color:#f92672">:</span> () =&gt; {
     <span style="color:#75715e">// NOTE Rest of the code
 </span><span style="color:#75715e"></span>  }
