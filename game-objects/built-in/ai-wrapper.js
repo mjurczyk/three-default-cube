@@ -1,7 +1,9 @@
 import { AssetsService } from '../../services/assets-service';
 import { DebugFlags, DummyDebug } from '../../services/dummy-debug';
 import { MathService } from '../../services/math-service';
+import { PhysicsService } from '../../services/physics-service';
 import { RenderService } from '../../services/render-service';
+import { UtilsService } from '../../services/utils-service';
 import { createArrowHelper } from '../../utils/helpers';
 
 export class AiWrapper {
@@ -9,6 +11,7 @@ export class AiWrapper {
   targetNode = null;
   targetNodeId = 0;
   tickListener = null;
+  path = [];
 
   constructor(target) {
     this.target = target;
@@ -45,7 +48,21 @@ export class AiWrapper {
   }
 
   hasTargetNode() {
-    return !!this.targetNode;
+    if (this.targetNode) {
+      return true;
+    } else {
+      if (this.path && this.path.length) {
+        this.targetNode = this.path.shift();
+
+        return true;
+      }
+
+      return false;
+    }
+  }
+
+  getTargetNode() {
+    return this.targetNode;
   }
 
   setTargetNode(node) {
@@ -78,7 +95,6 @@ export class AiWrapper {
   }
 
   getGroundAngleToTargetNode() {
-    // NOTE Ground angle is assumed as an angle on XZ-plane
     if (!this.target || !this.targetNode) {
       return 0.0;
     }
@@ -106,6 +122,52 @@ export class AiWrapper {
     return angle;
   }
 
+  findPathToTargetNode() {
+    if (!this.target || !this.targetNode) {
+      console.info('AiWrapper', 'getPathToTargetNode', 'missing target node');
+      return [];
+    }
+
+    if (!PhysicsService.pathfinderZoneId) {
+      console.info('AiWrapper', 'getPathToTargetNode', 'pathfinder not enabled or navmesh missing');
+      return [];
+    }
+
+    const targetPosition = MathService.getVec3();
+    this.target.getWorldPosition(targetPosition);
+
+    const groupId = PhysicsService.pathfinder.getGroup(PhysicsService.pathfinderZoneId, targetPosition);
+
+    const targetNodePosition = MathService.getVec3();
+    this.targetNode.getWorldPosition(targetNodePosition);
+
+    this.path = [];
+
+    PhysicsService.pathfinder.findPath(
+      targetPosition,
+      targetNodePosition,
+      PhysicsService.pathfinderZoneId,
+      groupId
+    ).forEach(position => {
+      const mock = UtilsService.getEmpty();
+
+      mock.position.copy(position);
+
+      this.path.push(mock);
+    });
+
+    this.path.push(this.targetNode);
+    this.targetNode = this.path.shift();
+
+    MathService.releaseVec3(targetPosition);
+
+    return this.path;
+  }
+
+  getPathLength() {
+    return (this.path || []).length;
+  }
+
   dispose() {
     if (this.targetNode) {
       AssetsService.registerDisposable(this.targetNode);
@@ -119,6 +181,10 @@ export class AiWrapper {
 
     if (this.target) {
       delete this.target;
+    }
+
+    if (this.path) {
+      this.path = [];
     }
   }
 }

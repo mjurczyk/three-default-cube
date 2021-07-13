@@ -464,9 +464,8 @@ Stores an AI decision making callback. callback is called without any arguments 
 getAiBehaviour () getAiBehaviour()
 Retrieves AI decision for the current object state. Returns decision based on registerBehaviour callback.
 hasTargetNode () hasTargetNode()
-Returns true if object currently has a target aiNode. See aiNode in Custom Properties List.
-setTargetNode () setTargetNode(nodeObject)
-Sets node as a current target node.</description>
+Returns true if object currently has a target aiNode.
+Returns true if object has nodes left in their path. If target node is not defined, but path exists - first node in the path is automatically assigned as the target node.</description>
     </item>
     
     <item>
@@ -498,7 +497,11 @@ Makes the object responsive to navmaps and physical surfaces. Must be called in 
 getSimpleVelocity () getSimpleVelocity()
 Returns current velocity of the object.
 setSimpleVelocity () getSimpleVelocity(vector)
-Sets new velocity of the object.</description>
+Sets new velocity of the object.
+enableNoClip () enableNoClip()
+Allows the object to leave the navmesh without affecting their velocity.
+disableNoClip () disableNoClip()
+Undoes enableNoClip.</description>
     </item>
     
     <item>
@@ -534,13 +537,39 @@ Splices and returns a random element from an array.</description>
     </item>
     
     <item>
+      <title>Contact</title>
+      <link>/contact/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/contact/</guid>
+      <description>  Github Issues
+  Twitter
+  Discord
+  Email
+  </description>
+    </item>
+    
+    <item>
+      <title>Downloads</title>
+      <link>/downloads/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/downloads/</guid>
+      <description>  Default Cube Boilerplate
+  Demo GLTFs
+  </description>
+    </item>
+    
+    <item>
       <title>TODO</title>
       <link>/todo/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/todo/</guid>
       <description>Active Issues Some or all of the things below may or may not be 100% working / are inconsistent / missing documentation.
-[ParserService] Remove var- prefix from labels Originally labels were supposed to always use text read from VarService - but that&amp;rsquo;s not necessary for static text. Also, var- prefix is inconsistent in terms of when it fetches a value from VarService and when it just uses direct value from Blender.</description>
+[AssetsService] Rename getImage to getTexture Since there&amp;rsquo;s already cloneTexture, and game info uses textures field, there seems to be no reason for using an alternative name.
+[General] Uniform axes Make sure axes exported from Blender are the same as three axes (Z-forward.)
+[AiService] Geometry AI nodes For more complex AI nets separate geometry nodes lack &amp;ldquo;networking&amp;rdquo; factor.</description>
     </item>
     
   </channel>

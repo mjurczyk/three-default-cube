@@ -12,6 +12,7 @@ import { DemoDebugging } from './game-views/demo-debugging';
 import { DemoGameObjects } from './game-views/demo-game-objects';
 import { DemoPersistence } from './game-views/demo-persistence';
 import { DemoPhysics } from './game-views/demo-physics';
+import { DemoAi } from './game-views/demo-ai';
 const { demoId } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
 
 DummyDebug.on(DebugFlags.DEBUG_ENABLE);
@@ -45,6 +46,7 @@ SystemService.onReady(async () => {
     'game-objects': new DemoGameObjects(),
     'persistence': new DemoPersistence(),
     'physics': new DemoPhysics(),
+    'ai': new DemoAi(),
   })[demoId]);
 
   RenderService.run();

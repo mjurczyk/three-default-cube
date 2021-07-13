@@ -1,6 +1,5 @@
-import * as Three from 'three';
 import { removePlaceholder } from '../utils/remove-placeholder';
-import { defaultTo } from '../utils/shared';
+import { defaultTo, MathUtils } from '../utils/shared';
 import { AssetsService } from './assets-service';
 import { MathService } from './math-service';
 import { RenderService } from './render-service';
@@ -188,18 +187,18 @@ class ParticleServiceClass {
   getUniformRandomness(value) {
     if (value instanceof Array) {
       return [
-        Three.MathUtils.randFloatSpread(value[0]),
-        Three.MathUtils.randFloatSpread(value[1]),
-        Three.MathUtils.randFloatSpread(value[2]),
+        MathUtils.randFloatSpread(value[0]),
+        MathUtils.randFloatSpread(value[1]),
+        MathUtils.randFloatSpread(value[2]),
       ];
     } else if (value instanceof Three.Vector3) {
       return [
-        Three.MathUtils.randFloatSpread(value.x),
-        Three.MathUtils.randFloatSpread(value.y),
-        Three.MathUtils.randFloatSpread(value.z),
+        MathUtils.randFloatSpread(value.x),
+        MathUtils.randFloatSpread(value.y),
+        MathUtils.randFloatSpread(value.z),
       ];
     } else if (typeof value === 'number') {
-      const uniformRandom = Three.MathUtils.randFloatSpread(value);
+      const uniformRandom = MathUtils.randFloatSpread(value);
 
       return [ uniformRandom, uniformRandom, uniformRandom ];
     }

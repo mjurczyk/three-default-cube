@@ -1,4 +1,5 @@
 import * as Three from 'three';
+import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createArrowHelper, createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
 import { DebugFlags, DummyDebug } from './dummy-debug';
@@ -6,11 +7,16 @@ import { MathService } from './math-service';
 import { RenderService } from './render-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
+import { Pathfinding } from 'three-pathfinding';
 
 class PhysicsServiceClass {
   bodies = [];
   dynamicBodies = [];
+
   navmaps = [];
+  pathfinder = null;
+  pathfinedEnabled = false;
+  pathfinderZoneId = 'zone';
 
   surfaceHandlers = {};
   surfaces = [];
@@ -54,7 +60,7 @@ class PhysicsServiceClass {
       if (body.grounded) {
         body.simpleGravity.y = 0.0;
       } else {
-        body.simpleGravity.y = Three.MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
+        body.simpleGravity.y = MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
       }
 
       const simpleVelocity = body.getSimpleVelocity();
@@ -121,7 +127,7 @@ class PhysicsServiceClass {
         );
 
         if (collisions[0]) {
-          const { object: collisionNavmap, point } = collisions[0];
+          const { point } = collisions[0];
 
           body.target.getWorldPosition(position);
 
@@ -140,11 +146,16 @@ class PhysicsServiceClass {
 
           MathService.releaseVec3(pointOffset);
         } else {
-          if (body.collisionListener) {
-            body.collisionListener();
-          }
+          if (!body.noClip) {
+            if (body.collisionListener) {
+              body.collisionListener();
+            }
 
-          body.grounded = false;
+            body.grounded = false;
+          } else {
+            body.target.position.add(simpleVelocity);
+            body.grounded = true;
+          }
         }
       }
 
@@ -283,10 +294,38 @@ class PhysicsServiceClass {
     this.navmaps = this.navmaps.filter(match => match !== object);
 
     this.navmaps.push(object);
+
+    this.updatePathfinder();
   }
 
   disableNavmap(object) {
     this.navmaps = this.navmaps.filter(match => match !== object);
+
+    this.updatePathfinder();
+  }
+
+  updatePathfinder() {
+    if (!this.pathfinder) {
+      this.pathfinder = new Pathfinding();
+    }
+
+    const navmapGeometries = this.navmaps.filter(navmap => navmap.geometry)
+      .map(navmap => navmap.geometry);
+
+    if (!navmapGeometries.length) {
+      this.pathfinedEnabled = false;
+      return;
+    }
+
+    const navmeshGeometry = BufferGeometryUtils.mergeBufferGeometries(
+      navmapGeometries,
+      false
+    );
+    const zone = Pathfinding.createZone(navmeshGeometry);
+
+    this.pathfinder.setZoneData(this.pathfinderZoneId, zone);
+
+    this.pathfinedEnabled = this.pathfinder.zones.length > 0;
   }
 
   registerSurfaceHandler(
@@ -348,6 +387,10 @@ class PhysicsServiceClass {
     this.navmaps = [];
     this.surfaces = [];
     this.surfaceHandlers = {};
+
+    if (this.pathfinder) {
+      this.pathfinder = null;
+    }
   }
 }
 

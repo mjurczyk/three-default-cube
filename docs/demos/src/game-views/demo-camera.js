@@ -1,4 +1,3 @@
-import * as Three from 'three';
 import {
   ViewClass,
   Preloader,
@@ -12,6 +11,7 @@ import {
   MathService,
   replacePlaceholder,
   AnimationWrapper,
+  MathUtils
 } from 'three-default-cube';
 
 export class DemoCamera extends ViewClass {
@@ -32,6 +32,7 @@ export class DemoCamera extends ViewClass {
       ]) => {
         SceneService.parseScene({
           target: worldModel,
+          navpath: 1,
           gameObjects: {
             'player': (object) => {
               replacePlaceholder(object, characterModel);
@@ -63,11 +64,11 @@ export class DemoCamera extends ViewClass {
                 }
 
                 if (keyUp) {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, -maxPlayerSpeed, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, -maxPlayerSpeed, 0.2);
                 } else if (keyDown) {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, maxPlayerSpeed / 2.0, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, maxPlayerSpeed / 2.0, 0.2);
                 } else {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, 0.0, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, 0.0, 0.2);
                 }
 
                 const velocity = MathService.getVec3();

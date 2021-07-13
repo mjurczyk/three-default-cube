@@ -1,4 +1,3 @@
-import * as Three from 'three';
 import {
   ViewClass,
   Preloader,
@@ -13,6 +12,7 @@ import {
   replacePlaceholder,
   AnimationWrapper,
   UtilsService,
+  MathUtils
 } from 'three-default-cube';
 
 export class DemoViewsAndScenes extends ViewClass {
@@ -33,6 +33,7 @@ export class DemoViewsAndScenes extends ViewClass {
       ]) => {
         SceneService.parseScene({
           target: worldModel,
+          navpath: 1,
           gameObjects: {
             'player': (object) => {
               replacePlaceholder(object, characterModel);
@@ -42,6 +43,7 @@ export class DemoViewsAndScenes extends ViewClass {
 
               const physics = new PhysicsWrapper(object);
               physics.enableNavmaps();
+              physics.enableNoClip();
 
               let playerSpeed = 0.0;
               const maxPlayerSpeed = 0.04;
@@ -71,7 +73,7 @@ export class DemoViewsAndScenes extends ViewClass {
                 }
 
                 if (velocity.length() > 0.0) {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, maxPlayerSpeed, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, maxPlayerSpeed, 0.2);
 
                   const direction = MathService.getVec3(0.0, 0.0, 0.0);
                   const rotationMock = UtilsService.getEmpty();
@@ -86,7 +88,7 @@ export class DemoViewsAndScenes extends ViewClass {
                   MathService.releaseVec3(direction);
                   UtilsService.releaseEmpty(rotationMock);
                 } else {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, 0.0, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, 0.0, 0.2);
                 }
 
                 velocity.normalize().multiplyScalar(playerSpeed);

@@ -1,5 +1,4 @@
 import { AssetsService } from "../services/assets-service";
-import { mathPi2 } from "./constants";
 
 export const replacePlaceholder = (target, replacement) => {
   if (target.geometry) {

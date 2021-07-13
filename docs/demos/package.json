@@ -22,14 +22,14 @@
     "react-scripts": "3.4.1",
     "resize-observer-polyfill": "1.5.1",
     "three": "0.123.0",
-    "three-default-cube": "0.1.1",
     "troika-three-text": "0.35.0",
     "typescript": "3.8.3",
     "uuid": "8.3.2"
   },
   "devDependencies": {
     "@capacitor/cli": "2.4.7",
-    "@ionic/cli": "^6.16.3"
+    "@ionic/cli": "^6.16.3",
+    "three-default-cube": "file:../../three-default-cube-0.1.5.tgz"
   },
   "scripts": {
     "start": "react-scripts start",

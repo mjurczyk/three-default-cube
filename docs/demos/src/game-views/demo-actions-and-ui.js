@@ -9,6 +9,7 @@ import {
   VarService,
   TimeService,
   MathService,
+  MathUtils
 } from 'three-default-cube';
 
 export class DemoActionsAndUi extends ViewClass {
@@ -51,7 +52,7 @@ export class DemoActionsAndUi extends ViewClass {
               material.emissive = new Three.Color(0xffffcc);
 
               TimeService.registerFrameListener(() => {
-                material.emissiveIntensity = Three.MathUtils.lerp(material.emissiveIntensity, 0.0, 0.1);
+                material.emissiveIntensity = MathUtils.lerp(material.emissiveIntensity, 0.0, 0.1);
 
                 const originalScale = MathService.getVec3(1.0, 1.0, 1.0);
 

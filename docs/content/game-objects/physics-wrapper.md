@@ -21,3 +21,16 @@ Returns current velocity of the object.
 `getSimpleVelocity(vector)`
 
 Sets new velocity of the object.
+
+## enableNoClip ()
+
+`enableNoClip()`
+
+Allows the object to leave the navmesh without affecting their velocity.
+
+## disableNoClip ()
+
+`disableNoClip()`
+
+Undoes `enableNoClip`.
+

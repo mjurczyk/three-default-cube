@@ -17,9 +17,8 @@ Stores an AI decision making callback. callback is called without any arguments 
 getAiBehaviour () getAiBehaviour()
 Retrieves AI decision for the current object state. Returns decision based on registerBehaviour callback.
 hasTargetNode () hasTargetNode()
-Returns true if object currently has a target aiNode. See aiNode in Custom Properties List.
-setTargetNode () setTargetNode(nodeObject)
-Sets node as a current target node.</description>
+Returns true if object currently has a target aiNode.
+Returns true if object has nodes left in their path. If target node is not defined, but path exists - first node in the path is automatically assigned as the target node.</description>
     </item>
     
     <item>
@@ -51,7 +50,11 @@ Makes the object responsive to navmaps and physical surfaces. Must be called in 
 getSimpleVelocity () getSimpleVelocity()
 Returns current velocity of the object.
 setSimpleVelocity () getSimpleVelocity(vector)
-Sets new velocity of the object.</description>
+Sets new velocity of the object.
+enableNoClip () enableNoClip()
+Allows the object to leave the navmesh without affecting their velocity.
+disableNoClip () disableNoClip()
+Undoes enableNoClip.</description>
     </item>
     
     <item>

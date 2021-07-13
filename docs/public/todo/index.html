@@ -30,10 +30,13 @@
                 <a href="/downloads">Downloads</a>
               </li>
               <li>
-                <a href="#">Github</a>
+                <a href="https://github.com/mjurczyk/three-default-cube">Github</a>
               </li>
               <li>
-                <a href="#">Contact</a>
+                <a href="https://www.npmjs.com/package/three-default-cube">NPM</a>
+              </li>
+              <li>
+                <a href="/contact">Contact</a>
               </li>
             </ul>
           </div>
@@ -194,6 +197,7 @@
     <li><a href="/intro/ai/#"ai-nodes">AI Nodes</a></li>
     <li><a href="/intro/ai/#"ai-maps">AI Maps</a></li>
     <li><a href="/intro/ai/#"aiwrapper--ai-behaviours">AiWrapper &amp; AI Behaviours</a></li>
+    <li><a href="/intro/ai/#"pathfinding">Pathfinding</a></li>
   </ul>
 </nav>
             </div>
@@ -476,6 +480,7 @@
     <li><a href="/services/physics-service/#"enablenavmap-">enableNavmap ()</a></li>
     <li><a href="/services/physics-service/#"disablenavmap-">disableNavmap ()</a></li>
     <li><a href="/services/physics-service/#"registersurfacehandler-">registerSurfaceHandler ()</a></li>
+    <li><a href="/services/physics-service/#"updatepathfinder-">updatePathfinder ()</a></li>
   </ul>
 </nav>
             </div>
@@ -603,8 +608,11 @@
     <li><a href="/game-objects/ai-wrapper/#"getaibehaviour-">getAiBehaviour ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"hastargetnode-">hasTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"settargetnode-">setTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"gettargetnode-">getTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"getdistancetotargetnode-">getDistanceToTargetNode ()</a></li>
     <li><a href="/game-objects/ai-wrapper/#"getgroundangletotargetnode-">getGroundAngleToTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"findpathtotargetnode-">findPathToTargetNode ()</a></li>
+    <li><a href="/game-objects/ai-wrapper/#"getpathlength-">getPathLength ()</a></li>
   </ul>
 </nav>
             </div>
@@ -633,6 +641,8 @@
     <li><a href="/game-objects/physics-wrapper/#"enablenavmaps-">enableNavmaps ()</a></li>
     <li><a href="/game-objects/physics-wrapper/#"getsimplevelocity-">getSimpleVelocity ()</a></li>
     <li><a href="/game-objects/physics-wrapper/#"setsimplevelocity-">setSimpleVelocity ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"enablenoclip-">enableNoClip ()</a></li>
+    <li><a href="/game-objects/physics-wrapper/#"disablenoclip-">disableNoClip ()</a></li>
   </ul>
 </nav>
             </div>
@@ -671,13 +681,24 @@
           
             <div class="list-bundle list-filterable">
               <div class="list-category">
+                <a href="/contact/">Contact</a>
+              </div>
+              <nav id="TableOfContents"></nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
+                <a href="/downloads/">Downloads</a>
+              </div>
+              <nav id="TableOfContents"></nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
                 <a href="/todo/">TODO</a>
               </div>
               <nav id="TableOfContents">
   <ul>
-    <li><a href="/todo/#"parserservice-remove-var--prefix-from-labels">[ParserService] Remove var- prefix from labels</a></li>
-    <li><a href="/todo/#"parserservice-add-variable-notation">[ParserService] Add variable notation</a></li>
-    <li><a href="/todo/#"parserservice-flatshade-ie-shading">[ParserService] flatshade (ie. shading)</a></li>
     <li><a href="/todo/#"assetsservice-rename-getimage-to-gettexture">[AssetsService] Rename getImage to getTexture</a></li>
     <li><a href="/todo/#"general-uniform-axes">[General] Uniform axes</a></li>
     <li><a href="/todo/#"aiservice-geometry-ai-nodes">[AiService] Geometry AI nodes</a></li>
@@ -686,15 +707,6 @@
     <li><a href="/todo/#"renderservice-add-pre-compile-helper">[RenderService] Add pre-compile helper</a></li>
     <li><a href="/todo/#"assetsservice-improve-raycasting-by-using-bvh">[AssetsService] Improve raycasting by using BVH</a></li>
     <li><a href="/todo/#"sceneservice-setbackgroundimage-and-setbackground-naming">[SceneService] setBackgroundImage and setBackground naming</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="/todo/#"rename-physics-wrapper-to-physics-game-object">Rename <code>physics-wrapper</code> to <code>physics-game-object</code></a></li>
-    <li><a href="/todo/#"rename-ai-wrapper-to-ai-game-object-kept--wrapper-for-consitency">Rename <code>ai-wrapper</code> to <code>ai-game-object</code> (Kept <code>-wrapper</code> for consitency.)</a></li>
-    <li><a href="/todo/#"general-add-configservice">[General] Add ConfigService</a></li>
-    <li><a href="/todo/#"gameinfo-gameinfo-and-varsservice-clarity">[GameInfo] GameInfo and VarsService clarity</a></li>
-    <li><a href="/todo/#"gameinfo-add-automatic-gameinfo-parsing">[GameInfo] Add automatic GameInfo parsing</a></li>
-    <li><a href="/todo/#"assetsservice-add-userdata-flag-signifying-whether-object-was-registered-for-disposal-to-prevent-multiple-disposals">[AssetsService] Add userData flag signifying whether object was registered for disposal to prevent multiple disposals</a></li>
   </ul>
 </nav>
             </div>
@@ -713,16 +725,6 @@
             
             <h1 id="active-issues">Active Issues</h1>
 <p>Some or all of the things below may or may not be 100% working / are inconsistent / missing documentation.</p>
-<h2 id="parserservice-remove-var--prefix-from-labels">[ParserService] Remove var- prefix from labels</h2>
-<p>Originally labels were supposed to always use text read from <code>VarService</code> - but that&rsquo;s not necessary for static text. Also, <code>var-</code> prefix is inconsistent in terms of when it fetches a value from <code>VarService</code> and when it just uses direct value from Blender.</p>
-<p><strong>Note:</strong> This will likely break a lot of stuff in games running on first version, add
-only after they are finished.</p>
-<h2 id="parserservice-add-variable-notation">[ParserService] Add variable notation</h2>
-<p>Use <code>:variable-name:</code> to denote variables in <code>userData</code>. Only values matching <code>:variable-name:</code> should be fetched from <code>VarService</code>.</p>
-<p><strong>Note:</strong> This will likely break a lot of stuff in games running on first version, add
-only after they are finished.</p>
-<h2 id="parserservice-flatshade-ie-shading">[ParserService] flatshade (ie. shading)</h2>
-<p>Deprecate <code>flatshade</code> in favor of using <code>shading</code> (ie. remove it from the code. <code>shading</code> is already implemented. <code>flatshade</code> remains for backwards compatibility.)</p>
 <h2 id="assetsservice-rename-getimage-to-gettexture">[AssetsService] Rename getImage to getTexture</h2>
 <p>Since there&rsquo;s already <code>cloneTexture</code>, and game info uses <code>textures</code> field, there seems to be no reason for using an alternative name.</p>
 <h2 id="general-uniform-axes">[General] Uniform axes</h2>
@@ -739,37 +741,6 @@ only after they are finished.</p>
 <p>Add <code>three-mesh-bvh</code> as a default handler for raycasting.</p>
 <h2 id="sceneservice-setbackgroundimage-and-setbackground-naming">[SceneService] setBackgroundImage and setBackground naming</h2>
 <p><code>setBackgroundImage</code> and <code>setBackground</code> seem to have exactly opposite meanings than their names. Double-check and rename properly.</p>
-<h1 id="likely-resolved">(Likely) Resolved</h1>
-<h2 id="rename-physics-wrapper-to-physics-game-object">Rename <code>physics-wrapper</code> to <code>physics-game-object</code></h2>
-<p><code>PhysicsWrapper</code> was originally bound to <code>GameObjectClass</code> - that was removed. Right now, to enable physics on an object manually, pass the parent object via the constructor:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">class</span> Object <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">GameObjectClass</span> {
-  <span style="color:#a6e22e">physics</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>;
-
-  <span style="color:#a6e22e">constructor</span>() {
-    <span style="color:#66d9ef">super</span>();
-
-    <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">physics</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">PhysicsWrapper</span>(<span style="color:#66d9ef">this</span>);
-  }
-
-  <span style="color:#a6e22e">dispose</span>() {
-    <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">physics</span>.<span style="color:#a6e22e">dispose</span>();
-
-    <span style="color:#66d9ef">delete</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">physics</span>;
-  }
-}
-</code></pre></div><h2 id="rename-ai-wrapper-to-ai-game-object-kept--wrapper-for-consitency">Rename <code>ai-wrapper</code> to <code>ai-game-object</code> (Kept <code>-wrapper</code> for consitency.)</h2>
-<p>Same as above - apply AI to an object by passing it via the constructor.</p>
-<h2 id="general-add-configservice">[General] Add ConfigService</h2>
-<p>Add <code>ConfigService</code> to allow swapping config files easier (prod vs dev for example.) Read config values only from that service.</p>
-<h2 id="gameinfo-gameinfo-and-varsservice-clarity">[GameInfo] GameInfo and VarsService clarity</h2>
-<p>(Done) 1. Improve GameInfo vars clarity. It&rsquo;s a little hard to understand what goes where.
-(Done) 2. Unify GameInfo vars. Using <code>game.options</code> and <code>game.system</code> etc. is quite misleading and arbitrary.</p>
-<p>Config has been simplified to only include <code>system</code> (system-related variables), <code>vars</code> (global runtime variables), and <code>labels</code> (localized strings.)</p>
-<h2 id="gameinfo-add-automatic-gameinfo-parsing">[GameInfo] Add automatic GameInfo parsing</h2>
-<p>Add parser for GameInfo that will ensure: (1) all mandatory properties are there / using default values, (2) GameInfo values cannot be accessed directly - only via getters.</p>
-<h2 id="assetsservice-add-userdata-flag-signifying-whether-object-was-registered-for-disposal-to-prevent-multiple-disposals">[AssetsService] Add userData flag signifying whether object was registered for disposal to prevent multiple disposals</h2>
-<p>Objects are likely registered for disposal multiple times - pretty much any service or class that uses any object almost automatically ensures this object is disposed when no longer needed.</p>
-<p>Add <code>userData</code> flag to objects when they are registered for disposal - just for the sake of saving memory in <code>AssetsService</code>.</p>
 
           </div>
         </div>

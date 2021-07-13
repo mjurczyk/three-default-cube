@@ -1,9 +1,9 @@
-import * as Three from 'three';
 import { AssetsService } from '../services/assets-service';
 import { MathService } from "../services/math-service";
 import { RenderService } from '../services/render-service';
 import { TimeService } from "../services/time-service";
 import { get3dScreenWidth } from "../utils/screen-size";
+import { MathUtils } from '../utils/shared';
 
 export const parseAlign = (object) => {
   const { userData } = object;
@@ -27,7 +27,7 @@ export const parseAlign = (object) => {
         targetOffset = screenWidth / 2.0 - 0.1;
       }
 
-      object.position.z = Three.MathUtils.lerp(object.position.z, targetOffset, 0.05);
+      object.position.z = MathUtils.lerp(object.position.z, targetOffset, 0.05);
 
       MathService.releaseVec3(position);
       MathService.releaseVec3(cameraPosition);

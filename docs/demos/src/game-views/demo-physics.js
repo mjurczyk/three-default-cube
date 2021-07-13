@@ -14,6 +14,7 @@ import {
   AnimationWrapper,
   UtilsService,
   PhysicsService,
+  MathUtils
 } from 'three-default-cube';
 
 export class SnowSurface {
@@ -158,7 +159,7 @@ export class DemoPhysics extends ViewClass {
                 }
 
                 if (velocity.length() > 0.0) {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, maxPlayerSpeed, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, maxPlayerSpeed, 0.2);
 
                   const direction = MathService.getVec3(0.0, 0.0, 0.0);
                   const rotationMock = UtilsService.getEmpty();
@@ -173,7 +174,7 @@ export class DemoPhysics extends ViewClass {
                   MathService.releaseVec3(direction);
                   UtilsService.releaseEmpty(rotationMock);
                 } else {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, 0.0, 0.2);
+                  playerSpeed = MathUtils.lerp(playerSpeed, 0.0, 0.2);
                 }
 
                 velocity.normalize().multiplyScalar(playerSpeed);

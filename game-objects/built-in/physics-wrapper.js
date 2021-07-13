@@ -11,6 +11,7 @@ export class PhysicsWrapper {
   collisionListener = null;
   dynamicCollisions = false;
   boundingBox = null;
+  noClip = false;
 
   surfaceCollisions = {};
 
@@ -27,6 +28,14 @@ export class PhysicsWrapper {
   enableNavmaps() {
     this.simpleVelocity = MathService.getVec3(0.0, 0.0, 0.0, 'physics-wrapper-2');
     this.simpleGravity = MathService.getVec3(0.0, 0.0, 0.0, 'physics-wrapper-3');
+  }
+
+  enableNoClip() {
+    this.noClip = true;
+  }
+
+  disableNoClip() {
+    this.noClip = false;
   }
 
   enablePhysics() {

@@ -1,4 +1,3 @@
-import * as Three from 'three';
 import {
   ViewClass,
   Preloader,
@@ -6,6 +5,7 @@ import {
   RenderService,
   SceneService,
   mathPi4,
+  MathUtils
 } from 'three-default-cube';
 
 export class DemoDebugging extends ViewClass {
@@ -25,11 +25,11 @@ export class DemoDebugging extends ViewClass {
             SceneService.parseScene({
               target: characterModel,
               onCreate: () => {
-                characterModel.position.x = Three.MathUtils.randFloat(-5.0, 5.0)
+                characterModel.position.x = MathUtils.randFloat(-5.0, 5.0)
                 characterModel.position.y -= 1.5;
-                characterModel.position.z -= 15.0 + Three.MathUtils.randFloat(0.0, 10.0);
+                characterModel.position.z -= 15.0 + MathUtils.randFloat(0.0, 10.0);
 
-                characterModel.rotation.y = Three.MathUtils.randFloat(-mathPi4, mathPi4);
+                characterModel.rotation.y = MathUtils.randFloat(-mathPi4, mathPi4);
 
                 scene.add(characterModel);
 

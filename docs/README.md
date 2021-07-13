@@ -5,7 +5,7 @@
 ### If demos were updated
 
 - `cd` to `lib/docs/demos/` directory and run `npm install && npm run build`
-- Copy contents of `lib/docs/demosdemos/build/` to `lib/docs/static/`
+- Copy contents of `lib/docs/demos/build/` to `lib/docs/static/`
 - Move `lib/docs/static/index.html` to `lib/docs/static/static/` (it makes Hugo build easier and I'm lazy, sry)
 
 ### Building docs

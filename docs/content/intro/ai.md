@@ -2,6 +2,7 @@
 title: "IX: AI"
 draft: false
 weight: 9
+demoId: 'ai'
 ---
 
 ## Overview
@@ -38,7 +39,7 @@ ai.registerBehaviour(() => {
     ai.setTargetNode(AiService.getAiNodeById('start'));
   }
 
-  // NOTE advice object can, for example, tell which direction should the character move next
+  // NOTE Advice object can, for example, tell which direction should the character move next
   let advice = {
     w: false,
     a: false,
@@ -83,6 +84,66 @@ SceneService.parseScene({
       });
     }
   }
+  onCreate: () => {
+    // NOTE Rest of the code
+  }
+});
+```
+
+## Pathfinding
+
+Using Default Cube navmaps and `AiWrapper` you can find a path between two points on the scene. This allows you to plan a path an object should move along:
+
+```js
+SceneService.parseScene({
+  target: sceneModel,
+  gameObjects: {
+    heroObject: (object) => {
+      const physics = new PhysicsWrapper(object);
+      physics.enableNavmaps();
+
+      // NOTE Pathfinding can sometimes move the object to the edge of a navmesh
+      //      which PhysicsService will consider leaving a navmap. To prevent annoying
+      //      stutter - consider disabling navmap clipping when using pathfinding.
+      physics.enableNoClip();
+
+      const ai = new AiWrapper(object);
+
+      ai.registerBehaviour(() => {
+        if (ai.hasTargetNode() && ai.getDistanceToTargetNode() <= 0.5) {
+          ai.setTargetNode(null);
+        }
+
+        if (!ai.hasTargetNode() || ai.path.length === 0) {
+          ai.setTargetNode(AiService.getAiNodeById('targetNode'));
+          ai.findPathToTargetNode();
+        }
+
+        return { targetNode: ai.getTargetNode() };
+      });
+
+      TimeService.registerFrameListener(() => {
+        const { targetNode } = ai.getAiBehaviour();
+
+        if (!targetNode) {
+          return;
+        }
+
+        const targetNodePosition = MathService.getVec3();
+        targetNode.getWorldPosition(targetNodePosition);
+
+        object.lookAt(targetNodePosition);
+
+        const heroDirection = MathService.getVec3();
+        object.getWorldDirection(heroDirection);
+
+        object.setSimpleVelocity(heroDirection);
+
+        MathService.releaseVec3(targetNodePosition);
+        MathService.releaseVec3(heroDirection);
+      });
+    }
+  },
   onCreate: () => {
     // NOTE Rest of the code
   }

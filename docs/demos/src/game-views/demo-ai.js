@@ -7,12 +7,15 @@ import {
   RenderService,
   SceneService,
   TimeService,
-  InputService,
   PhysicsWrapper,
   MathService,
   replacePlaceholder,
   AnimationWrapper,
   UtilsService,
+  AiService,
+  AiWrapper,
+  getRandomElement,
+  createArrowHelper,
 } from 'three-default-cube';
 
 export class DemoAi extends ViewClass {
@@ -33,69 +36,71 @@ export class DemoAi extends ViewClass {
       ]) => {
         SceneService.parseScene({
           target: worldModel,
+          navpath: 2,
           gameObjects: {
             'player': (object) => {
               replacePlaceholder(object, characterModel);
 
               const animations = new AnimationWrapper(characterModel);
-              animations.playAnimation('idle');
+              animations.playAnimation('run');
 
               const physics = new PhysicsWrapper(object);
               physics.enableNavmaps();
+              physics.enableNoClip();
 
-              let playerSpeed = 0.0;
-              const maxPlayerSpeed = 0.04;
+              const ai = new AiWrapper(object);
+
+              ai.registerBehaviour(() => {
+                if (ai.hasTargetNode() && ai.getDistanceToTargetNode() <= 0.5) {
+                  ai.setTargetNode(null);
+                }
+
+                if (!ai.hasTargetNode() || ai.path.length === 0) {
+                  ai.setTargetNode(AiService.getAiNodeById(getRandomElement([ 1, 2, 3 ])));
+                  ai.findPathToTargetNode();
+                }
+
+                const targetNode = ai.getTargetNode();
+                const targetNodePosition = MathService.getVec3();
+                targetNode.getWorldPosition(targetNodePosition);
+
+                createArrowHelper(RenderService.getScene(), 'target-position', new Three.Vector3(0.0, 2.0, 0.0), targetNodePosition);
+
+                MathService.releaseVec3(targetNodePosition);
+
+                return { targetNode };
+              });
+
+              const playerSpeed = 0.04;
 
               TimeService.registerFrameListener(() => {
-                const keyUp = InputService.keys['w'];
-                const keyDown = InputService.keys['s'];
-                const keyLeft = InputService.keys['a'];
-                const keyRight = InputService.keys['d'];
+                const {
+                  targetNode
+                } = ai.getAiBehaviour();
 
-                const velocity = MathService.getVec3(0.0, 0.0, 0.0);
-
-                if (keyUp) {
-                  velocity.z -= 1.0;
+                if (!targetNode) {
+                  return;
                 }
 
-                if (keyDown) {
-                  velocity.z += 1.0;
-                }
+                const targetNodePosition = MathService.getVec3();
+                targetNode.getWorldPosition(targetNodePosition);
 
-                if (keyLeft) {
-                  velocity.x -= 1.0;
-                }
+                targetNodePosition.y = object.position.y;
 
-                if (keyRight) {
-                  velocity.x += 1.0;
-                }
+                const rotationMock = UtilsService.getEmpty();
+                object.add(rotationMock);
 
-                if (velocity.length() > 0.0) {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, maxPlayerSpeed, 0.2);
+                rotationMock.lookAt(targetNodePosition);
+                characterModel.quaternion.slerp(rotationMock.quaternion, 0.2);
+                
+                const playerDirection = MathService.getVec3();
+                characterModel.getWorldDirection(playerDirection);
 
-                  const direction = MathService.getVec3(0.0, 0.0, 0.0);
-                  const rotationMock = UtilsService.getEmpty();
-
-                  object.getWorldPosition(direction).sub(velocity);
-                  rotationMock.position.copy(object.position);
-                  rotationMock.quaternion.copy(object.quaternion);
-                  rotationMock.lookAt(direction);
-
-                  object.quaternion.slerp(rotationMock.quaternion, 0.2);
-
-                  MathService.releaseVec3(direction);
-                  UtilsService.releaseEmpty(rotationMock);
-                } else {
-                  playerSpeed = Three.MathUtils.lerp(playerSpeed, 0.0, 0.2);
-                }
-
-                velocity.normalize().multiplyScalar(playerSpeed);
-
-                physics.setSimpleVelocity(velocity);
-
-                animations.blendInAnimation('run', playerSpeed * (1 / maxPlayerSpeed));
-
-                MathService.releaseVec3(velocity);
+                physics.setSimpleVelocity(playerDirection.multiplyScalar(playerSpeed));
+                
+                MathService.releaseVec3(targetNodePosition);
+                MathService.releaseVec3(playerDirection);
+                UtilsService.releaseEmpty(rotationMock);
               });
             }
           },
