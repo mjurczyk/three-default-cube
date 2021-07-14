@@ -14,4 +14,8 @@
 - Remove `lib/docs/public/`
 - `cd` to `lib/` and run `npm run build:docs`
 - Commit the new docs version
-- Run `git subtree push --prefix=docs/public/ origin gh-pages`
+- Run `git subtree push --prefix=docs/public/ origin gh-pages`, or:
+
+```bash
+git push origin `git subtree split --prefix=docs/public/ develop`:gh-pages --force
+```

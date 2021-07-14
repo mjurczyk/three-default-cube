@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Way less. In way more time.",
   "main": "./three-default-cube.js",
   "files": [

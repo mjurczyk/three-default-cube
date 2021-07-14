@@ -143,12 +143,12 @@ export class AiWrapper {
 
     this.path = [];
 
-    PhysicsService.pathfinder.findPath(
+    (PhysicsService.pathfinder.findPath(
       targetPosition,
       targetNodePosition,
       PhysicsService.pathfinderZoneId,
       groupId
-    ).forEach(position => {
+    ) || []).forEach(position => {
       const mock = UtilsService.getEmpty();
 
       mock.position.copy(position);

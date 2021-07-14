@@ -8,6 +8,7 @@ import { RenderService } from './render-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { Pathfinding } from 'three-pathfinding';
+import { MathUtils } from '../utils/shared';
 
 class PhysicsServiceClass {
   bodies = [];

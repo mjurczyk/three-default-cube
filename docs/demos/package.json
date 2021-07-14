@@ -29,7 +29,7 @@
   "devDependencies": {
     "@capacitor/cli": "2.4.7",
     "@ionic/cli": "^6.16.3",
-    "three-default-cube": "file:../../three-default-cube-0.1.5.tgz"
+    "three-default-cube": "0.1.6"
   },
   "scripts": {
     "start": "react-scripts start",

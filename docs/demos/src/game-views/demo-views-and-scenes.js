@@ -43,7 +43,6 @@ export class DemoViewsAndScenes extends ViewClass {
 
               const physics = new PhysicsWrapper(object);
               physics.enableNavmaps();
-              physics.enableNoClip();
 
               let playerSpeed = 0.0;
               const maxPlayerSpeed = 0.04;
