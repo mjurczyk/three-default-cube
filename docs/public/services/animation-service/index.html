@@ -548,6 +548,8 @@
               <nav id="TableOfContents">
   <ul>
     <li><a href="/services/time-service/#"registerframelistener-">registerFrameListener ()</a></li>
+    <li><a href="/services/time-service/#"registerpersistentframelistener-">registerPersistentFrameListener ()</a></li>
+    <li><a href="/services/time-service/#"registerintervallistener-">registerIntervalListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -734,9 +736,9 @@
   randomSeed = 0.0
 })
 </code></pre><p>Create new animation on target (similar to <code>TimeService.registerFrameListener</code>.)</p>
-<p><code>onCreate</code> is called with: <code>{ target }</code>
-<code>onStep</code> is called with: <code>{ target, dt, animationTime, intervalTime }</code>
-<code>onDispose</code> is called with <code>{ target }</code>. Allows to implement custom disposal.</p>
+<p><code>onCreate</code> is called with: <code>{ target }</code></p>
+<p><code>onStep</code> is called with: <code>{ target, dt, animationTime, intervalTime }</code>. If <code>onStep</code> returns <code>false</code>, the entire animation is automatically disposed.</p>
+<p><code>onDispose</code> is called with <code>{ target }</code>. Allows to implement custom disposal.</p>
 <p><code>interval</code> is optional, must be in miliseconds (JavaScript default.)</p>
 <h2 id="animationoverridetype">AnimationOverrideType</h2>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{

@@ -548,6 +548,8 @@
               <nav id="TableOfContents">
   <ul>
     <li><a href="/services/time-service/#"registerframelistener-">registerFrameListener ()</a></li>
+    <li><a href="/services/time-service/#"registerpersistentframelistener-">registerPersistentFrameListener ()</a></li>
+    <li><a href="/services/time-service/#"registerintervallistener-">registerIntervalListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -724,8 +726,17 @@
           <div class="body">
             
             <h2 id="registerframelistener-">registerFrameListener ()</h2>
-<p><code>registerFrameListener(callback)</code></p>
-<p>Creates a continuous loop. Calls <code>callback</code> on each frame. Frame listeners are cancelled when view is disposed.</p>
+<p><code>registerFrameListener(onFrame)</code></p>
+<p>Creates a continuous loop. Calls <code>onFrame</code> on each frame. Frame listeners are cancelled when view is disposed.</p>
+<p>If a listener returns <code>false</code>, it is automatically disposed.</p>
+<h2 id="registerpersistentframelistener-">registerPersistentFrameListener ()</h2>
+<p><code>registerPersistentFrameListener(onFrame)</code></p>
+<p>Similar to <code>registerFrameListener</code>, but the listener is never disposed.</p>
+<p><strong>Note:</strong> May cause memory leaks.</p>
+<h2 id="registerintervallistener-">registerIntervalListener ()</h2>
+<p><code>registerIntervalListener(onIntervalStep, intervalTime)</code></p>
+<p>Creates an interval listener similar to <code>setInterval</code>. Interval listeners are cancelled when view is disposed.</p>
+<p>If a listener returns <code>false</code>, it is automatically disposed.</p>
 
           </div>
         </div>
