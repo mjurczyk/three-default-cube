@@ -187,9 +187,10 @@ Returns ai node. See aiNode in Custom Properties List.</description>
       
       <guid>/services/animation-service/</guid>
       <description>registerAnimation () registerAnimation({ target, onCreate, onStep, onDispose, interval, override = AnimationOverrideType.default, randomSeed = 0.0 }) Create new animation on target (similar to TimeService.registerFrameListener.)
-onCreate is called with: { target } onStep is called with: { target, dt, animationTime, intervalTime } onDispose is called with { target }. Allows to implement custom disposal.
-interval is optional, must be in miliseconds (JavaScript default.)
-AnimationOverrideType { noOverride, overrideIfExists, ignoreIfExists } </description>
+onCreate is called with: { target }
+onStep is called with: { target, dt, animationTime, intervalTime }. If onStep returns false, the entire animation is automatically disposed.
+onDispose is called with { target }. Allows to implement custom disposal.
+interval is optional, must be in miliseconds (JavaScript default.</description>
     </item>
     
     <item>
@@ -394,8 +395,15 @@ Calls callback when the system is fully ready.</description>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/services/time-service/</guid>
-      <description>registerFrameListener () registerFrameListener(callback)
-Creates a continuous loop. Calls callback on each frame. Frame listeners are cancelled when view is disposed.</description>
+      <description>registerFrameListener () registerFrameListener(onFrame)
+Creates a continuous loop. Calls onFrame on each frame. Frame listeners are cancelled when view is disposed.
+If a listener returns false, it is automatically disposed.
+registerPersistentFrameListener () registerPersistentFrameListener(onFrame)
+Similar to registerFrameListener, but the listener is never disposed.
+Note: May cause memory leaks.
+registerIntervalListener () registerIntervalListener(onIntervalStep, intervalTime)
+Creates an interval listener similar to setInterval. Interval listeners are cancelled when view is disposed.
+If a listener returns false, it is automatically disposed.</description>
     </item>
     
     <item>
