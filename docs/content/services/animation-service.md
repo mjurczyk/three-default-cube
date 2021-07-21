@@ -21,7 +21,9 @@ registerAnimation({
 Create new animation on target (similar to `TimeService.registerFrameListener`.)
 
 `onCreate` is called with: `{ target }`
-`onStep` is called with: `{ target, dt, animationTime, intervalTime }`
+
+`onStep` is called with: `{ target, dt, animationTime, intervalTime }`. If `onStep` returns `false`, the entire animation is automatically disposed.
+
 `onDispose` is called with `{ target }`. Allows to implement custom disposal.
 
 `interval` is optional, must be in miliseconds (JavaScript default.)
