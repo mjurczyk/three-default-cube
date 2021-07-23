@@ -135,25 +135,29 @@ class CameraServiceClass {
   }
 
   follow(object, onReachTarget) {
-    this.stopFollowing();
-    this.reattachCamera();
+    RenderService.pauseRendering(() => {
+      this.stopFollowing();
+      this.reattachCamera();
 
-    this.followedObject = object;
-    this.followListener = onReachTarget;
+      this.followedObject = object;
+      this.followListener = onReachTarget;
 
-    const pivot = UtilsService.getEmpty();
-    this.camera.parent.add(pivot);
+      const pivot = UtilsService.getEmpty();
+      this.camera.parent.add(pivot);
 
-    pivot.position.copy(this.camera.position);
-    pivot.quaternion.copy(this.camera.quaternion);
+      pivot.position.copy(this.camera.position);
+      pivot.quaternion.copy(this.camera.quaternion);
 
-    this.camera.position.set(0.0, 0.0, 0.0);
-    this.camera.quaternion.identity();
+      this.camera.position.set(0.0, 0.0, 0.0);
+      this.camera.quaternion.identity();
 
-    pivot.add(this.camera);
+      pivot.add(this.camera);
 
-    this.followPivot = this.camera;
-    this.camera = pivot;
+      this.followPivot = this.camera;
+      this.camera = pivot;
+
+      RenderService.resumeRendering();
+    });
   }
 
   getFollowPivot() {

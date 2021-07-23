@@ -252,7 +252,7 @@ class AssetsServiceClass {
     return copy;
   }
 
-  registerDisposeCallback = (object, dispose) => {
+  registerDisposeCallback(object, dispose) {
     if (!object || !dispose || !object.userData) {
       return;
     }
@@ -264,17 +264,25 @@ class AssetsServiceClass {
     object.userData.disposeRefs.push(dispose);
   }
   
-  markDisposable = (object) => {
+  markDisposable(object) {
     object.__registeredDisposable__ = true;
   }
   
-  markDisposed = (object) => {
+  markDisposed(object) {
     object.__registeredDisposable__ = false;
     object.__disposed__ = true;
   }
-  
-  markUndisposed = (object, reason) => {
+
+  markUndisposed(object, reason) {
     object.__undisposed__ = reason;
+  }
+
+  isDisposed(object) {
+    return object.__disposed__;
+  }
+
+  willBeDisposed(object) {
+    return object.__registeredDisposable__;
   }
 
   registerDisposable(object) {

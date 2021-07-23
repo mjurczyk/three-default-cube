@@ -99,3 +99,14 @@ Returns a clone of a material.
 
 Returns a clone of a texture.
 
+## isDisposed ()
+
+`isDisposed()`
+
+Returns true if object has been already disposed.
+
+## willBeDisposed ()
+
+`willBeDisposed()`
+
+Returns true if object has been registered for disposal. If object is disposed, this method returns false.

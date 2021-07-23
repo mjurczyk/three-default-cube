@@ -55,7 +55,7 @@ export class DemoAi extends ViewClass {
                   ai.setTargetNode(null);
                 }
 
-                if (!ai.hasTargetNode() || ai.path.length === 0) {
+                if (!ai.hasTargetNode() && ai.path.length === 0) {
                   ai.setTargetNode(AiService.getAiNodeById(getRandomElement([ 1, 2, 3 ])));
                   ai.findPathToTargetNode();
                 }
