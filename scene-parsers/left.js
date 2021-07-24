@@ -52,7 +52,7 @@ export const parseLeft = (object) => {
           camera.getWorldPosition(cameraPosition);
           camera.getWorldDirection(cameraDirection);
 
-          const cameraOffset = position.add(cameraPosition).projectOnVector(cameraDirection).length();
+          const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
           const screenWidth = get3dScreenWidth(cameraOffset, camera);
 
           object.position.x = -screenWidth / 2.0;

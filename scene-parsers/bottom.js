@@ -52,7 +52,7 @@ export const parseBottom = (object) => {
           camera.getWorldPosition(cameraPosition);
           camera.getWorldDirection(cameraDirection);
 
-          const cameraOffset = position.add(cameraPosition).projectOnVector(cameraDirection).length();
+          const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
           const screenHeight = get3dScreenHeight(cameraOffset, camera);
 
           object.position.y = -screenHeight / 2.0;
