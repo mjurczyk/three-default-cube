@@ -21,6 +21,10 @@ import { parseSlideshow } from '../scene-parsers/slideshow';
 import { parseSurface } from '../scene-parsers/surface';
 import { parseShading } from '../scene-parsers/shading';
 import { RenderService } from './render-service';
+import { parseLeft } from '../scene-parsers/left';
+import { parseRight } from '../scene-parsers/right';
+import { parseTop } from '../scene-parsers/top';
+import { parseBottom } from '../scene-parsers/bottom';
 
 class ParserServiceClass {
   parseModel({
@@ -87,6 +91,10 @@ class ParserServiceClass {
       parseMaterial(child, parserPayload);
       parseShading(child, parserPayload);
       parseAlign(child, parserPayload);
+      parseLeft(child, parserPayload);
+      parseRight(child, parserPayload);
+      parseTop(child, parserPayload);
+      parseBottom(child, parserPayload);
       parseSlideshow(child, parserPayload);
       parseRotateXYZ(child, parserPayload);
       parseFullscreen(child, parserPayload);

@@ -1,7 +1,7 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.7",
-  "description": "Way less. In way more time.",
+  "version": "0.1.8",
+  "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
   "files": [
     "three-default-cube.js",
@@ -11,16 +11,22 @@
     "build": "rollup --config ./rollup-config/cjs.config.js",
     "build:module": "rollup --config ./rollup-config/es.config.js",
     "build:docs": "cd ./docs && hugo && cd ../",
-    "docs": "cd docs && hugo server -D",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "docs": "cd docs && hugo server -D"
   },
   "keywords": [
     "three",
+    "threejs",
     "webgl",
     "game",
+    "game-development",
     "engine"
   ],
+  "homepage": "https://defaultcube.wtlstudio.com/",
   "author": "wtlstudio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mjurczyk/three-default-cube.git"
+  },
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "7.14.6",

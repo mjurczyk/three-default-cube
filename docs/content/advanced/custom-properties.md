@@ -22,17 +22,17 @@ Value: none
 
 Declare mesh to be an AI spawn. This removes the mesh from the scene. See [AI](/intro/ai/).
 
-## align
-
-Values: `left`, `right`.
-
-Align mesh to a side of the screen. This effect is continuous and may affect performance.
-
 ## animation
 
 Value: animation id (string)
 
 Assign a global animation script. See [Controlling Animations](/advanced/controlling-animations/).
+
+## bottom
+
+Value: absolute offset (number or percentage suffixed with `%`) or variable (:variable:)
+
+Align UI element to the bottom of the screen. See [UI Alignment](/advanced/ui-alignment/).
 
 ## cacheMaterial
 
@@ -70,6 +70,18 @@ Value: game object id (string)
 
 Declare mesh to be a game object. See [Game Objects](/intro/game-objects/).
 
+## if
+
+Value: value (string) or variable (:variable:)
+
+Show mesh only if value is truthy.
+
+## ifNot
+
+Value: value (string) or variable (:variable:)
+
+Show mesh only if value is falsy.
+
 ## label
 
 Value: text (string) or variable (:variable:)
@@ -106,6 +118,12 @@ Value: color (string, prefixed with `#`)
 
 Define outline color for `label`. If not defined, outline is not added. Color value must be compatible with `Three.Color`.
 
+## left
+
+Value: absolute offset (number or percentage suffixed with `%`) or variable (:variable:)
+
+Align UI element to the left of the screen. See [UI Alignment](/advanced/ui-alignment/).
+
 ## material
 
 Value: material id (string) or variable (:variable:)
@@ -117,6 +135,12 @@ Assign material to mesh. Material must be defined using `AssetsService.saveMater
 Value: none
 
 Declare mesh to be a navmap. This removes the mesh from the scene. See [Views & Scenes](/intro/views-and-scenes/) and [Physics](/intro/physics/). 
+
+## right
+
+Value: absolute offset (number or percentage suffixed with `%`) or variable (:variable:)
+
+Align UI element to the right of the screen. See [UI Alignment](/advanced/ui-alignment/).
 
 ## navpath
 
@@ -172,14 +196,8 @@ Value: surface id (string)
 
 Declare mesh to be of specific surface type. Surface handler must be registered using `PhysicsService.registerSurfaceHandler`. See [Physics](/intro/physics/).
 
-## if
+## top
 
-Value: value (string) or variable (:variable:)
+Value: absolute offset (number or percentage suffixed with `%`) or variable (:variable:)
 
-Show mesh only if value is truthy.
-
-## ifNot
-
-Value: value (string) or variable (:variable:)
-
-Show mesh only if value is falsy.
+Align UI element to the top of the screen. See [UI Alignment](/advanced/ui-alignment/).

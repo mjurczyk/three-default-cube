@@ -32,7 +32,7 @@ export const get3dScreenWidth = (depth = 1.0, camera) => {
     UtilsService.releaseCamera(targetCamera);
   }
 
-  return height * camera.aspect;
+  return height * targetCamera.aspect;
 };
 
 export const fitToScreen = (mesh, depth = 1.0, camera, preserveRatio = false) => {

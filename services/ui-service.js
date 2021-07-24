@@ -22,6 +22,16 @@ class UiServiceClass {
     this.uiElements.push(object);
   }
 
+  isUiElement(object) {
+    let result = false;
+
+    object.traverseAncestors(parent => {
+      result = result || (parent === this.uiScene);
+    });
+
+    return result;
+  }
+
   onFrame() {
     const camera = RenderService.getNativeCamera();
     const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0, 'ui-1');
