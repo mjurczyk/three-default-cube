@@ -399,6 +399,7 @@ code, code span {
 }
 
 .webgl-preview {
+  position: relative;
   height: 420px;
   border: solid 1px var(--color-outlines);
   background-color: #111111;
@@ -409,4 +410,18 @@ code, code span {
   width: 100%;
   border: none;
   outline: none;
+}
+
+.webgl-preview a {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  color: #fff;
+  font-size: 12px;
+}
+
+
+.webgl-preview a:hover {
+  cursor: pointer;
+  color: #ccc;
 }

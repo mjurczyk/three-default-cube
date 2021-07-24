@@ -6,7 +6,7 @@
 
     <link rel="stylesheet" href="/css/index.css">
 
-    <title>AnimationService - Default Cube</title>
+    <title>UI Alignment - Default Cube</title>
     <link rel="icon" type="image/jpeg" href="/images/favicon.jpg" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -738,32 +738,24 @@
             <a href="/">⇠ Documentation</a>
           </div>
           <div class="title">
-            AnimationService <span class="trinket">⌘</span>
+            UI Alignment <span class="trinket">⌘</span>
           </div>
           <div class="body">
             
-            <h2 id="registeranimation-">registerAnimation ()</h2>
-<pre><code>registerAnimation({
-  target,
-  onCreate,
-  onStep,
-  onDispose,
-  interval,
-  override = AnimationOverrideType.default,
-  randomSeed = 0.0
-})
-</code></pre><p>Create new animation on target (similar to <code>TimeService.registerFrameListener</code>.)</p>
-<p><code>onCreate</code> is called with: <code>{ target }</code></p>
-<p><code>onStep</code> is called with: <code>{ target, dt, animationTime, intervalTime }</code>. If <code>onStep</code> returns <code>false</code>, the entire animation is automatically disposed.</p>
-<p><code>onDispose</code> is called with <code>{ target }</code>. Allows to implement custom disposal.</p>
-<p><code>interval</code> is optional, must be in miliseconds (JavaScript default.)</p>
-<h2 id="animationoverridetype">AnimationOverrideType</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
-  <span style="color:#a6e22e">noOverride</span>,
-  <span style="color:#a6e22e">overrideIfExists</span>,
-  <span style="color:#a6e22e">ignoreIfExists</span>
-}
-</code></pre></div>
+              <div class="webgl-preview">
+                <iframe 
+                  src="/static/index.html?demoId=ui-alignment"
+                  loading="lazy"
+                ></iframe>
+                <a href="https://github.com/mjurczyk/three-default-cube/blob/develop/docs/demos/src/game-views/demo-ui-alignment.js" target="_tab">
+                  Source Code
+                </a>
+              </div>
+            
+            <h2 id="aligning-elements-on-the-screen">Aligning Elements on the Screen</h2>
+<p>You can align UI elements absolutely on the screen using <code>left</code>, <code>right</code>, <code>top</code>, and <code>bottom</code> custom properties. All four of them can take either a number or a percentage value - they can also use variables defined in <code>VarService</code>.</p>
+<p><strong>Note:</strong> Alignment properties can only be used on elements that are part of the UI layer. Be sure to use <code>UIService.registerUiElement</code> on the UI model before parsing it.</p>
+
           </div>
         </div>
       </div>

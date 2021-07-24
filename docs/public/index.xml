@@ -132,8 +132,9 @@ aiNode Value: node id (string)
 Declare mesh to be an AI node. This removes the mesh from the scene. See AI.
 aiSpawn Value: none
 Declare mesh to be an AI spawn. This removes the mesh from the scene. See AI.
-align Values: left, right.
-Align mesh to a side of the screen. This effect is continuous and may affect performance.</description>
+animation Value: animation id (string)
+Assign a global animation script. See Controlling Animations.
+bottom Value: absolute offset (number or percentage suffixed with %) or variable (:variable:)</description>
     </item>
     
     <item>
@@ -168,6 +169,16 @@ animations.playAnimation(&amp;#39;idle&amp;#39;); animations.blendInAnimation(&a
 The goal of using a particle emitter is to spawn a higher amount of similarly looking / behaving objects, from an approximately same spot.
 Note: Particles can be emitted from any Object3D - it can be either a game object defined in the parsed scene, or a manually created Three Object3D.
 Note: You can use emitter.play() and emitter.stop() to spawn particles only when necessary.</description>
+    </item>
+    
+    <item>
+      <title>UI Alignment</title>
+      <link>/advanced/ui-alignment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/advanced/ui-alignment/</guid>
+      <description>Aligning Elements on the Screen You can align UI elements absolutely on the screen using left, right, top, and bottom custom properties. All four of them can take either a number or a percentage value - they can also use variables defined in VarService.
+Note: Alignment properties can only be used on elements that are part of the UI layer. Be sure to use UIService.registerUiElement on the UI model before parsing it.</description>
     </item>
     
     <item>
@@ -413,7 +424,9 @@ If a listener returns false, it is automatically disposed.</description>
       
       <guid>/services/ui-service/</guid>
       <description>registerUiElement () registerUiElement(object)
-Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.</description>
+Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.
+isUiElement () isUiElement(object)
+Returns true if element belongs to the UI layer.</description>
     </item>
     
     <item>
