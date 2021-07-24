@@ -222,22 +222,26 @@
     <li><a href="/advanced/custom-properties/#"action">action</a></li>
     <li><a href="/advanced/custom-properties/#"ainode">aiNode</a></li>
     <li><a href="/advanced/custom-properties/#"aispawn">aiSpawn</a></li>
-    <li><a href="/advanced/custom-properties/#"align">align</a></li>
     <li><a href="/advanced/custom-properties/#"animation">animation</a></li>
+    <li><a href="/advanced/custom-properties/#"bottom">bottom</a></li>
     <li><a href="/advanced/custom-properties/#"cachematerial">cacheMaterial</a></li>
     <li><a href="/advanced/custom-properties/#"camera">camera</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreen">fullscreen</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreenoffset">fullscreenOffset</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreenpreserveratio">fullscreenPreserveRatio</a></li>
     <li><a href="/advanced/custom-properties/#"gameobject">gameObject</a></li>
+    <li><a href="/advanced/custom-properties/#"if">if</a></li>
+    <li><a href="/advanced/custom-properties/#"ifnot">ifNot</a></li>
     <li><a href="/advanced/custom-properties/#"label">label</a></li>
     <li><a href="/advanced/custom-properties/#"labelfont">labelFont</a></li>
     <li><a href="/advanced/custom-properties/#"labelsize">labelSize</a></li>
     <li><a href="/advanced/custom-properties/#"labelalign">labelAlign</a></li>
     <li><a href="/advanced/custom-properties/#"labelcolor">labelColor</a></li>
     <li><a href="/advanced/custom-properties/#"labeloutlinecolor">labelOutlineColor</a></li>
+    <li><a href="/advanced/custom-properties/#"left">left</a></li>
     <li><a href="/advanced/custom-properties/#"material">material</a></li>
     <li><a href="/advanced/custom-properties/#"navmap">navmap</a></li>
+    <li><a href="/advanced/custom-properties/#"right">right</a></li>
     <li><a href="/advanced/custom-properties/#"navpath">navpath</a></li>
     <li><a href="/advanced/custom-properties/#"rotatex--y--z">rotateX / Y / Z</a></li>
     <li><a href="/advanced/custom-properties/#"scroll">scroll</a></li>
@@ -247,8 +251,7 @@
     <li><a href="/advanced/custom-properties/#"slidesx">slidesX</a></li>
     <li><a href="/advanced/custom-properties/#"slidesy">slidesY</a></li>
     <li><a href="/advanced/custom-properties/#"surface">surface</a></li>
-    <li><a href="/advanced/custom-properties/#"if">if</a></li>
-    <li><a href="/advanced/custom-properties/#"ifnot">ifNot</a></li>
+    <li><a href="/advanced/custom-properties/#"top">top</a></li>
   </ul>
 </nav>
             </div>
@@ -299,6 +302,17 @@
           
             <div class="list-bundle list-filterable">
               <div class="list-category">
+                <a href="/advanced/ui-alignment/">UI Alignment</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/ui-alignment/#"aligning-elements-on-the-screen">Aligning Elements on the Screen</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
                 <a href="/services/ai-service/">AiService</a>
               </div>
               <nav id="TableOfContents">
@@ -340,6 +354,8 @@
     <li><a href="/services/assets-service/#"savematerial-">saveMaterial ()</a></li>
     <li><a href="/services/assets-service/#"clonematerial-">cloneMaterial ()</a></li>
     <li><a href="/services/assets-service/#"clonetexture-">cloneTexture ()</a></li>
+    <li><a href="/services/assets-service/#"isdisposed-">isDisposed ()</a></li>
+    <li><a href="/services/assets-service/#"willbedisposed-">willBeDisposed ()</a></li>
   </ul>
 </nav>
             </div>
@@ -561,6 +577,7 @@
               <nav id="TableOfContents">
   <ul>
     <li><a href="/services/ui-service/#"registeruielement-">registerUiElement ()</a></li>
+    <li><a href="/services/ui-service/#"isuielement-">isUiElement ()</a></li>
   </ul>
 </nav>
             </div>
@@ -734,12 +751,12 @@
 <h2 id="aispawn">aiSpawn</h2>
 <p>Value: none</p>
 <p>Declare mesh to be an AI spawn. This removes the mesh from the scene. See <a href="/intro/ai/">AI</a>.</p>
-<h2 id="align">align</h2>
-<p>Values: <code>left</code>, <code>right</code>.</p>
-<p>Align mesh to a side of the screen. This effect is continuous and may affect performance.</p>
 <h2 id="animation">animation</h2>
 <p>Value: animation id (string)</p>
 <p>Assign a global animation script. See <a href="/advanced/controlling-animations/">Controlling Animations</a>.</p>
+<h2 id="bottom">bottom</h2>
+<p>Value: absolute offset (number or percentage suffixed with <code>%</code>) or variable (:variable:)</p>
+<p>Align UI element to the bottom of the screen. See <a href="/advanced/ui-alignment/">UI Alignment</a>.</p>
 <h2 id="cachematerial">cacheMaterial</h2>
 <p>Value: none</p>
 <p>Save mesh material to <code>AssetsService</code>. Material can be retrieved in-code using <code>AssetsService.getMaterial(materialName)</code>. Material is disposed on scene change.</p>
@@ -758,6 +775,12 @@
 <h2 id="gameobject">gameObject</h2>
 <p>Value: game object id (string)</p>
 <p>Declare mesh to be a game object. See <a href="/intro/game-objects/">Game Objects</a>.</p>
+<h2 id="if">if</h2>
+<p>Value: value (string) or variable (:variable:)</p>
+<p>Show mesh only if value is truthy.</p>
+<h2 id="ifnot">ifNot</h2>
+<p>Value: value (string) or variable (:variable:)</p>
+<p>Show mesh only if value is falsy.</p>
 <h2 id="label">label</h2>
 <p>Value: text (string) or variable (:variable:)</p>
 <p>Declare mesh to be a label placeholder. This removes the mesh from the scene. See <a href="/intro/actions-and-ui/">Actions &amp; UI</a>.</p>
@@ -776,12 +799,18 @@
 <h2 id="labeloutlinecolor">labelOutlineColor</h2>
 <p>Value: color (string, prefixed with <code>#</code>)</p>
 <p>Define outline color for <code>label</code>. If not defined, outline is not added. Color value must be compatible with <code>Three.Color</code>.</p>
+<h2 id="left">left</h2>
+<p>Value: absolute offset (number or percentage suffixed with <code>%</code>) or variable (:variable:)</p>
+<p>Align UI element to the left of the screen. See <a href="/advanced/ui-alignment/">UI Alignment</a>.</p>
 <h2 id="material">material</h2>
 <p>Value: material id (string) or variable (:variable:)</p>
 <p>Assign material to mesh. Material must be defined using <code>AssetsService.saveMaterial</code> or <code>cacheMaterial</code>.</p>
 <h2 id="navmap">navmap</h2>
 <p>Value: none</p>
 <p>Declare mesh to be a navmap. This removes the mesh from the scene. See <a href="/intro/views-and-scenes/">Views &amp; Scenes</a> and <a href="/intro/physics/">Physics</a>.</p>
+<h2 id="right">right</h2>
+<p>Value: absolute offset (number or percentage suffixed with <code>%</code>) or variable (:variable:)</p>
+<p>Align UI element to the right of the screen. See <a href="/advanced/ui-alignment/">UI Alignment</a>.</p>
 <h2 id="navpath">navpath</h2>
 <p>Value: navpath id (string)</p>
 <p>Declare mesh to be a navpath. See <a href="/services/scene-service">SceneService.parseScene#navpath</a>. If defined, mesh is only added to the scene if value matches the current <code>parseScene</code> navpath value.</p>
@@ -809,12 +838,9 @@
 <h2 id="surface">surface</h2>
 <p>Value: surface id (string)</p>
 <p>Declare mesh to be of specific surface type. Surface handler must be registered using <code>PhysicsService.registerSurfaceHandler</code>. See <a href="/intro/physics/">Physics</a>.</p>
-<h2 id="if">if</h2>
-<p>Value: value (string) or variable (:variable:)</p>
-<p>Show mesh only if value is truthy.</p>
-<h2 id="ifnot">ifNot</h2>
-<p>Value: value (string) or variable (:variable:)</p>
-<p>Show mesh only if value is falsy.</p>
+<h2 id="top">top</h2>
+<p>Value: absolute offset (number or percentage suffixed with <code>%</code>) or variable (:variable:)</p>
+<p>Align UI element to the top of the screen. See <a href="/advanced/ui-alignment/">UI Alignment</a>.</p>
 
           </div>
         </div>

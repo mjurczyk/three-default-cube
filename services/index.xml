@@ -249,7 +249,9 @@ If a listener returns false, it is automatically disposed.</description>
       
       <guid>/services/ui-service/</guid>
       <description>registerUiElement () registerUiElement(object)
-Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.</description>
+Registers object as a UI element. UI elements are rendered on a separate scene and always face the camera.
+isUiElement () isUiElement(object)
+Returns true if element belongs to the UI layer.</description>
     </item>
     
     <item>

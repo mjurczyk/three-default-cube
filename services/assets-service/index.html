@@ -222,22 +222,26 @@
     <li><a href="/advanced/custom-properties/#"action">action</a></li>
     <li><a href="/advanced/custom-properties/#"ainode">aiNode</a></li>
     <li><a href="/advanced/custom-properties/#"aispawn">aiSpawn</a></li>
-    <li><a href="/advanced/custom-properties/#"align">align</a></li>
     <li><a href="/advanced/custom-properties/#"animation">animation</a></li>
+    <li><a href="/advanced/custom-properties/#"bottom">bottom</a></li>
     <li><a href="/advanced/custom-properties/#"cachematerial">cacheMaterial</a></li>
     <li><a href="/advanced/custom-properties/#"camera">camera</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreen">fullscreen</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreenoffset">fullscreenOffset</a></li>
     <li><a href="/advanced/custom-properties/#"fullscreenpreserveratio">fullscreenPreserveRatio</a></li>
     <li><a href="/advanced/custom-properties/#"gameobject">gameObject</a></li>
+    <li><a href="/advanced/custom-properties/#"if">if</a></li>
+    <li><a href="/advanced/custom-properties/#"ifnot">ifNot</a></li>
     <li><a href="/advanced/custom-properties/#"label">label</a></li>
     <li><a href="/advanced/custom-properties/#"labelfont">labelFont</a></li>
     <li><a href="/advanced/custom-properties/#"labelsize">labelSize</a></li>
     <li><a href="/advanced/custom-properties/#"labelalign">labelAlign</a></li>
     <li><a href="/advanced/custom-properties/#"labelcolor">labelColor</a></li>
     <li><a href="/advanced/custom-properties/#"labeloutlinecolor">labelOutlineColor</a></li>
+    <li><a href="/advanced/custom-properties/#"left">left</a></li>
     <li><a href="/advanced/custom-properties/#"material">material</a></li>
     <li><a href="/advanced/custom-properties/#"navmap">navmap</a></li>
+    <li><a href="/advanced/custom-properties/#"right">right</a></li>
     <li><a href="/advanced/custom-properties/#"navpath">navpath</a></li>
     <li><a href="/advanced/custom-properties/#"rotatex--y--z">rotateX / Y / Z</a></li>
     <li><a href="/advanced/custom-properties/#"scroll">scroll</a></li>
@@ -247,8 +251,7 @@
     <li><a href="/advanced/custom-properties/#"slidesx">slidesX</a></li>
     <li><a href="/advanced/custom-properties/#"slidesy">slidesY</a></li>
     <li><a href="/advanced/custom-properties/#"surface">surface</a></li>
-    <li><a href="/advanced/custom-properties/#"if">if</a></li>
-    <li><a href="/advanced/custom-properties/#"ifnot">ifNot</a></li>
+    <li><a href="/advanced/custom-properties/#"top">top</a></li>
   </ul>
 </nav>
             </div>
@@ -299,6 +302,17 @@
           
             <div class="list-bundle list-filterable">
               <div class="list-category">
+                <a href="/advanced/ui-alignment/">UI Alignment</a>
+              </div>
+              <nav id="TableOfContents">
+  <ul>
+    <li><a href="/advanced/ui-alignment/#"aligning-elements-on-the-screen">Aligning Elements on the Screen</a></li>
+  </ul>
+</nav>
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
                 <a href="/services/ai-service/">AiService</a>
               </div>
               <nav id="TableOfContents">
@@ -340,6 +354,8 @@
     <li><a href="/services/assets-service/#"savematerial-">saveMaterial ()</a></li>
     <li><a href="/services/assets-service/#"clonematerial-">cloneMaterial ()</a></li>
     <li><a href="/services/assets-service/#"clonetexture-">cloneTexture ()</a></li>
+    <li><a href="/services/assets-service/#"isdisposed-">isDisposed ()</a></li>
+    <li><a href="/services/assets-service/#"willbedisposed-">willBeDisposed ()</a></li>
   </ul>
 </nav>
             </div>
@@ -561,6 +577,7 @@
               <nav id="TableOfContents">
   <ul>
     <li><a href="/services/ui-service/#"registeruielement-">registerUiElement ()</a></li>
+    <li><a href="/services/ui-service/#"isuielement-">isUiElement ()</a></li>
   </ul>
 </nav>
             </div>
@@ -776,6 +793,12 @@
 <h2 id="clonetexture-">cloneTexture ()</h2>
 <p><code>cloneTexture(texture)</code></p>
 <p>Returns a clone of a texture.</p>
+<h2 id="isdisposed-">isDisposed ()</h2>
+<p><code>isDisposed()</code></p>
+<p>Returns true if object has been already disposed.</p>
+<h2 id="willbedisposed-">willBeDisposed ()</h2>
+<p><code>willBeDisposed()</code></p>
+<p>Returns true if object has been registered for disposal. If object is disposed, this method returns false.</p>
 
           </div>
         </div>
