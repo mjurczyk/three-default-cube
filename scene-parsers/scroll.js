@@ -1,9 +1,10 @@
 import { ScrollList } from "../game-objects/built-in/scroll-list";
+import { isDefined } from "../utils/shared";
 
 export const parseScroll = (object, { scene, scrollLists }) => {
   const { userData } = object;
 
-  if (userData.scroll) {
+  if (isDefined(userData.scroll)) {
     const scrollId = Number(userData.scroll);
 
     if (!scrollLists[scrollId]) {

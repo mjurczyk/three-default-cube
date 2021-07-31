@@ -3,12 +3,12 @@ import { MathService } from "../services/math-service";
 import { RenderService } from '../services/render-service';
 import { TimeService } from "../services/time-service";
 import { get3dScreenWidth } from "../utils/screen-size";
-import { MathUtils } from '../utils/shared';
+import { isDefined, MathUtils } from '../utils/shared';
 
 export const parseAlign = (object) => {
   const { userData } = object;
 
-  if (userData.align) {
+  if (isDefined(userData.align)) {
     const frameListener = TimeService.registerFrameListener(() => {
       const camera = RenderService.getNativeCamera();
 

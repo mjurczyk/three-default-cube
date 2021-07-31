@@ -1,11 +1,12 @@
 import { AssetsService } from "../services/assets-service";
 import { InteractionEnums, InteractionsService } from "../services/interactions-service";
+import { isDefined } from "../utils/shared";
 
 export const parseAction = (object, parserPayload) => {
   const { userData } = object;
   const { actions } = parserPayload;
 
-  if (userData.action) {
+  if (isDefined(userData.action)) {
     const actionCallback = actions[userData.action];
 
     if (typeof actionCallback === 'function') {

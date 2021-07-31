@@ -1,11 +1,12 @@
 import { AssetsService } from '../services/assets-service';
 import { VarService } from '../services/var-service';
 import { convertMaterialType } from '../utils/materials';
+import { isDefined } from '../utils/shared';
 
 export const parseShading = (object) => {
   const { userData } = object;
 
-  if (userData.shading) {
+  if (isDefined(userData.shading)) {
     VarService.resolveVar(userData.shading, (value) => {
       const replacementMaterial = convertMaterialType(object.material, value);
     

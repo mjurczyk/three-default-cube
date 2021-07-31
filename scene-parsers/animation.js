@@ -1,9 +1,10 @@
 import { GameInfoService } from "../services/game-info-service";
+import { isDefined } from "../utils/shared";
 
 export const parseAnimation = (object) => {
   const { userData } = object;
 
-  if (userData.animation) {
+  if (isDefined(userData.animation)) {
     const animation = GameInfoService.config.animations[userData.animation];
 
     if (animation) {

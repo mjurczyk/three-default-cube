@@ -1,16 +1,15 @@
-
 import { Text } from "../game-objects/built-in/text";
 import { MathService } from "../services/math-service";
 import { VarService } from "../services/var-service";
 import { replacePlaceholder } from "../utils/replace-placeholder";
-import { mathPi2 } from "../utils/constants";
 import { AssetsService } from "../services/assets-service";
 import { GameInfoService } from "../services/game-info-service";
+import { isDefined } from "../utils/shared";
 
 export const parseLabel = (object) => {
   const { userData } = object;
 
-  if (userData.label) {
+  if (isDefined(userData.label)) {
     const label = new Text({
       font: GameInfoService.config.fonts[userData.labelFont] || GameInfoService.config.fonts.default,
       fontSize: userData.labelSize || 1.0,

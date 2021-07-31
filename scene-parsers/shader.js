@@ -1,11 +1,12 @@
 import * as Three from 'three';
 import { AssetsService } from "../services/assets-service";
 import { GameInfoService } from '../services/game-info-service';
+import { isDefined } from '../utils/shared';
 
 export const parseShader = (object) => {
   const { userData } = object;
 
-  if (userData.shader) {
+  if (isDefined(userData.shader)) {
     const shaderFunction = GameInfoService.config.shaders[userData.shader];
 
     if (!shaderFunction || typeof shaderFunction !== 'function') {

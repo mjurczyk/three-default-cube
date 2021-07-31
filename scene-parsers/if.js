@@ -1,10 +1,11 @@
 import { AssetsService } from "../services/assets-service";
 import { VarService } from "../services/var-service";
+import { isDefined } from "../utils/shared";
 
 export const parseIf = (object) => {
   const { userData } = object;
 
-  if (userData.if) {
+  if (isDefined(userData.if)) {
     VarService.resolveVar(userData.if, (newValue) => {
       if (!object || !object.parent) {
         return false;

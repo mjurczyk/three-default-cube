@@ -5,11 +5,12 @@ import { TimeService } from "../services/time-service";
 import { VarService } from '../services/var-service';
 import { get3dScreenWidth } from "../utils/screen-size";
 import { UiService } from '../services/ui-service';
+import { isDefined } from '../utils/shared';
 
 export const parseRight = (object) => {
   const { userData } = object;
 
-  if (userData.right) {
+  if (isDefined(userData.right)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseRight', 'object must be part of the UI layer');
 

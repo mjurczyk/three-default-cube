@@ -1,10 +1,11 @@
 import { AssetsService } from "../services/assets-service";
 import { VarService } from "../services/var-service";
+import { isDefined } from "../utils/shared";
 
 export const parseMaterial = (object) => {
   const { userData } = object;
 
-  if (userData.material) {
+  if (isDefined(userData.material)) {
     VarService.resolveVar(
       userData.material,
       (materialName) => {

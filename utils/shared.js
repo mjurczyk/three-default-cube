@@ -3,6 +3,8 @@ import { MathService } from '../services/math-service';
 
 export const MathUtils = Three.MathUtils;
 
+export const isDefined = (value) => typeof value !== 'undefined';
+
 export const cloneValue = (value) => JSON.parse(JSON.stringify(value));
 
 export const getRandomColor = () => new Three.Color(Math.random() * 0xffffff);

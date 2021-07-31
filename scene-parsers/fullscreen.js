@@ -4,11 +4,12 @@ import { TimeService } from "../services/time-service";
 import { fitToCamera, fitToScreen } from "../utils/screen-size";
 import { mathPi2 } from "../utils/constants";
 import { AssetsService } from "../services/assets-service";
+import { isDefined } from "../utils/shared";
 
 export const parseFullscreen = (object) => {
   const { userData } = object;
 
-  if (userData.fullscreen) {
+  if (isDefined(userData.fullscreen)) {
     const camera = RenderService.getNativeCamera();
 
     const originalOrientation = MathService.getVec3(0.0, 0.0, 0.0, 'fullscreen-1')

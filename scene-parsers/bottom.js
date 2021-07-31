@@ -5,11 +5,12 @@ import { TimeService } from "../services/time-service";
 import { VarService } from '../services/var-service';
 import { get3dScreenHeight } from "../utils/screen-size";
 import { UiService } from '../services/ui-service';
+import { isDefined } from '../utils/shared';
 
 export const parseBottom = (object) => {
   const { userData } = object;
 
-  if (userData.bottom) {
+  if (isDefined(userData.bottom)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseBottom', 'object must be part of the UI layer');
 

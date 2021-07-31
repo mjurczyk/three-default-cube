@@ -1,9 +1,10 @@
 import { removePlaceholder } from "../utils/remove-placeholder";
+import { isDefined } from "../utils/shared";
 
 export const parseAiSpawn = (object, { aiSpawns }) => {
   const { userData } = object;
 
-  if (userData.aiSpawn) {
+  if (isDefined(userData.aiSpawn)) {
     removePlaceholder(object);
 
     object.visible = false;

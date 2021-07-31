@@ -4,11 +4,12 @@ import { AnimationService } from '../services/animation-service';
 import { AssetsService } from "../services/assets-service";
 import { DebugFlags, DummyDebug } from '../services/dummy-debug';
 import { removePlaceholder } from '../utils/remove-placeholder';
+import { isDefined } from '../utils/shared';
 
 export const parseAiNode = (object) => {
   const { userData } = object;
 
-  if (userData.aiNode) {
+  if (isDefined(userData.aiNode)) {
     if (!DummyDebug.get(DebugFlags.DEBUG_AI_NODES)) {
       removePlaceholder(object);
 

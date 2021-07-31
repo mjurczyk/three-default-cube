@@ -1,10 +1,11 @@
 import { AnimationService } from "../services/animation-service";
 import { AssetsService } from "../services/assets-service";
+import { isDefined } from "../utils/shared";
 
 export const parseSlideshow = (object) => {
   const { userData } = object;
 
-  if (userData.slideshow) {
+  if (isDefined(userData.slideshow)) {
     let slidesX = parseInt(userData.slidesX, 10);
     let slidesY = parseInt(userData.slidesY, 10);
     const slideshowFrequency = 500;
