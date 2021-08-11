@@ -134,8 +134,8 @@ class CameraServiceClass {
     }
   }
 
-  follow(object, onReachTarget) {
-    RenderService.pauseRendering(() => {
+  follow(object, onReachTarget, freezeFrame = true) {
+    const callback = () => {
       this.stopFollowing();
       this.reattachCamera();
 
@@ -156,8 +156,16 @@ class CameraServiceClass {
       this.followPivot = this.camera;
       this.camera = pivot;
 
-      RenderService.resumeRendering();
-    });
+      if (freezeFrame) {
+        RenderService.resumeRendering();
+      }
+    };
+
+    if (freezeFrame) {
+      RenderService.pauseRendering(() => callback());
+    } else {
+      callback();
+    }
   }
 
   getFollowPivot() {

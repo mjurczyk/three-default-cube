@@ -21,7 +21,7 @@ export class PhysicsWrapper {
     PhysicsService.registerBody(this);
     AssetsService.registerDisposeCallback(this.target, () => {
       PhysicsService.disposeBody(this);
-      this.dispose
+      this.dispose();
     });
   }
 

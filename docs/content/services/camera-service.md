@@ -18,9 +18,11 @@ Moves viewport to a specific camera. If instant is not specified, camera is twee
 
 ## follow ()
 
-`follow(object, onReachTarget)`
+`follow(object, onReachTarget, freezeFrame)`
 
 Moves viewport to follow a specific mesh. `onReachTarget` is optionally called when camera reaches the target.
+
+By default, rendering is paused on the first frame to prevent jumpy frames. To disable frame freeze, set `freezeFrame` to `false`.
 
 ## getFollowPivot ()
 

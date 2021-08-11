@@ -183,10 +183,14 @@ class PhysicsServiceClass {
     const positionB = MathService.getVec3(0.0, 0.0, 0.0, 'physics-5');
 
     this.dynamicBodies = this.dynamicBodies.filter(bodyA => {
+      if (!bodyA || !bodyA.target) {
+        return false;
+      }
+
       bodyA.target.getWorldPosition(positionA);
 
       this.dynamicBodies.forEach((bodyB) => {
-        if (bodyA === bodyB) {
+        if (bodyA === bodyB || !bodyB || !bodyB.target) {
           return;
         }
 
