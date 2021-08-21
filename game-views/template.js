@@ -1,27 +1,29 @@
 // NOTE Template only
 
-import { ViewClass } from "../classes/view-class";
-import { Preloader } from "../game-objects/built-in/preloader";
-import { AssetsService } from "../services/assets-service";
-import { CameraService } from "../services/camera-service";
-import { MathService } from "../services/math-service";
-import { RenderService } from "../services/render-service";
+import {
+  ViewClass,
+  Preloader,
+  AssetsService,
+  CameraService,
+  MathService,
+  RenderService,
+} from 'three-default-cube';
 
 export class TemplateView extends ViewClass {
   onCreate() {
     const scene = RenderService.getScene();
     const { camera } = CameraService;
 
-    const cameraOffset = MathService.getVec3(5.0, 0.0, 0.0, 'view-1');
+    const cameraOffset = MathService.getVec3(5.0, 0.0, 0.0);
     camera.position.copy(cameraOffset);
     CameraService.setCameraPosition(cameraOffset.x, cameraOffset.y, cameraOffset.z);
     MathService.releaseVec3(cameraOffset);
 
-    const cameraTarget = MathService.getVec3(0, 0, 0, 'view-2');
+    const cameraTarget = MathService.getVec3(0.0, 0.0, 0.0);
     camera.lookAt(cameraTarget);
     MathService.releaseVec3(cameraTarget);
 
-    const ambientLight = AssetsService.getAmbientLight();
+    const ambientLight = AssetsService.getAmbientLight(0x000033, 0xffffcc, 1.0);
     scene.add(ambientLight);
 
     const preloaderObject = new Preloader({
@@ -39,10 +41,6 @@ export class TemplateView extends ViewClass {
   }
 
   onLoaded() {
-    
-  }
-
-  onDispose() {
     
   }
 }

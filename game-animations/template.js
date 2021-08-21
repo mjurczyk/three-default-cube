@@ -1,8 +1,8 @@
 // NOTE Template only
 
-import { AnimationService } from "../services/animation-service";
+import { AnimationService } from 'three-default-cube';
 
-export const Animation = (object) => {
+export const TemplateAnimation = (object) => {
   return new Promise((resolve) => {
     AnimationService.registerAnimation({
       target: object,

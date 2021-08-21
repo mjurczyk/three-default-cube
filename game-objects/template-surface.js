@@ -1,3 +1,5 @@
+// NOTE Template only
+
 export class TemplateSurface {
   constructor(target) {
     this.target = target;
@@ -11,6 +13,14 @@ export class TemplateSurface {
 
   onInteraction({ hit } = {}) {
     
+  }
+
+  onEnter() {
+    
+  }
+
+  onLeave() {
+
   }
 
   dispose() {

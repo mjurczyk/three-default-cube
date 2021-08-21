@@ -1,3 +1,5 @@
+// NOTE Template only
+
 import * as Three from 'three';
 
 export const TemplateShader = () => {
@@ -15,7 +17,7 @@ export const TemplateShader = () => {
         gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
       }
     `,
-    transparent: true,
+    transparent: true
   };
 
   return shader;

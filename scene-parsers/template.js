@@ -1,7 +1,6 @@
 // NOTE Template only
 
-import { AssetsService } from "../services/assets-service";
-import { isDefined } from "../utils/shared";
+import { AssetsService, isDefined } from 'three-default-cube';
 
 export const parse = (object, payload) => {
   const { userData } = object;

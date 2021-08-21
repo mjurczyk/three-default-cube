@@ -1,6 +1,6 @@
 // NOTE Template only
 
-import { GameObjectClass } from '../classes/game-object-class';
+import { GameObjectClass } from 'three-default-cube';
 
 export class Template extends GameObjectClass {
   constructor() {
