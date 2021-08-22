@@ -73,10 +73,9 @@ setChannelVolume () setChannelVolume(channel, volume = 1.0, tweenDuration = 0.</
 Returns a camera. See camera in Custom Properties List.
 useCamera () useCamera(camera, instant = false)
 Moves viewport to a specific camera. If instant is not specified, camera is tweened according to CameraService.tween.
-follow () follow(object, onReachTarget)
+follow () follow(object, onReachTarget, freezeFrame)
 Moves viewport to follow a specific mesh. onReachTarget is optionally called when camera reaches the target.
-getFollowPivot () getFollowPivot(), CameraService.followPivotPosition
-Requires follow() to be enabled. Returns a follow pivot. Use followPivotPosition to specify the distance camera should keep from the target.</description>
+By default, rendering is paused on the first frame to prevent jumpy frames. To disable frame freeze, set freezeFrame to false.</description>
     </item>
     
     <item>
