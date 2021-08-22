@@ -171,6 +171,10 @@
   </url>
   
   <url>
+    <loc>/templates/</loc>
+  </url>
+  
+  <url>
     <loc>/todo/</loc>
   </url>
   

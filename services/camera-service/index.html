@@ -30,6 +30,9 @@
                 <a href="/downloads">Downloads</a>
               </li>
               <li>
+                <a href="/templates">Templates</a>
+              </li>
+              <li>
                 <a href="https://github.com/mjurczyk/three-default-cube">Github</a>
               </li>
               <li>
@@ -714,6 +717,13 @@
           
             <div class="list-bundle list-filterable">
               <div class="list-category">
+                <a href="/templates/">Templates</a>
+              </div>
+              
+            </div>
+          
+            <div class="list-bundle list-filterable">
+              <div class="list-category">
                 <a href="/todo/">TODO</a>
               </div>
               <nav id="TableOfContents">
@@ -749,8 +759,9 @@
 <p><code>useCamera(camera, instant = false)</code></p>
 <p>Moves viewport to a specific camera. If instant is not specified, camera is tweened according to <code>CameraService.tween</code>.</p>
 <h2 id="follow-">follow ()</h2>
-<p><code>follow(object, onReachTarget)</code></p>
+<p><code>follow(object, onReachTarget, freezeFrame)</code></p>
 <p>Moves viewport to follow a specific mesh. <code>onReachTarget</code> is optionally called when camera reaches the target.</p>
+<p>By default, rendering is paused on the first frame to prevent jumpy frames. To disable frame freeze, set <code>freezeFrame</code> to <code>false</code>.</p>
 <h2 id="getfollowpivot-">getFollowPivot ()</h2>
 <p><code>getFollowPivot()</code>, <code>CameraService.followPivotPosition</code></p>
 <p>Requires <code>follow()</code> to be enabled. Returns a follow pivot. Use <code>followPivotPosition</code> to specify the distance camera should keep from the target.</p>
