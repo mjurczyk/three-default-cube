@@ -3,7 +3,6 @@ export * from './classes/view-class';
 
 export * from './game-objects/built-in/ai-wrapper';
 export * from './game-objects/built-in/animation-wrapper';
-export * from './game-objects/built-in/background';
 export * from './game-objects/built-in/physics-wrapper';
 export * from './game-objects/built-in/preloader';
 export * from './game-objects/built-in/scroll-list';

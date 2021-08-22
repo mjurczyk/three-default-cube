@@ -1,12 +1,10 @@
 import * as Three from 'three';
 import { AssetsService } from './assets-service';
 import { RenderService } from './render-service';
-import { BackgroundPlane } from '../game-objects/built-in/background';
 import { ParserService } from './parser-service';
 import { GameInfoService } from './game-info-service';
 
 export class SceneServiceClass {
-  backgroundPlane = null;
   gameObjectRefs = {};
 
   parseScene({
@@ -29,7 +27,7 @@ export class SceneServiceClass {
     });
   }
 
-  setBackgroundImage(texture, spherical = true) {
+  setBackground(texture, spherical = true) {
     const scene = RenderService.getScene();
 
     if (scene.background) {
@@ -54,22 +52,6 @@ export class SceneServiceClass {
     }
   }
 
-  setBackground(background) {
-    if (this.backgroundPlane) {
-      AssetsService.disposeAsset(this.backgroundPlane);
-    }
-
-    const scene = RenderService.getScene();
-
-    this.backgroundPlane = background || new BackgroundPlane();
-
-    scene.add(this.backgroundPlane);
-  }
-
-  getBackground() {
-    return this.backgroundPlane;
-  }
-
   setEnvironment(hdri) {
     const scene = RenderService.getScene();
 
@@ -88,12 +70,6 @@ export class SceneServiceClass {
 
   disposeAll() {
     const scene = RenderService.getScene();
-
-    if (this.backgroundPlane) {
-      AssetsService.disposeAsset(this.backgroundPlane);
-    }
-
-    this.backgroundPlane = null;
     
     if (scene.environment) {
       AssetsService.disposeAsset(scene.environment);
