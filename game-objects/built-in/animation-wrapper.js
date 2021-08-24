@@ -63,6 +63,11 @@ export class AnimationWrapper {
     }
 
     const action = this.mixerActions[name];
+
+    if (action.isRunning()) {
+      return;
+    }
+
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeIn(tweenDuration / 1000.0);
@@ -75,6 +80,11 @@ export class AnimationWrapper {
     }
 
     const action = this.mixerActions[name];
+
+    if (!action.isRunning()) {
+      return;
+    }
+
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeOut(tweenDuration / 1000.0);
