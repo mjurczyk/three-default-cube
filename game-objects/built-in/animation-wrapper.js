@@ -56,7 +56,7 @@ export class AnimationWrapper {
     });
   }
 
-  playAnimation(name, tweenDuration = 1000) {
+  playAnimation(name, tweenDuration = 1000, reset = false, onFinish) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'playAnimation', `animation "${name}" does not exist`);
       return;
@@ -66,6 +66,27 @@ export class AnimationWrapper {
 
     if (action.isRunning()) {
       return;
+    }
+
+    if (reset || onFinish) {
+      action.reset();
+    }
+
+    if (typeof onFinish === 'function') {
+      const listener = (event) => {
+        if (event.action !== action) {
+          return;
+        }
+
+        this.mixer.removeEventListener('finished', listener);
+
+        onFinish();
+      };
+
+      this.mixer.addEventListener('finished', listener);
+      action.loop = Three.LoopOnce;
+    } else {
+      action.loop = Three.LoopRepeat;
     }
 
     action.enabled = true;

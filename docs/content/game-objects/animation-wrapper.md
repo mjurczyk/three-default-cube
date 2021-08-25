@@ -6,9 +6,13 @@ weight: 20
 
 ## playAnimation ()
 
-`playAnimation(name, tweenDuration)`
+`playAnimation(name, tweenDuration, reset, onFinish)`
 
 Starts playing specific animation on the model.
+
+If `reset` is set to `true` - animation will start from frame 0.
+
+If `onFinish` callback is defined - animation will play only once. The callback is called when the animation reaches the last frame.
 
 ## stopAnimation ()
 
