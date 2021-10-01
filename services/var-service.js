@@ -25,14 +25,17 @@ class VarServiceClass {
   }
 
   setVar(id, value) {
-    this.variables[id] = value;
+    // NOTE Lossy immutability
+    const immutableValue = JSON.parse(JSON.stringify(value));
+
+    this.variables[id] = immutableValue;
 
     if (!this.listeners[id]) {
       this.listeners[id] = [];
     } else {
       this.listeners[id] = this.listeners[id].filter(callback => {
         if (callback) {
-          return callback(value) !== false;
+          return callback(immutableValue) !== false;
         }
 
         return false;
@@ -40,7 +43,7 @@ class VarServiceClass {
     }
 
     if (this.persistentVars[id]) {
-      this.persistentVars[id](value);
+      this.persistentVars[id](immutableValue);
     }
   }
 
