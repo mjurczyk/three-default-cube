@@ -217,6 +217,8 @@ class RenderServiceClass {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
 
+    CameraService.onFrame();
+    UiService.onFrame();
     TimeService.onFrame({ dt, elapsedTime });
   }
 
@@ -230,9 +232,6 @@ class RenderServiceClass {
     const dt = this.animationClock.getDelta();
 
     if (!this.paused) {
-      CameraService.onFrame();
-      UiService.onFrame();
-
       if (this.composer) {
         this.composer.render(dt);
       } else {
