@@ -247,6 +247,12 @@ class InteractionsServiceClass {
     }
   }
 
+  registerInvisibleListener(target, eventType, callback) {
+    target.userData.interactionsServiceInvisibleListener = true;
+
+    this.registerListener(target, eventType, callback);
+  }
+
   getHits({ pointer }) {
     const raycaster = UtilsService.getRaycaster();
 
@@ -257,6 +263,18 @@ class InteractionsServiceClass {
     UtilsService.releaseRaycaster(raycaster);
 
     return hits.filter(({ object }, index) => {
+      if (object.interactionsServiceInvisibleListener !== true) {
+        let visible = true;
+
+        object.traverseAncestors(parent => {
+          visible = parent.visible && visible;
+        });
+
+        if (!visible) {
+          return;
+        }
+      }
+
       const nonUniqueHit = hits.findIndex(({ object: searchObject }) => searchObject.uuid === object.uuid);
 
       return nonUniqueHit === index;  
