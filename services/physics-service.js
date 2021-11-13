@@ -1,5 +1,4 @@
-import * as Three from 'three';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
+import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createArrowHelper, createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
 import { DebugFlags, DummyDebug } from './dummy-debug';
@@ -322,7 +321,7 @@ class PhysicsServiceClass {
       return;
     }
 
-    const navmeshGeometry = BufferGeometryUtils.mergeBufferGeometries(
+    const navmeshGeometry = mergeBufferGeometries(
       navmapGeometries,
       false
     );

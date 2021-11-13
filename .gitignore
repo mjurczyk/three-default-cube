@@ -5,6 +5,7 @@ three-default-cube.js
 three-default-cube.module.js
 *.tgz
 .DS_Store
+package/
 
 # Docs
 
