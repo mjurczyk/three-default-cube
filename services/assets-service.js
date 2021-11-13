@@ -7,8 +7,9 @@ import {
   preloadFont as troikaPreloadFont,
   Text as TroikaText
 } from 'troika-three-text';
-import { Howler, Howl } from 'howler';
+import { Howl } from 'howler';
 import { AudioService } from './audio-service';
+import { convertMaterialType } from '../utils/materials';
 
 const loaders = {
   models: new GLTFLoader(),
@@ -109,7 +110,7 @@ class AssetsServiceClass {
     });
   }
 
-  getModel(path, { internalAllowPreloaded, forceUniqueMaterials } = {}) {
+  getModel(path, { internalAllowPreloaded, forceUniqueMaterials, forceMaterialsType } = {}) {
     return this.registerAsyncAsset(resolve => {
       // NOTE Prevent fetching previously preloaded models when preloading
 
@@ -133,8 +134,12 @@ class AssetsServiceClass {
         model.scene.traverse(child => {
           this.registerDisposable(child);
 
-          if (forceUniqueMaterials && child.material) {
-            child.material = this.cloneMaterial(child.material);
+          if (child.material) {
+            if (forceMaterialsType) {
+              child.material = convertMaterialType(child.material, forceMaterialsType);
+            } else if (forceUniqueMaterials) {
+              child.material = this.cloneMaterial(child.material);
+            }
           }
         });
 
