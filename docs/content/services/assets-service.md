@@ -37,12 +37,17 @@ getModel(
   path,
   {
     internalAllowPreloaded = true,
-    forceUniqueMaterials = false
+    forceUniqueMaterials = false,
+    forceMaterialsType = null
   }
 )
 ```
 
 Fetches a glTF model.
+
+If `forceUniqueMaterials` is set - every material on the model will be cloned to avoid reference duplication.
+
+If `forceMaterialsType` is set - every material on the model will be converted to the passed material type. See `shading` in [Custom Properties List](/advanced/custom-properties/).
 
 ## preloadModel ()
 
