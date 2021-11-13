@@ -68,7 +68,7 @@ export class AnimationWrapper {
       return;
     }
 
-    if (reset || onFinish) {
+    if (reset) {
       action.reset();
     }
 
@@ -78,9 +78,9 @@ export class AnimationWrapper {
           return;
         }
 
-        this.mixer.removeEventListener('finished', listener);
-
         onFinish();
+
+        this.mixer.removeEventListener('finished', listener);
       };
 
       this.mixer.addEventListener('finished', listener);
