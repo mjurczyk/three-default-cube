@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -754,9 +755,9 @@
             
             <h2 id="animation-wrappers">Animation Wrappers</h2>
 <p>Apply an <code>AnimationWrapper</code> to a mesh to parse its animations:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">animations</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">AnimationWrapper</span>(<span style="color:#a6e22e">characterModel</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">animations</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">AnimationWrapper</span>(<span style="color:#a6e22e">characterModel</span>);
 </code></pre></div><p>Use the animation wrapper to play and blend the animations on the mesh:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">animations</span>.<span style="color:#a6e22e">playAnimation</span>(<span style="color:#e6db74">&#39;idle&#39;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">animations</span>.<span style="color:#a6e22e">playAnimation</span>(<span style="color:#e6db74">&#39;idle&#39;</span>);
 <span style="color:#a6e22e">animations</span>.<span style="color:#a6e22e">blendInAnimation</span>(<span style="color:#e6db74">&#39;run&#39;</span>, <span style="color:#ae81ff">0.5</span>);
 </code></pre></div>
           </div>

@@ -27,16 +27,14 @@ Returns true if object has nodes left in their path. If target node is not defin
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/game-objects/animation-wrapper/</guid>
-      <description>playAnimation () playAnimation(name, tweenDuration)
+      <description>playAnimation () playAnimation(name, tweenDuration, reset, onFinish)
 Starts playing specific animation on the model.
+If reset is set to true - animation will start from frame 0.
+If onFinish callback is defined - animation will play only once. The callback is called when the animation reaches the last frame.
 stopAnimation () stopAnimation(name, tweenDuration)
 Stops playing specific animation on the model.
 blendInAnimation () blendInAnimation(name, blendWeight)
-Blends in specific animation on the model. 0.0 weight disables the blending.
-playAllAnimations () playAllAnimations(tweenDuration)
-Plays all animations on the model at once.
-stopAllAnimations () stopAllAnimations(tweenDuration)
-Stops all animations on the model at once.</description>
+Blends in specific animation on the model. 0.</description>
     </item>
     
     <item>

@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -764,7 +765,7 @@
             
             <h2 id="key-inputs">Key Inputs</h2>
 <p>You can add keyboard interactions using a combination of <code>InputService</code> and <code>TimeService</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">TimeService</span>.<span style="color:#a6e22e">registerFrameListener</span>(() =&gt; {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">TimeService</span>.<span style="color:#a6e22e">registerFrameListener</span>(() =&gt; {
   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">keyUp</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">InputService</span>.<span style="color:#a6e22e">key</span>(<span style="color:#e6db74">&#39;w&#39;</span>);
 
   <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">keyUp</span>) {
@@ -775,9 +776,9 @@
 <h2 id="touch--mouse-inputs">Touch &amp; Mouse Inputs</h2>
 <p>Default Cube combines both touch and click inputs into <strong>actions</strong>. Actions are declared per-scene in the <code>SceneService.parseScene</code>. Each action is executed whenever an assigned object is pressed.</p>
 <p>To assign an action to a specific object on the scene, use a custom property in Blender:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">action: [actionId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">action: [actionId]
 </code></pre></div><p>Then define action behaviour in the parser:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">actions</span><span style="color:#f92672">:</span> {
     <span style="color:#e6db74">&#39;exampleActionId&#39;</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">object</span>) =&gt; {
@@ -794,12 +795,12 @@
 <p>Since Default Cube runs on top of Three.js and WebGL - you are allowed to create HTML UI overlaying the rendering canvas. This may have some slight caveats though when it comes to portability between mobile and web games.</p>
 <p>On the other hand, Default Cube also allows you to create UI as scenes - composed out of actions and game objects. To do that, you are also given control over variables in the <code>SceneService</code>.</p>
 <p>First, define a variable in the <code>GameInfoService</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">vars</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">vars</span>({
   <span style="color:#e6db74">&#39;playerHealth&#39;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
   <span style="color:#e6db74">&#39;playerName&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;Ogar&#39;</span>
 });
 </code></pre></div><p>These variables are global and reactive - meaning you can also listen to variable state at any time (using <code>VarService</code>):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">initialPlayerName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">VarService</span>.<span style="color:#a6e22e">getVar</span>(<span style="color:#e6db74">&#39;playerName&#39;</span>, (<span style="color:#a6e22e">newName</span>) =&gt; {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">initialPlayerName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">VarService</span>.<span style="color:#a6e22e">getVar</span>(<span style="color:#e6db74">&#39;playerName&#39;</span>, (<span style="color:#a6e22e">newName</span>) =&gt; {
   <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">info</span>({<span style="color:#a6e22e">newName</span>});
 });
 
@@ -809,12 +810,12 @@
 
 <span style="color:#75715e">// NOTE console is activated, logging: { newName: &#39;Beliarek&#39; }
 </span></code></pre></div><p>Knowing the basics of Default Cube variables - you can now assign them inside Blender using a double-colon variable notation:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">someCustomProperty: [:variableId:]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">someCustomProperty: [:variableId:]
 </code></pre></div><p>Variables assigned in the scene are automatically updated according to the <code>GameInfoService</code> - this allows you to dynamically change text, textures, and behaviours.</p>
 <p><strong>Note:</strong> Some properties may not update dynamically. Be sure to check the documentation.</p>
 <h2 id="user-interface-text">User Interface Text</h2>
 <p>To create a useful UI you usually need some kind of text. Using Blender text meshes or textures would be less than optimal - instead, you can create placeholders in the scene that are later going to be replaced by Default Cube with actual text:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">label: [:variableId: | &#34;static text&#34;]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">label: [:variableId: | &#34;static text&#34;]
 labelFont: [:variableId: | fontId]
 labelAlign: [:variableId: | &#39;left&#39; | &#39;right&#39; | &#39;center&#39;]
 labelSize: [:variableId: | fontSize]
@@ -823,7 +824,7 @@ labelOutlineColor: [:variableId: | &#39;#HEX&#39;]
 </code></pre></div><p><strong>Note:</strong> Any mesh with a label property will removed and replaced with a label.</p>
 <h2 id="camera-facing-user-interface">Camera-facing User Interface</h2>
 <p><code>UiService</code> allows you to additionally make a particular object or scene always face the camera - and render above all other objects. To register a specific scene as a UI view, it&rsquo;s enough to do:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">onCreate</span><span style="color:#f92672">:</span> ({ <span style="color:#a6e22e">scene</span> }) =&gt; {
     <span style="color:#75715e">// NOTE onCreate is called with an object describing various elements on the scene, and the scene itself

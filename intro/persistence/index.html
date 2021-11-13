@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -764,7 +765,7 @@
             
             <h2 id="saving-variables">Saving Variables</h2>
 <p>Default Cube uses Ionic native storage to save variables locally. To register a permanent variable, request it at the beginning of the game (using the <code>VarService</code>):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">await</span> <span style="color:#a6e22e">VarService</span>.<span style="color:#a6e22e">registerPersistentVar</span>(<span style="color:#e6db74">&#39;playerName&#39;</span>, <span style="color:#e6db74">&#39;Banjer&#39;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">await</span> <span style="color:#a6e22e">VarService</span>.<span style="color:#a6e22e">registerPersistentVar</span>(<span style="color:#e6db74">&#39;playerName&#39;</span>, <span style="color:#e6db74">&#39;Banjer&#39;</span>);
 
 <span style="color:#a6e22e">VarService</span>.<span style="color:#a6e22e">setVar</span>(<span style="color:#e6db74">&#39;playerName&#39;</span>, <span style="color:#e6db74">&#39;Finn&#39;</span>);
 </code></pre></div><p>Whenever the specific variable is updated, it will also be saved locally.</p>

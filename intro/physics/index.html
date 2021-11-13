@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -767,16 +768,16 @@
 <h2 id="navmeshes">Navmeshes</h2>
 <p>You can limit the walkable area of every scene using navmeshes. When, for example, a character is moving around - <code>PhysicsService</code> will the check whether the character is within the allowed area. This allows you to easily create floors, walls, and doors.</p>
 <p><strong>Note:</strong> Navmeshes can be dynamically enabled and disabled using the <code>PhysicsService</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">hero</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">myHeroModel</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">hero</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">myHeroModel</span>;
 
 <span style="color:#75715e">// NOTE Enable physics for the model using a PhysicsWrapper
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">heroPhysics</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">PhysicsWrapper</span>(<span style="color:#a6e22e">hero</span>);
 <span style="color:#a6e22e">heroPhysics</span>.<span style="color:#a6e22e">enableNavmaps</span>();
 </code></pre></div><p>Navmaps can be declared directly within the Blender file using a custom property (it requires no value):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">navmap: []
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">navmap: []
 </code></pre></div><h2 id="hit-testing">Hit-testing</h2>
 <p>To determine collisions between two meshes, you can use <code>PhysicsService.registerDynamicCollisionBody</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">PhysicsService</span>.<span style="color:#a6e22e">registerDynamicCollisionBody</span>(<span style="color:#a6e22e">hero</span>, (<span style="color:#a6e22e">hitObject</span>) =&gt; {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">PhysicsService</span>.<span style="color:#a6e22e">registerDynamicCollisionBody</span>(<span style="color:#a6e22e">hero</span>, (<span style="color:#a6e22e">hitObject</span>) =&gt; {
   <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">hitObject</span> <span style="color:#66d9ef">instanceof</span> <span style="color:#a6e22e">Enemy</span>) {
     <span style="color:#75715e">// NOTE Game logic
 </span><span style="color:#75715e"></span>  }
@@ -784,7 +785,7 @@
 </code></pre></div><h2 id="surfaces">Surfaces</h2>
 <p><code>PhysicsService</code> allows you to also register trigger surfaces - think of it as an extension of the navmaps idea.</p>
 <p>Registered surface reacts to being stepped on, for example snow caving in. To setup a surface type, you need to first define the behaviour in code:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SampleSufrace</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SampleSufrace</span> {
   <span style="color:#a6e22e">onInteraction</span>(<span style="color:#a6e22e">threeJsCollision</span>) {
     <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">info</span>(<span style="color:#e6db74">&#39;Surface reached&#39;</span>, { <span style="color:#a6e22e">threeJsCollision</span> });
   }
@@ -792,7 +793,7 @@
 
 <span style="color:#a6e22e">PhysicsService</span>.<span style="color:#a6e22e">registerSurfaceHandler</span>(<span style="color:#e6db74">&#39;snow&#39;</span>, <span style="color:#a6e22e">SampleSufrace</span>, <span style="color:#e6db74">&#39;onInteraction&#39;</span>);
 </code></pre></div><p>Then, in the Blender file, you can assign the surface type to specific meshes:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">surface: [surfaceId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">surface: [surfaceId]
 </code></pre></div><p>Next: <a href="/intro/audio/">Audio</a></p>
 
           </div>

@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -753,8 +754,10 @@
           <div class="body">
             
             <h2 id="playanimation-">playAnimation ()</h2>
-<p><code>playAnimation(name, tweenDuration)</code></p>
+<p><code>playAnimation(name, tweenDuration, reset, onFinish)</code></p>
 <p>Starts playing specific animation on the model.</p>
+<p>If <code>reset</code> is set to <code>true</code> - animation will start from frame 0.</p>
+<p>If <code>onFinish</code> callback is defined - animation will play only once. The callback is called when the animation reaches the last frame.</p>
 <h2 id="stopanimation-">stopAnimation ()</h2>
 <p><code>stopAnimation(name, tweenDuration)</code></p>
 <p>Stops playing specific animation on the model.</p>

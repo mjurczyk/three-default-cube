@@ -43,8 +43,8 @@ Fetches an image as a Three.Texture.
 getImageSync () See getImage. Synchronous.
 getHDRI () getHDRI(path)
 Fetches a HDRI texture.
-getModel () getModel( path, { internalAllowPreloaded = true, forceUniqueMaterials = false } ) Fetches a glTF model.
-preloadModel () preloadModel( path, { forceUniqueMaterials = false } ) Fetches a glTF model and stores it in the service.</description>
+getModel () getModel( path, { internalAllowPreloaded = true, forceUniqueMaterials = false, forceMaterialsType = null } ) Fetches a glTF model.
+If forceUniqueMaterials is set - every material on the model will be cloned to avoid reference duplication.</description>
     </item>
     
     <item>
@@ -120,7 +120,9 @@ Returns key state. See MDN KeyboardEvent.key.</description>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/services/interactions-service/</guid>
-      <description>InteractionEnums { eventClick, eventDrag, eventHold, eventRelease, eventLeave, } registerListener () registerListener(target, interactionEnum, callback)</description>
+      <description>InteractionEnums { eventClick, eventDrag, eventHold, eventRelease, eventLeave, } registerListener () registerListener(target, interactionEnum, callback)
+registerInvisibleListener () registerInvisibleListener(target, interactionEnum, callback)
+Allows the interaction listener to be invisible, while still triggering the event callback.</description>
     </item>
     
     <item>
