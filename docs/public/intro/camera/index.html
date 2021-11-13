@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -767,9 +768,9 @@
 <p>That camera can dynamically switch and tween between positions and orientations. It can also follow objects around the game world.</p>
 <h2 id="switching-cameras">Switching Cameras</h2>
 <p>Cameras are defined per-view. You can define any object to act as a camera using a custom property:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">camera: [cameraId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">camera: [cameraId]
 </code></pre></div><p>When the scene is loaded, you can then find cameras using the <code>CameraService</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">onCreate</span><span style="color:#f92672">:</span> () =&gt; {
     <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">cameraById</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">CameraService</span>.<span style="color:#a6e22e">getCamera</span>(<span style="color:#e6db74">&#39;exampleCameraId&#39;</span>);
@@ -782,7 +783,7 @@
 });
 </code></pre></div><h2 id="following-objects">Following Objects</h2>
 <p>You can ask the <code>CameraService</code> to follow a specific object in the game - and keep a certain distance using a pivot.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">CameraService</span>.<span style="color:#a6e22e">follow</span>(<span style="color:#a6e22e">object</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">CameraService</span>.<span style="color:#a6e22e">follow</span>(<span style="color:#a6e22e">object</span>);
 <span style="color:#a6e22e">CameraService</span>.<span style="color:#a6e22e">followPivotPosition</span>.<span style="color:#a6e22e">set</span>(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">2.0</span>, <span style="color:#ae81ff">2.0</span>);
 </code></pre></div><p>Next: <a href="/intro/actions-and-ui/">Actions &amp; UI</a></p>
 

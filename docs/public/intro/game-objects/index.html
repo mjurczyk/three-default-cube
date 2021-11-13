@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -765,10 +766,10 @@
             <h2 id="building-scenes">Building Scenes</h2>
 <p>Default Cube scenes are generally built with only 2 things: static meshes and game objects.</p>
 <p>Game object declaration allows you to assign any kind of logic to a specific object exported from Blender.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">gameObject: [gameObjectId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">gameObject: [gameObjectId]
 </code></pre></div><p><code>SceneService</code> parses and initializes each object separately:</p>
 <p>Since each object is initialized only once - you can use <code>TimeService.registerFrameListener</code> to assign continuous logic to it.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">gameObjects</span><span style="color:#f92672">:</span> {
     <span style="color:#e6db74">&#39;gameObjectId&#39;</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">object</span>) =&gt; {

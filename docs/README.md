@@ -11,8 +11,8 @@
 ### Building docs
 
 - Make sure `hugo` cli is installed ([see here](https://gohugo.io/getting-started/installing/))
-- Remove `lib/docs/public/`
-- `cd` to `lib/` and run `npm run build:docs`
+- Remove `docs/public/`
+- run `npm run build:docs`
 - Commit the new docs version
 - Run `git subtree push --prefix=docs/public/ origin gh-pages`, or:
 

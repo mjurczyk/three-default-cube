@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -753,7 +754,7 @@
           <div class="body">
             
             <h2 id="system-">system ()</h2>
-<pre><code>system(
+<pre tabindex="0"><code>system(
   fps = 60,
   pixelRatio = 1.5,
   antialiasing = true,
@@ -761,7 +762,7 @@
   sceneBackgroundDefault = 0x000000,
 )
 </code></pre><h2 id="camera-">camera ()</h2>
-<pre><code>camera(
+<pre tabindex="0"><code>camera(
   fov = 50,
   near = 0.1,
   far = 2000.0,
@@ -782,15 +783,15 @@
 <h2 id="texture-">texture ()</h2>
 <p><code>texture(id, imagePath)</code></p>
 <p>Registers a global image reference. Can be used in views as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getImage</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textures</span>.<span style="color:#a6e22e">sampleTexture</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getImage</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textures</span>.<span style="color:#a6e22e">sampleTexture</span>);
 </code></pre></div><h2 id="model-">model ()</h2>
 <p><code>model(id, modelPath)</code></p>
 <p>Registers a global model reference. Can be used in views as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getModel</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">sampleModel</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getModel</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">sampleModel</span>);
 </code></pre></div><h2 id="audio-">audio ()</h2>
 <p><code>audio(id, audioPath)</code></p>
 <p>Registers a global audio reference. Can be used in views as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getAudio</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textaudioures</span>.<span style="color:#a6e22e">sampleTrack</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getAudio</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textaudioures</span>.<span style="color:#a6e22e">sampleTrack</span>);
 </code></pre></div><h2 id="shader-">shader ()</h2>
 <p><code>shader(id, shader)</code></p>
 <p>Registers a system shader. See <code>shader</code> in <a href="/advanced/custom-properties/">Custom Properties List</a>.</p>

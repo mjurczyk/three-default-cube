@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -757,7 +758,7 @@
 <p>Three.js Audio, while an amazing API, does cause issues on specific Android devices after switching audio contexts. To prevent that, Default Cube uses Howler audio library.</p>
 <h2 id="independent-audio">Independent Audio</h2>
 <p>To play a sound or music, use <code>AudioService.playAudio</code> without specifying the first argument (channel):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getAudio</span>(<span style="color:#a6e22e">GameInfo</span>.<span style="color:#a6e22e">audio</span>.<span style="color:#a6e22e">bikeEngine</span>).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">audio</span> =&gt; {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getAudio</span>(<span style="color:#a6e22e">GameInfo</span>.<span style="color:#a6e22e">audio</span>.<span style="color:#a6e22e">bikeEngine</span>).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">audio</span> =&gt; {
   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">audioContext</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">AudioService</span>.<span style="color:#a6e22e">playAudio</span>(
     <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// NOTE Do not assign this audio clip to any channel
 </span><span style="color:#75715e"></span>    <span style="color:#a6e22e">audio</span>,
@@ -770,7 +771,7 @@
 });
 </code></pre></div><h2 id="channels">Channels</h2>
 <p>Default Cube gives you access to two global audio channels. Audio channel can be assigned an audio clip, and whenever a new one is assigned - the old one is automatically removed.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AudioService</span>.<span style="color:#a6e22e">playAudio</span>(<span style="color:#a6e22e">AudioChannelEnums</span>.<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">forestMusicClip</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AudioService</span>.<span style="color:#a6e22e">playAudio</span>(<span style="color:#a6e22e">AudioChannelEnums</span>.<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">forestMusicClip</span>);
 
 <span style="color:#75715e">// NOTE AudioChannelEnums.ambient will automatically loop the audio clip
 </span><span style="color:#75715e"></span><span style="color:#a6e22e">AudioService</span>.<span style="color:#a6e22e">playAudio</span>(<span style="color:#a6e22e">AudioChannelEnums</span>.<span style="color:#a6e22e">ambient</span>, <span style="color:#a6e22e">forestMusicClip</span>);

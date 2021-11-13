@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -753,7 +754,7 @@
           <div class="body">
             
             <h2 id="parsescene-">parseScene ()</h2>
-<pre><code>parseScene({
+<pre tabindex="0"><code>parseScene({
   target,
   navpath = null,
   actions = {},
@@ -762,7 +763,7 @@
 })
 </code></pre><p>Parse model as a Default Cube scene using parsers. <code>actions</code> and <code>gameObjects</code> are used to parse respective <a href="/advanced/custom-properties/">Custom Properties</a>.</p>
 <p><code>gameObject</code> and <code>action</code> parsers are called with the target object as the first argument and parsing payload as the second one (<code>gameObjectRefs</code> stores all existing game objects before the parsing is started):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
     <span style="color:#a6e22e">scrollLists</span>,
     <span style="color:#a6e22e">actions</span>,
     <span style="color:#a6e22e">gameObjectRefs</span>,
@@ -772,7 +773,7 @@
   }
 </code></pre></div><p>If <code>navpath</code> is specified, meshes with different value of <code>navpath</code> custom property are not added to the scene.</p>
 <p><code>onCreate</code> is called with:</p>
-<pre><code>{
+<pre tabindex="0"><code>{
   scene: target,
   scrollLists,
   actions,

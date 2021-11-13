@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -766,14 +767,14 @@
 <p>Default Cube AI system contains 2 elements: AI game objects (wrapped in <code>AiWrapper</code>) and AI nodes.</p>
 <h2 id="ai-nodes">AI Nodes</h2>
 <p>AI nodes are static meshes with assigned custom property:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">aiNode: [aiNodeId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">aiNode: [aiNodeId]
 </code></pre></div><h2 id="ai-maps">AI Maps</h2>
 <p>AI maps are an extension of AI nodes.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">aiMap: [aiMapId]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">aiMap: [aiMapId]
 </code></pre></div><p>Each vertex of a static mesh with an assigned AI map custom property will become an independent AI node. This makes creating complex routing and behaviour a bit easier.</p>
 <h2 id="aiwrapper--ai-behaviours">AiWrapper &amp; AI Behaviours</h2>
 <p>Each AI wrapper should provide an advice callback - using the game object position, state, and AI nodes.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">ai</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">AiWrapper</span>(<span style="color:#a6e22e">object</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">ai</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">AiWrapper</span>(<span style="color:#a6e22e">object</span>);
 
 <span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">registerBehaviour</span>(() =&gt; {
   <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">ai</span>.<span style="color:#a6e22e">hasTargetNode</span>()) {
@@ -806,7 +807,7 @@
   <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">advice</span>;
 });
 </code></pre></div><p>In the game object definition you can then retrieve AI advice on each frame:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">gameObjects</span><span style="color:#f92672">:</span> {
     <span style="color:#a6e22e">heroObject</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">object</span>) =&gt; {
@@ -827,7 +828,7 @@
 });
 </code></pre></div><h2 id="pathfinding">Pathfinding</h2>
 <p>Using Default Cube navmaps and <code>AiWrapper</code> you can find a path between two points on the scene. This allows you to plan a path an object should move along:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">SceneService</span>.<span style="color:#a6e22e">parseScene</span>({
   <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">sceneModel</span>,
   <span style="color:#a6e22e">gameObjects</span><span style="color:#f92672">:</span> {
     <span style="color:#a6e22e">heroObject</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">object</span>) =&gt; {

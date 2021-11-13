@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -760,11 +761,11 @@
 <li>Install Android Studio.</li>
 <li>If platform hasn&rsquo;t been added yet, add it:</li>
 </ol>
-<pre><code class="language-cli" data-lang="cli">$ npm add android
+<pre tabindex="0"><code class="language-cli" data-lang="cli">$ npm add android
 </code></pre><ol start="4">
 <li>Build an Android project:</li>
 </ol>
-<pre><code class="language-cli" data-lang="cli">$ cordova-res android --skip-config --copy
+<pre tabindex="0"><code class="language-cli" data-lang="cli">$ cordova-res android --skip-config --copy
 $ cordova-res ios --skip-config --copy
 $ ionic cap build android
 # For consecutive updates, you can also use &quot;ionic cap copy android&quot;
@@ -778,7 +779,7 @@ $ ionic cap build android
 <li>Replicate structure of the original module (ie. put assets in <code>assetpack/src/main/assets/public/static/media</code>.) Be sure to remove the assets from the original module.</li>
 <li>Add <code>build.gradle</code> file to the <code>assetspack</code>:</li>
 </ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">apply plugin: &#39;com.android.asset-pack&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">apply plugin: &#39;com.android.asset-pack&#39;
 
 assetPack {
     packName = &#34;assetpack&#34;
@@ -789,7 +790,7 @@ assetPack {
 </code></pre></div><ol start="5">
 <li>Add <code>assetspack</code> reference to the <code>build.gradle</code> of the original module (remember to prefix the name with a <code>:</code>):</li>
 </ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">apply plugin: &#39;com.android.application&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">apply plugin: &#39;com.android.application&#39;
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -805,7 +806,7 @@ repositories {
 </code></pre></div><ol start="6">
 <li>Include <code>assetpack</code> reference in <code>settings.gradle</code>:</li>
 </ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">include &#39;:app&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">include &#39;:app&#39;
 include &#39;:capacitor-cordova-android-plugins&#39;
 project(&#39;:capacitor-cordova-android-plugins&#39;).projectDir = new File(&#39;./capacitor-cordova-android-plugins/&#39;)
 include &#39;:assetpack&#39;

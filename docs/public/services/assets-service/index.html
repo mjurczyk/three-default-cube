@@ -458,6 +458,7 @@
   <ul>
     <li><a href="/services/interactions-service/#"interactionenums">InteractionEnums</a></li>
     <li><a href="/services/interactions-service/#"registerlistener-">registerListener ()</a></li>
+    <li><a href="/services/interactions-service/#"registerinvisiblelistener-">registerInvisibleListener ()</a></li>
   </ul>
 </nav>
             </div>
@@ -766,16 +767,19 @@
 <p><code>getHDRI(path)</code></p>
 <p>Fetches a HDRI texture.</p>
 <h2 id="getmodel-">getModel ()</h2>
-<pre><code>getModel(
+<pre tabindex="0"><code>getModel(
   path,
   {
     internalAllowPreloaded = true,
-    forceUniqueMaterials = false
+    forceUniqueMaterials = false,
+    forceMaterialsType = null
   }
 )
 </code></pre><p>Fetches a glTF model.</p>
+<p>If <code>forceUniqueMaterials</code> is set - every material on the model will be cloned to avoid reference duplication.</p>
+<p>If <code>forceMaterialsType</code> is set - every material on the model will be converted to the passed material type. See <code>shading</code> in <a href="/advanced/custom-properties/">Custom Properties List</a>.</p>
 <h2 id="preloadmodel-">preloadModel ()</h2>
-<pre><code>preloadModel(
+<pre tabindex="0"><code>preloadModel(
   path,
   {
     forceUniqueMaterials = false
