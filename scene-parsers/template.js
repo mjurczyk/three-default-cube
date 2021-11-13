@@ -6,8 +6,6 @@ export const parse = (object, payload) => {
   const { userData } = object;
 
   if (isDefined(userData.key)) {
-
-
     AssetsService.registerDisposeCallback(object, () => {});
   }
 };
