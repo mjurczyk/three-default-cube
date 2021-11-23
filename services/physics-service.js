@@ -1,4 +1,4 @@
-import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
+import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createArrowHelper, createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
 import { DebugFlags, DummyDebug } from './dummy-debug';
@@ -321,7 +321,7 @@ class PhysicsServiceClass {
       return;
     }
 
-    const navmeshGeometry = mergeBufferGeometries(
+    const navmeshGeometry = (BufferGeometryScope.mergeBufferGeometries ? BufferGeometryScope : BufferGeometryScope.BufferGeometryUtils).mergeBufferGeometries(
       navmapGeometries,
       false
     );
