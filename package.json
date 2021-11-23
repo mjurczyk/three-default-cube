@@ -1,13 +1,17 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
   "types": "./types/index.js",
   "files": [
     "three-default-cube.js",
-    "three-default-cube.module.js"
+    "three-default-cube.module.js",
+    "types/**/*.d.ts"
   ],
+  "directories": {
+    "types": "./types"
+  },
   "scripts": {
     "build": "rollup --config ./rollup-config/cjs.config.js",
     "build:module": "rollup --config ./rollup-config/es.config.js",
