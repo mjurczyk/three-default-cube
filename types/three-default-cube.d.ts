@@ -31,7 +31,7 @@ export class AnimationWrapper {
     target?: any;
     parseAnimations(): void;
     mixer?: any;
-    playAnimation(name?: any, tweenDuration: number, reset: boolean, onFinish?: any): void;
+    playAnimation(name: any, tweenDuration: number, reset: boolean, onFinish?: any): void;
     stopAnimation(name?: any, tweenDuration?: number): void;
     blendInAnimation(name?: any, blendWeight?: number): void;
     playAllAnimations(tweenDuration?: number): void;
@@ -181,7 +181,7 @@ export class ScrollList extends GameObjectClass {
     scrollMaxOffsetY: number;
 }
 export class SkinnedGameObject extends GameObjectClass {
-    constructor(...args?: any[]);
+    constructor(...args: any[]);
     mixer?: any;
     playAnimation(name?: any, tweenDuration?: number): void;
     stopAnimation(name?: any, tweenDuration?: number): void;
@@ -227,7 +227,7 @@ export function createDefaultCube(container?: any, id?: any, { position, size, c
 }): any;
 export function defaultTo(value?: any, defaultValue?: any): any;
 export function fitToCamera(mesh?: any, camera?: any, preserveRatio?: boolean): void;
-export function fitToScreen(mesh?: any, depth: number, camera?: any, preserveRatio?: boolean): void;
+export function fitToScreen(mesh: any, depth: number, camera?: any, preserveRatio?: boolean): void;
 export function forAllMaterialTextures(material?: any, callback?: any): void;
 export function get3dScreenHeight(depth: number, camera?: any): number;
 export function get3dScreenWidth(depth: number, camera?: any): number;
@@ -246,7 +246,7 @@ export function parseLabel(object?: any): void;
 export function parseMaterial(object?: any): void;
 export function parseNavmap(object?: any): void;
 export function parseRotateXYZ(object?: any): void;
-export function parseScroll(object?: any, { scene, scrollLists }: {
+export function parseScroll(object: any, { scene, scrollLists }: {
     scene?: any;
     scrollLists?: any;
 }): void;
@@ -414,7 +414,7 @@ declare class DummyDebugClass {
     hideStats(): void;
     showLogs(): void;
     logs: HTMLDivElement;
-    createLogLine(...logs?: any[]): HTMLDivElement;
+    createLogLine(...logs: any[]): HTMLDivElement;
 }
 declare class GameInfoServiceClass {
     addConfig(config?: {}): GameInfoServiceClass;
