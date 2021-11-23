@@ -1,0 +1,31 @@
+export const PhysicsService: PhysicsServiceClass;
+declare class PhysicsServiceClass {
+    bodies: any[];
+    dynamicBodies: any[];
+    navmaps: any[];
+    pathfinder: any;
+    pathfinedEnabled: boolean;
+    pathfinderZoneId: string;
+    surfaceHandlers: {};
+    surfaces: any[];
+    slopeTolerance: number;
+    gravityConstant: number;
+    maxDynamicBodySize: number;
+    init(): void;
+    updateStaticBodies(): void;
+    updateDynamicBodies(): void;
+    registerBody(object: any): void;
+    registerDynamicCollisionBody(object: any, collisionCallback: any): void;
+    registerNavmap(object: any): void;
+    enableNavmap(object: any): void;
+    disableNavmap(object: any): void;
+    updatePathfinder(): void;
+    registerSurfaceHandler(surfaceType: any, handlerClass: any, onInteraction?: string, onEnter?: string, onLeave?: string): void;
+    registerSurface(object: any): void;
+    getNavmaps(): any[];
+    disposeBody(object: any): void;
+    disposeNavmap(object: any): void;
+    disposeSurface(object: any): void;
+    disposeAll(): void;
+}
+export {};

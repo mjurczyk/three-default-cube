@@ -1,0 +1,10 @@
+export const MathUtils: any;
+export function isDefined(value: any): boolean;
+export function cloneValue(value: any): any;
+export function getRandomColor(): any;
+export function getRandomElement(set: any): any;
+export function spliceRandomElement(set: any): any;
+export function moduloAngle(x: any): number;
+export function defaultTo(value: any, defaultValue: any): any;
+export function swapVectors(vectorA: any, vectorB: any): void;
+export function forAllMaterialTextures(material: any, callback: any): void;
