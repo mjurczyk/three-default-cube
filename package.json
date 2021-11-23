@@ -1,9 +1,9 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
-  "types": "./types/index.js",
+  "types": "./types/three-default-cube.js",
   "files": [
     "three-default-cube.js",
     "three-default-cube.module.js",
