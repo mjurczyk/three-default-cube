@@ -4,12 +4,14 @@ import { NavigationBar } from '@ionic-native/navigation-bar';
 import { ScreenOrientation } from '@ionic-native/screen-orientation';
 import { StorageService } from './storage-service';
 import { DebugFlags, DummyDebug } from './dummy-debug';
+import { VarService } from './var-service';
 
 const { App, StatusBar } = Plugins;
 
 class SystemServiceClass {
   isCordova = false;
   appStateListeners = [];
+  promised = [];
 
   constructor() {
     this.isCordova = typeof cordova !== 'undefined';
@@ -36,6 +38,14 @@ class SystemServiceClass {
 
     if (DummyDebug.get(DebugFlags.DEBUG_LIVE)) {
       DummyDebug.showLogs();
+    }
+
+    this.promised.push(VarService.retrievePersistentVars());
+
+    if (this.isCordova) {
+      this.promised.push(new Promise((resolve) => {
+        document.addEventListener('deviceready', () => resolve(), false);
+      }));
     }
   }
 
@@ -67,11 +77,9 @@ class SystemServiceClass {
       return;
     }
 
-    if (this.isCordova) {
-      document.addEventListener('deviceready', then, false);
-    } else {
+    Promise.all(this.promised).then(() => {
       then();
-    }
+    });
   }
 
   disposeAll() {

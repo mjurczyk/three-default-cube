@@ -81,6 +81,18 @@ class VarServiceClass {
     });
   }
 
+  retrievePersistentVars() {
+    return new Promise(async (resolve) => {
+      const keys = await StorageService.getAllKeys();
+
+      await Promise.all(keys.map(key => {
+        return this.registerPersistentVar(key);
+      }));
+
+      resolve();
+    });
+  }
+
   resolveVar(variableString, onResolve, onCreate) {
     if (!variableString) {
       return onResolve();

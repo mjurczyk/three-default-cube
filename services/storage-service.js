@@ -14,6 +14,25 @@ class StorageServiceClass {
     this.set('system.control', Date.now());    
   }
 
+  getAllKeys() {
+    return new Promise((resolve) => {
+      if (!this.useNative) {
+        return resolve(Object.keys(localStorage));
+      }
+
+      return NativeStorage.keys(
+        keys => resolve(keys),
+        error => {
+          if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+            console.info('StorageServiceClass', 'getAllKeys', 'error', { error });
+          }
+    
+          return resolve([]);
+        }
+      );
+    });
+  }
+
   set(key, value) {
     if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'set', { key, value });

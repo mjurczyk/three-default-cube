@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.30",
+  "version": "0.1.36",
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
   "types": "./types/three-default-cube.d.ts",
@@ -13,9 +13,10 @@
     "types": "./types"
   },
   "scripts": {
-    "build:all": "npm run build && npm run build:module && npm run build:types && npm pack",
+    "build:all": "npm run build:js && npm run build:types && npm pack",
     "build": "rollup --config ./rollup-config/cjs.config.js && npx -p typescript tsc three-default-cube.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "build:module": "rollup --config ./rollup-config/es.config.js && npx -p typescript tsc three-default-cube.module.js --declaration --allowJs --emitDeclarationOnly --outDir types",
+    "build:js": "npm run build && npm run build:module",
     "build:types": "npx -p typescript tsc index.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "build:docs": "cd ./docs && hugo && cd ../",
     "docs": "cd docs && hugo server -D"
