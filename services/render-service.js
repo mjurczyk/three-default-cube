@@ -74,6 +74,7 @@ class RenderServiceClass {
     renderer.toneMapping = Three.ACESFilmicToneMapping;
     renderer.outputEncoding = Three.sRGBEncoding;
     renderer.autoClear = false;
+    renderer.physicallyCorrectLights = true;
 
     renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);

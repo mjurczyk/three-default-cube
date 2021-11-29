@@ -31,6 +31,7 @@ class GameInfoServiceClass {
     antialiasing = true,
     postprocessing = true,
     sceneBackgroundDefault = 0x000000,
+    correctBlenderLights = true,
   ) {
     return this.addConfig({
       system: {
@@ -39,7 +40,8 @@ class GameInfoServiceClass {
         pixelRatio,
         antialiasing,
         postprocessing,
-        sceneBackgroundDefault
+        sceneBackgroundDefault,
+        correctBlenderLights
       }
     });
   }

@@ -10,6 +10,7 @@ import {
 import { Howl } from 'howler';
 import { AudioService } from './audio-service';
 import { convertMaterialType } from '../utils/materials';
+import { GameInfoService } from './game-info-service';
 
 const loaders = {
   models: new GLTFLoader(),
@@ -139,6 +140,22 @@ class AssetsServiceClass {
               child.material = convertMaterialType(child.material, forceMaterialsType);
             } else if (forceUniqueMaterials) {
               child.material = this.cloneMaterial(child.material);
+            }
+          }
+
+          if (GameInfoService.config.system.correctBlenderLights) {
+            // NOTE More arbitrary that you dare to imagine 👀
+
+            if (child instanceof Three.Light) {
+              child.intensity /= 68.3;
+
+              if (typeof child.distance === 'number') {
+                child.distance *= 10.0;
+              }
+  
+              if (typeof child.decay === 'number') {
+                child.decay /= 2.0;
+              }
             }
           }
         });

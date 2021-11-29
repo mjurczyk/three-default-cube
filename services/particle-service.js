@@ -1,3 +1,4 @@
+import * as Three from 'three';
 import { removePlaceholder } from '../utils/remove-placeholder';
 import { defaultTo, MathUtils } from '../utils/shared';
 import { AssetsService } from './assets-service';
