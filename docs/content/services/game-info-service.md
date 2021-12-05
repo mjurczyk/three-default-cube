@@ -69,7 +69,7 @@ Registers a system font. See `labelFont` in [Custom Properties List](/advanced/c
 Registers a global image reference. Can be used in views as:
 
 ```js
-AssetsService.getImage(GameInfoService.config.textures.sampleTexture);
+AssetsService.getTexture(GameInfoService.config.textures.sampleTexture);
 ```
 
 ## model ()

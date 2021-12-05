@@ -126,7 +126,7 @@ class AssetsServiceClass {
 
   getReflectionsTexture(path) {
     return this.registerAsyncAsset(resolve => {
-      this.getImage(path).then(texture => {
+      this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
         const generator = new Three.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);

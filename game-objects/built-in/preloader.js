@@ -50,7 +50,7 @@ export class Preloader extends GameObjectClass {
     const spinner = new Three.Mesh(
       new Three.PlaneBufferGeometry(1.0, 1.0),
       new Three.MeshBasicMaterial({
-        map: await AssetsService.getImage(this.spinnerTexture),
+        map: await AssetsService.getTexture(this.spinnerTexture),
         transparent: true,
       })
     );
