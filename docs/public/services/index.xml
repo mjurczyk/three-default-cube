@@ -38,13 +38,14 @@ interval is optional, must be in miliseconds (JavaScript default.</description>
       <description>getDefaultCube () Returns a cube.
 getAmbientLight () getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0)
 Returns a new hemisphere light, acting as an ambient light.
-getImage () getImage(path)
+getTexture () getTexture(path)
 Fetches an image as a Three.Texture.
-getImageSync () See getImage. Synchronous.
-getHDRI () getHDRI(path)
+getTextureSync () getTexture(path, then)
+See getTexture. Synchronous.
+getHDRI () getHDRI(path, encoding = Three.RGBEEncoding)
 Fetches a HDRI texture.
-getModel () getModel( path, { internalAllowPreloaded = true, forceUniqueMaterials = false, forceMaterialsType = null } ) Fetches a glTF model.
-If forceUniqueMaterials is set - every material on the model will be cloned to avoid reference duplication.</description>
+getReflectionsTexture () getReflectionsTexture(path)
+Fetches a reflections texture. Acts similar to getHDRI, but the texture is not encoded as HDRI texture automatically.</description>
     </item>
     
     <item>
@@ -96,12 +97,10 @@ Disables specific debugging flag. Cannot be called after game is initialized.</d
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/services/game-info-service/</guid>
-      <description>system () system( fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, ) camera () camera( fov = 50, near = 0.1, far = 2000.0, ) vars () vars({ varKey: varValue, ... })
+      <description>system () system( fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, ) camera () camera( fov = 50, near = 0.1, far = 2000.0, ) vr (enabled = true) vr( enabled = true ) Enable VR capabilities. Disables postprocessing and enabled XR-compatible rendering loop.
+vars () vars({ varKey: varValue, ... })
 Adds variables to the system config.
-labels () labels(language = &#39;en&#39;, vars)
-Adds localized string variables to the system config. Similar to vars.
-animation () animation(id, animation)
-Registers a system animation. See animation in Custom Properties List.</description>
+labels () labels(language = &#39;en&#39;, vars)</description>
     </item>
     
     <item>
