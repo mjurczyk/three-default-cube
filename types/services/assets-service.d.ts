@@ -8,9 +8,12 @@ declare class AssetsServiceClass {
     getDefaultCube(): any;
     getAmbientLight(groundColor?: number, skyColor?: number, intensity?: number): any;
     registerAsyncAsset(promisable: any): any;
+    getTexture(path: any): any;
+    getTextureSync(path: any, then: any): any;
     getImage(path: any): any;
     getImageSync(path: any, then: any): any;
-    getHDRI(path: any): any;
+    getHDRI(path: any, encoding?: any): any;
+    getReflectionsTexture(path: any): any;
     getModel(path: any, { internalAllowPreloaded, forceUniqueMaterials, forceMaterialsType }?: {
         internalAllowPreloaded: any;
         forceUniqueMaterials: any;

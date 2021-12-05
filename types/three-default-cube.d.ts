@@ -31,7 +31,7 @@ export class AnimationWrapper {
     target?: any;
     parseAnimations(): void;
     mixer?: any;
-    playAnimation(name: any, tweenDuration?: number, reset?: boolean, onFinish?: any): void;
+    playAnimation(name?: any, tweenDuration?: number, reset?: boolean, onFinish?: any): void;
     stopAnimation(name?: any, tweenDuration?: number): void;
     blendInAnimation(name?: any, blendWeight?: number): void;
     playAllAnimations(tweenDuration?: number): void;
@@ -97,12 +97,12 @@ export function IntroFadeShader({ target }: {
             value?: any;
         };
         fTime: {
-            value?: number;
+            value: number;
         };
     };
     vertexShader: string;
     fragmentShader: string;
-    transparent: boolean;
+    transparent?: boolean;
 };
 export class IntroView extends ViewClass {
     constructor(nextView?: any);
@@ -127,11 +127,11 @@ export class PhysicsWrapper {
     simpleVelocity?: any;
     simpleGravity?: any;
     enableNoClip(): void;
-    noClip: boolean;
+    noClip?: boolean;
     disableNoClip(): void;
     enablePhysics(): void;
     enableDynamicCollisions(callback?: any): void;
-    dynamicCollisions: boolean;
+    dynamicCollisions?: boolean;
     boundingBox?: any;
     disableDynamicCollisions(): void;
     disablePhysics(): void;
@@ -177,8 +177,8 @@ export class ScrollList extends GameObjectClass {
     scrollPositionX?: any;
     scrollPositionY?: any;
     add(object?: any): void;
-    scrollMaxOffsetX?: number;
-    scrollMaxOffsetY?: number;
+    scrollMaxOffsetX: number;
+    scrollMaxOffsetY: number;
 }
 export class SkinnedGameObject extends GameObjectClass {
     constructor(...args: any[]);
@@ -227,10 +227,10 @@ export function createDefaultCube(container?: any, id?: any, { position, size, c
 }): any;
 export function defaultTo(value?: any, defaultValue?: any): any;
 export function fitToCamera(mesh?: any, camera?: any, preserveRatio?: boolean): void;
-export function fitToScreen(mesh: any, depth?: number, camera?: any, preserveRatio?: boolean): void;
+export function fitToScreen(mesh?: any, depth?: number, camera?: any, preserveRatio?: boolean): void;
 export function forAllMaterialTextures(material?: any, callback?: any): void;
-export function get3dScreenHeight(depth?: number, camera?: any): number;
-export function get3dScreenWidth(depth?: number, camera?: any): number;
+export function get3dScreenHeight(depth: number, camera?: any): number;
+export function get3dScreenWidth(depth: number, camera?: any): number;
 export function getRandomColor(): any;
 export function getRandomElement(set?: any): any;
 export function isDefined(value?: any): boolean;
@@ -246,7 +246,7 @@ export function parseLabel(object?: any): void;
 export function parseMaterial(object?: any): void;
 export function parseNavmap(object?: any): void;
 export function parseRotateXYZ(object?: any): void;
-export function parseScroll(object: any, { scene, scrollLists }: {
+export function parseScroll(object?: any, payload?: {
     scene?: any;
     scrollLists?: any;
 }): void;
@@ -290,9 +290,12 @@ declare class AssetsServiceClass {
     getDefaultCube(): any;
     getAmbientLight(groundColor?: number, skyColor?: number, intensity?: number): any;
     registerAsyncAsset(promisable?: any): any;
+    getTexture(path?: any): any;
+    getTextureSync(path?: any, then?: any): any;
     getImage(path?: any): any;
     getImageSync(path?: any, then?: any): any;
-    getHDRI(path?: any): any;
+    getHDRI(path?: any, encoding?: any): any;
+    getReflectionsTexture(path?: any): any;
     getModel(path?: any, { internalAllowPreloaded, forceUniqueMaterials, forceMaterialsType }?: {
         internalAllowPreloaded?: any;
         forceUniqueMaterials?: any;
@@ -374,10 +377,10 @@ declare class CameraServiceClass {
         collisionRadius?: any;
         occlusionStep?: any;
     }): void;
-    occlusionTest: boolean;
+    occlusionTest?: boolean;
     occlusionSettings: {
         allowTransparent?: any;
-        faceTarget: boolean;
+        faceTarget?: boolean;
     } | {
         allowTransparent?: undefined;
         faceTarget?: undefined;
@@ -390,9 +393,9 @@ declare class CameraServiceClass {
     detachedControls?: any;
     reattachCamera(): void;
     lockTranslation(): void;
-    translationLocked: boolean;
+    translationLocked?: boolean;
     lockRotation(): void;
-    rotationLocked: boolean;
+    rotationLocked?: boolean;
     unlockTranslation(): void;
     unlockRotation(): void;
     disposeCamera(id?: any): void;
@@ -402,8 +405,8 @@ declare class CameraServiceClass {
     cameraPosition?: any;
     followPivotPosition?: any;
     cameraQuaternion?: any;
-    followThreshold?: number;
-    tween?: number;
+    followThreshold: number;
+    tween: number;
 }
 declare class DummyDebugClass {
     on(debugFlag?: any): void;
@@ -419,7 +422,8 @@ declare class DummyDebugClass {
 declare class GameInfoServiceClass {
     addConfig(config?: {}): GameInfoServiceClass;
     config?: any;
-    system(fps?: number, pixelRatio?: number, antialiasing?: boolean, postprocessing?: boolean, sceneBackgroundDefault?: number): GameInfoServiceClass;
+    system(fps?: number, pixelRatio?: number, antialiasing?: boolean, postprocessing?: boolean, sceneBackgroundDefault?: number, correctBlenderLights?: boolean): GameInfoServiceClass;
+    vr(enabled?: boolean): GameInfoServiceClass;
     camera(fov?: number, near?: number, far?: number): GameInfoServiceClass;
     initialVars(vars?: {}): GameInfoServiceClass;
     vars(vars?: {}): GameInfoServiceClass;
@@ -456,7 +460,7 @@ declare class InteractionsServiceClass {
     onPointerUp(event?: any): void;
     camera?: any;
     addListeners(): void;
-    useTouch: boolean;
+    useTouch?: boolean;
     startTouch({ pointer, touch }: {
         pointer?: any;
         touch?: any;
@@ -485,11 +489,11 @@ declare class InteractionsServiceClass {
     delta?: any;
 }
 declare class MathServiceClass {
-    getVec2(x?: number, y?: number, id?: any): any;
+    getVec2(x: number, y: number, id?: any): any;
     releaseVec2(vector?: any): void;
     getQuaternion(id?: any): any;
     releaseQuaternion(quaternion?: any): void;
-    getVec3(x?: number, y?: number, z?: number, id?: any): any;
+    getVec3(x: number, y: number, z: number, id?: any): any;
     cloneVec3(sourceVector?: any): any;
     releaseVec3(vector?: any): void;
     registerId(object?: any, id?: any): void;
@@ -499,7 +503,7 @@ declare class MathServiceClass {
 declare class MoneyServiceClass {
     platformId?: any;
     init(): Promise<any>;
-    adsInitialised: boolean;
+    adsInitialised?: boolean;
     showAd(then?: () => void): Promise<any>;
 }
 declare class ParserServiceClass {
@@ -541,7 +545,7 @@ declare class ParticleServiceClass {
         root?: any;
         onFrame?: any;
         onReset?: any;
-        active: boolean;
+        active?: boolean;
     };
     createRandomParticle(pivot?: any, emitterProps?: any): void;
     getUniformBase(value?: any): any[];
@@ -564,7 +568,7 @@ declare class PhysicsServiceClass {
     disableNavmap(object?: any): void;
     updatePathfinder(): void;
     pathfinder?: any;
-    pathfinedEnabled: boolean;
+    pathfinedEnabled?: boolean;
     registerSurfaceHandler(surfaceType?: any, handlerClass?: any, onInteraction?: string, onEnter?: string, onLeave?: string): void;
     registerSurface(object?: any): void;
     getNavmaps(): any;
@@ -596,30 +600,31 @@ declare class RenderServiceClass {
     renderView(viewInstance?: any): void;
     currentView?: any;
     onSystemFrame(): void;
-    systemLoop?: number;
+    systemLoop: number;
     onAnimationFrame(): void;
-    animationLoop?: number;
+    animationLoop: number;
     onResumed?: any;
     onPaused?: any;
     onResize(): void;
     getWindowSize(): {
-        width?: number;
-        height?: number;
-        aspectRatio?: number;
+        width: number;
+        height: number;
+        aspectRatio: number;
     };
     pauseRendering(whenPaused?: any): any;
-    paused: boolean;
+    paused?: boolean;
     resumeRendering(whenResumed?: any): any;
     dispose(): void;
 }
 declare class StorageServiceClass {
-    useNative: boolean;
+    useNative?: boolean;
     init(): void;
+    getAllKeys(): any;
     set(key?: any, value?: any): any;
     get(key?: any): any;
 }
 declare class SystemServiceClass {
-    isCordova: boolean;
+    isCordova?: boolean;
     init({ statusBar }?: {
         statusBar?: any;
     }): void;
@@ -652,7 +657,7 @@ declare class UiServiceClass {
     onFrame(): void;
     disposeAll(): void;
     uiElements?: any[];
-    tween?: number;
+    tween: number;
 }
 declare class UtilsServiceClass {
     getRaycaster(): any;
@@ -668,8 +673,8 @@ declare class UtilsServiceClass {
     disposeAll(): void;
     poolEmpty?: any[];
     poolBlankMaterial?: any[];
-    poolEmptyTotal?: number;
-    poolBlankMaterialTotal?: number;
+    poolEmptyTotal: number;
+    poolBlankMaterialTotal: number;
 }
 declare class VarServiceClass {
     init({ language }?: {
@@ -679,6 +684,7 @@ declare class VarServiceClass {
     getVar(id?: any, onUpdate?: any, onCreate?: any): any;
     removeVar(id?: any): void;
     registerPersistentVar(id?: any, defaultValue?: any): any;
+    retrievePersistentVars(): any;
     resolveVar(variableString?: any, onResolve?: any, onCreate?: any): any;
     disposeListener(id?: any, callback?: any): void;
     disposeListeners(): void;

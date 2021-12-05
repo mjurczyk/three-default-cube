@@ -12,7 +12,8 @@ declare class GameInfoServiceClass {
         animations: {};
     };
     addConfig(config?: {}): GameInfoServiceClass;
-    system(fps?: number, pixelRatio?: number, antialiasing?: boolean, postprocessing?: boolean, sceneBackgroundDefault?: number): GameInfoServiceClass;
+    system(fps?: number, pixelRatio?: number, antialiasing?: boolean, postprocessing?: boolean, sceneBackgroundDefault?: number, correctBlenderLights?: boolean): GameInfoServiceClass;
+    vr(enabled?: boolean): GameInfoServiceClass;
     camera(fov?: number, near?: number, far?: number): GameInfoServiceClass;
     initialVars(vars?: {}): GameInfoServiceClass;
     vars(vars?: {}): GameInfoServiceClass;
