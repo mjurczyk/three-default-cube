@@ -20,12 +20,13 @@ Yep. Default Cube may make the most annoying parts of gamedev easier - but still
 
 ## Setting up a Default Cube game
 
-First, download the [boilerplate](https://github.com/mjurczyk/three-default-cube-boilerplate). Create a directory for it, then install the necessary dependencies (remember to also install the `three-default-cube` library itself):
+First, set up the [boilerplate](https://github.com/mjurczyk/three-default-cube-boilerplate). Create a directory for it, then install the necessary dependencies. For example:
 
 ```cli
-$ cd ./my-game-directory
+$ mkdir my-game
+$ cd my-game
+$ git clone git@github.com:mjurczyk/three-default-cube-boilerplate.git .
 $ npm install
-$ npm install three-default-cube
 ```
 
 Boilerplate contains a sample scene and a general setup. To start the development server use:

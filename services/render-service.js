@@ -64,17 +64,21 @@ class RenderServiceClass {
 
     this.scene = scene;
 
+    if (GameInfoService.config.system.vr) {
+      GameInfoService.config.system.postprocessing = false;
+    }
+
     const renderer = new Three.WebGLRenderer({
       antialias: GameInfoService.config.system.antialiasing,
-      powerPreference: 'high-performance',
-      stencil: false,
-      depth: false,
+      powerPreference: 'high-performance'
     });
 
     renderer.toneMapping = Three.ACESFilmicToneMapping;
     renderer.outputEncoding = Three.sRGBEncoding;
     renderer.autoClear = false;
     renderer.physicallyCorrectLights = true;
+
+    renderer.xr.enabled = GameInfoService.config.system.vr || false;
 
     renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);
@@ -189,7 +193,12 @@ class RenderServiceClass {
   }
 
   run() {
-    this.onAnimationFrame();
+    if (!this.renderer.xr.enabled) {
+      this.onAnimationFrame();
+    } else {
+      this.renderer.setAnimationLoop(() => this.onAnimationFrame());
+    }
+
     this.onSystemFrame();
   }
 
@@ -224,11 +233,13 @@ class RenderServiceClass {
   }
 
   onAnimationFrame() {
-    if (this.animationLoop) {
-      cancelAnimationFrame(this.animationLoop);
-    }
+    if (!this.renderer.xr.enabled) {
+      if (this.animationLoop) {
+        cancelAnimationFrame(this.animationLoop);
+      }
 
-    this.animationLoop = requestAnimationFrame(() => this.onAnimationFrame());
+      this.animationLoop = requestAnimationFrame(() => this.onAnimationFrame());
+    }
 
     const dt = this.animationClock.getDelta();
 

@@ -46,6 +46,16 @@ class GameInfoServiceClass {
     });
   }
 
+  vr(enabled = true) {
+    return this.addConfig({
+      system: {
+        ...(this.config.system || {}),
+        vr: enabled,
+        postprocessing: false
+      }
+    });
+  }
+
   camera(
     fov = 50,
     near = 0.1,

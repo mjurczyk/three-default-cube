@@ -90,7 +90,7 @@ class AssetsServiceClass {
     });
   }
 
-  getHDRI(path) {
+  getHDRI(path, encoding = Three.RGBEEncoding) {
     return this.registerAsyncAsset(resolve => {
       loaders.hdri
         .setDataType(Three.UnsignedByteType)
@@ -100,6 +100,7 @@ class AssetsServiceClass {
 
           const renderTarget = generator.fromEquirectangular(texture);
           const hdri = renderTarget.texture;
+          hdri.encoding = encoding || Three.RGBEEncoding;
 
           AssetsService.registerDisposable(hdri);
           AssetsService.registerDisposable(renderTarget);
@@ -108,6 +109,26 @@ class AssetsServiceClass {
 
           resolve(hdri);
         });
+    });
+  }
+
+  getReflectionsTexture(path) {
+    return this.registerAsyncAsset(resolve => {
+      this.getImage(path).then(texture => {
+        const renderer = RenderService.getRenderer();
+        const generator = new Three.PMREMGenerator(renderer);
+        const renderTarget = generator.fromEquirectangular(texture);
+
+        const reflections = renderTarget.texture;
+        reflections.encoding = Three.sRGBEncoding;
+
+        AssetsService.registerDisposable(reflections);
+        AssetsService.registerDisposable(renderTarget);
+        texture.dispose();
+        generator.dispose();
+
+        resolve(reflections);
+      });
     });
   }
 
