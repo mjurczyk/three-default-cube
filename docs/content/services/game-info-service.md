@@ -26,6 +26,16 @@ camera(
 )
 ```
 
+## vr (enabled = true)
+
+```
+vr(
+  enabled = true
+)
+```
+
+Enable VR capabilities. Disables postprocessing and enabled XR-compatible rendering loop.
+
 ## vars ()
 
 `vars({ varKey: varValue, ... })`

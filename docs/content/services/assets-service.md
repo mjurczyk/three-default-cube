@@ -14,21 +14,29 @@ Returns a cube.
 
 Returns a new hemisphere light, acting as an ambient light.
 
-## getImage ()
+## getTexture ()
 
-`getImage(path)`
+`getTexture(path)`
 
 Fetches an image as a `Three.Texture`.
 
-## getImageSync ()
+## getTextureSync ()
 
-See `getImage`. Synchronous.
+`getTexture(path, then)`
+
+See `getTexture`. Synchronous.
 
 ## getHDRI ()
 
-`getHDRI(path)`
+`getHDRI(path, encoding = Three.RGBEEncoding)`
 
 Fetches a HDRI texture.
+
+## getReflectionsTexture ()
+
+`getReflectionsTexture(path)`
+
+Fetches a reflections texture. Acts similar to `getHDRI`, but the texture is not encoded as HDRI texture automatically. Use for equirectangular maps in PNG / JPG formats.
 
 ## getModel ()
 

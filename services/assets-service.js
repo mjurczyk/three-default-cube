@@ -70,7 +70,7 @@ class AssetsServiceClass {
     return promised;
   }
 
-  getImage(path) {
+  getTexture(path) {
     return this.registerAsyncAsset((resolve) => {
       this.getImageSync(path, (image) => {
         resolve(image);
@@ -78,7 +78,7 @@ class AssetsServiceClass {
     });
   }
 
-  getImageSync(path, then) {
+  getTextureSync(path, then) {
     return loaders.images.load(path, (image) => {
       this.registerDisposable(image);
 
@@ -88,6 +88,18 @@ class AssetsServiceClass {
         then(image);
       }
     });
+  }
+
+  getImage(path) {
+    console.warn('AssetsService', 'getImage', 'AssetsService.getImage is deprecated, please use AssetsService.getTexture instead');
+
+    return this.getTexture(path);
+  }
+
+  getImageSync(path, then) {
+    console.warn('AssetsService', 'getImageSync', 'AssetsService.getImageSync is deprecated, please use AssetsService.getTextureSync instead');
+
+    return this.getTextureSync(path, then);
   }
 
   getHDRI(path, encoding = Three.RGBEEncoding) {
