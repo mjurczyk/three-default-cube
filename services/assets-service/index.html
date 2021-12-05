@@ -345,9 +345,10 @@
   <ul>
     <li><a href="/services/assets-service/#"getdefaultcube-">getDefaultCube ()</a></li>
     <li><a href="/services/assets-service/#"getambientlight-">getAmbientLight ()</a></li>
-    <li><a href="/services/assets-service/#"getimage-">getImage ()</a></li>
-    <li><a href="/services/assets-service/#"getimagesync-">getImageSync ()</a></li>
+    <li><a href="/services/assets-service/#"gettexture-">getTexture ()</a></li>
+    <li><a href="/services/assets-service/#"gettexturesync-">getTextureSync ()</a></li>
     <li><a href="/services/assets-service/#"gethdri-">getHDRI ()</a></li>
+    <li><a href="/services/assets-service/#"getreflectionstexture-">getReflectionsTexture ()</a></li>
     <li><a href="/services/assets-service/#"getmodel-">getModel ()</a></li>
     <li><a href="/services/assets-service/#"preloadmodel-">preloadModel ()</a></li>
     <li><a href="/services/assets-service/#"preloadfont-">preloadFont ()</a></li>
@@ -426,6 +427,7 @@
   <ul>
     <li><a href="/services/game-info-service/#"system-">system ()</a></li>
     <li><a href="/services/game-info-service/#"camera-">camera ()</a></li>
+    <li><a href="/services/game-info-service/#"vr-enabled--true">vr (enabled = true)</a></li>
     <li><a href="/services/game-info-service/#"vars-">vars ()</a></li>
     <li><a href="/services/game-info-service/#"labels-">labels ()</a></li>
     <li><a href="/services/game-info-service/#"animation-">animation ()</a></li>
@@ -758,14 +760,18 @@
 <h2 id="getambientlight-">getAmbientLight ()</h2>
 <p><code>getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0)</code></p>
 <p>Returns a new hemisphere light, acting as an ambient light.</p>
-<h2 id="getimage-">getImage ()</h2>
-<p><code>getImage(path)</code></p>
+<h2 id="gettexture-">getTexture ()</h2>
+<p><code>getTexture(path)</code></p>
 <p>Fetches an image as a <code>Three.Texture</code>.</p>
-<h2 id="getimagesync-">getImageSync ()</h2>
-<p>See <code>getImage</code>. Synchronous.</p>
+<h2 id="gettexturesync-">getTextureSync ()</h2>
+<p><code>getTexture(path, then)</code></p>
+<p>See <code>getTexture</code>. Synchronous.</p>
 <h2 id="gethdri-">getHDRI ()</h2>
-<p><code>getHDRI(path)</code></p>
+<p><code>getHDRI(path, encoding = Three.RGBEEncoding)</code></p>
 <p>Fetches a HDRI texture.</p>
+<h2 id="getreflectionstexture-">getReflectionsTexture ()</h2>
+<p><code>getReflectionsTexture(path)</code></p>
+<p>Fetches a reflections texture. Acts similar to <code>getHDRI</code>, but the texture is not encoded as HDRI texture automatically. Use for equirectangular maps in PNG / JPG formats.</p>
 <h2 id="getmodel-">getModel ()</h2>
 <pre tabindex="0"><code>getModel(
   path,

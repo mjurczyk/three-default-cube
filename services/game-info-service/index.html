@@ -345,9 +345,10 @@
   <ul>
     <li><a href="/services/assets-service/#"getdefaultcube-">getDefaultCube ()</a></li>
     <li><a href="/services/assets-service/#"getambientlight-">getAmbientLight ()</a></li>
-    <li><a href="/services/assets-service/#"getimage-">getImage ()</a></li>
-    <li><a href="/services/assets-service/#"getimagesync-">getImageSync ()</a></li>
+    <li><a href="/services/assets-service/#"gettexture-">getTexture ()</a></li>
+    <li><a href="/services/assets-service/#"gettexturesync-">getTextureSync ()</a></li>
     <li><a href="/services/assets-service/#"gethdri-">getHDRI ()</a></li>
+    <li><a href="/services/assets-service/#"getreflectionstexture-">getReflectionsTexture ()</a></li>
     <li><a href="/services/assets-service/#"getmodel-">getModel ()</a></li>
     <li><a href="/services/assets-service/#"preloadmodel-">preloadModel ()</a></li>
     <li><a href="/services/assets-service/#"preloadfont-">preloadFont ()</a></li>
@@ -426,6 +427,7 @@
   <ul>
     <li><a href="/services/game-info-service/#"system-">system ()</a></li>
     <li><a href="/services/game-info-service/#"camera-">camera ()</a></li>
+    <li><a href="/services/game-info-service/#"vr-enabled--true">vr (enabled = true)</a></li>
     <li><a href="/services/game-info-service/#"vars-">vars ()</a></li>
     <li><a href="/services/game-info-service/#"labels-">labels ()</a></li>
     <li><a href="/services/game-info-service/#"animation-">animation ()</a></li>
@@ -767,7 +769,12 @@
   near = 0.1,
   far = 2000.0,
 )
-</code></pre><h2 id="vars-">vars ()</h2>
+</code></pre><h2 id="vr-enabled--true">vr (enabled = true)</h2>
+<pre tabindex="0"><code>vr(
+  enabled = true
+)
+</code></pre><p>Enable VR capabilities. Disables postprocessing and enabled XR-compatible rendering loop.</p>
+<h2 id="vars-">vars ()</h2>
 <p><code>vars({ varKey: varValue, ... })</code></p>
 <p>Adds variables to the system config.</p>
 <h2 id="labels-">labels ()</h2>
@@ -783,7 +790,7 @@
 <h2 id="texture-">texture ()</h2>
 <p><code>texture(id, imagePath)</code></p>
 <p>Registers a global image reference. Can be used in views as:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getImage</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textures</span>.<span style="color:#a6e22e">sampleTexture</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">AssetsService</span>.<span style="color:#a6e22e">getTexture</span>(<span style="color:#a6e22e">GameInfoService</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">textures</span>.<span style="color:#a6e22e">sampleTexture</span>);
 </code></pre></div><h2 id="model-">model ()</h2>
 <p><code>model(id, modelPath)</code></p>
 <p>Registers a global model reference. Can be used in views as:</p>
