@@ -97,7 +97,7 @@ export function IntroFadeShader({ target }: {
             value?: any;
         };
         fTime: {
-            value: number;
+            value?: number;
         };
     };
     vertexShader: string;
@@ -177,8 +177,8 @@ export class ScrollList extends GameObjectClass {
     scrollPositionX?: any;
     scrollPositionY?: any;
     add(object?: any): void;
-    scrollMaxOffsetX: number;
-    scrollMaxOffsetY: number;
+    scrollMaxOffsetX?: number;
+    scrollMaxOffsetY?: number;
 }
 export class SkinnedGameObject extends GameObjectClass {
     constructor(...args: any[]);
@@ -229,8 +229,8 @@ export function defaultTo(value?: any, defaultValue?: any): any;
 export function fitToCamera(mesh?: any, camera?: any, preserveRatio?: boolean): void;
 export function fitToScreen(mesh?: any, depth?: number, camera?: any, preserveRatio?: boolean): void;
 export function forAllMaterialTextures(material?: any, callback?: any): void;
-export function get3dScreenHeight(depth: number, camera?: any): number;
-export function get3dScreenWidth(depth: number, camera?: any): number;
+export function get3dScreenHeight(depth?: number, camera?: any): number;
+export function get3dScreenWidth(depth?: number, camera?: any): number;
 export function getRandomColor(): any;
 export function getRandomElement(set?: any): any;
 export function isDefined(value?: any): boolean;
@@ -405,8 +405,8 @@ declare class CameraServiceClass {
     cameraPosition?: any;
     followPivotPosition?: any;
     cameraQuaternion?: any;
-    followThreshold: number;
-    tween: number;
+    followThreshold?: number;
+    tween?: number;
 }
 declare class DummyDebugClass {
     on(debugFlag?: any): void;
@@ -489,11 +489,11 @@ declare class InteractionsServiceClass {
     delta?: any;
 }
 declare class MathServiceClass {
-    getVec2(x: number, y: number, id?: any): any;
+    getVec2(x?: number, y?: number, id?: any): any;
     releaseVec2(vector?: any): void;
     getQuaternion(id?: any): any;
     releaseQuaternion(quaternion?: any): void;
-    getVec3(x: number, y: number, z: number, id?: any): any;
+    getVec3(x?: number, y?: number, z?: number, id?: any): any;
     cloneVec3(sourceVector?: any): any;
     releaseVec3(vector?: any): void;
     registerId(object?: any, id?: any): void;
@@ -600,16 +600,16 @@ declare class RenderServiceClass {
     renderView(viewInstance?: any): void;
     currentView?: any;
     onSystemFrame(): void;
-    systemLoop: number;
+    systemLoop?: number;
     onAnimationFrame(): void;
-    animationLoop: number;
+    animationLoop?: number;
     onResumed?: any;
     onPaused?: any;
     onResize(): void;
     getWindowSize(): {
-        width: number;
-        height: number;
-        aspectRatio: number;
+        width?: number;
+        height?: number;
+        aspectRatio?: number;
     };
     pauseRendering(whenPaused?: any): any;
     paused?: boolean;
@@ -657,7 +657,7 @@ declare class UiServiceClass {
     onFrame(): void;
     disposeAll(): void;
     uiElements?: any[];
-    tween: number;
+    tween?: number;
 }
 declare class UtilsServiceClass {
     getRaycaster(): any;
@@ -673,8 +673,8 @@ declare class UtilsServiceClass {
     disposeAll(): void;
     poolEmpty?: any[];
     poolBlankMaterial?: any[];
-    poolEmptyTotal: number;
-    poolBlankMaterialTotal: number;
+    poolEmptyTotal?: number;
+    poolBlankMaterialTotal?: number;
 }
 declare class VarServiceClass {
     init({ language }?: {
