@@ -93,6 +93,7 @@ a, a:hover, a:visited {
 
 .overview .list .list-search input {
   display: block;
+  width: 100%;
   color: var(--color-detail);
   appearance: none;
   -webkit-appearance: none;
@@ -102,6 +103,14 @@ a, a:hover, a:visited {
   border: 0;
   font-size: 16px;
   outline: 0;
+}
+
+.overview .list .list-search input::placeholder {
+  transition: color .1s ease;
+}
+
+.overview .list .list-search input:hover::placeholder {
+  color: var(--color-detail);
 }
 
 .overview .list ul {
