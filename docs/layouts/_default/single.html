@@ -83,7 +83,7 @@
                   }
                 }
               </script>
-              <input id="search" type="text" placeholder="Search..." onkeyup="filterSearch()" onblur="filterSearch()" />
+              <input id="search" type="text" placeholder="Search... 👀" onkeyup="filterSearch()" onblur="filterSearch()" />
             </div>
           </div>
           {{ range .Site.RegularPages }}
@@ -91,7 +91,7 @@
               <div class="list-category">
                 <a href="{{ .Permalink }}">{{ .Title }}</a>
               </div>
-              {{ replace .TableOfContents `href="#` (printf `href="%s#"` .Permalink) | safeHTML }}
+              {{ replace .TableOfContents `href="#` (printf `href="%s#"` .Permalink ) | safeHTML }}
             </div>
           {{ end }}
         </div>

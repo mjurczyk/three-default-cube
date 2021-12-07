@@ -52,3 +52,35 @@
     });
   });
 })();
+
+/* Generate ToC anchors */
+
+(function () {
+  const tableOfContents = document.querySelectorAll('#TableOfContents a');
+
+  Array.from(tableOfContents).forEach(node => {
+    const path = node.textContent.toLowerCase();
+  
+    node.href += path.toLowerCase().replace(/[^\w\s\-]/gi, '').replace(/\W/g, '-');
+  });
+})();
+
+/* Prefix search */
+
+(function () {
+  const searchField = document.querySelector('#search');
+  const previousValue = sessionStorage.getItem('search');
+
+  if (previousValue) {
+    searchField.value = previousValue;
+
+    if (typeof filterSearch === 'function') {
+      filterSearch();
+    }
+  }
+
+  searchField.addEventListener('keyup', (event) => {
+    console.info(event.target.value);
+    sessionStorage.setItem('search', event.target.value);
+  });
+})();
