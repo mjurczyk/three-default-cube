@@ -1197,11 +1197,15 @@ class MathServiceClass {
 
     _defineProperty(this, "poolQuaternions", []);
 
+    _defineProperty(this, "poolMatrix4", []);
+
     _defineProperty(this, "poolVec2Total", 0);
 
     _defineProperty(this, "poolVec3Total", 0);
 
     _defineProperty(this, "poolQuaternionsTotal", 0);
+
+    _defineProperty(this, "poolMatrix4Total", 0);
 
     _defineProperty(this, "leakRegistry", {});
   }
@@ -1242,6 +1246,25 @@ class MathServiceClass {
     quaternion.identity();
     this.unregisterId(quaternion);
     this.poolQuaternions.push(quaternion);
+  }
+
+  getMatrix4(id) {
+    const pooled = this.poolMatrix4.pop();
+
+    if (pooled) {
+      return pooled.identity();
+    }
+
+    this.poolMatrix4Total++;
+    const matrix = new Three__namespace.Matrix4();
+    this.registerId(matrix, id);
+    return matrix;
+  }
+
+  releaseMatrix4(matrix) {
+    matrix.identity();
+    this.unregisterId(matrix);
+    this.poolMatrix4.push(matrix);
   }
 
   getVec3(x = 0.0, y = 0.0, z = 0.0, id) {
@@ -2831,6 +2854,58 @@ const removePlaceholder = target => {
   target.isMesh = false;
 };
 
+class InstancedScene extends Three__namespace.Group {
+  constructor(sourceMesh, count) {
+    super();
+
+    _defineProperty(this, "objects", []);
+
+    _defineProperty(this, "dirty", []);
+
+    _defineProperty(this, "root", null);
+
+    this.root = new Three__namespace.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
+    this.add(this.root);
+    this.onCreate();
+  }
+
+  onCreate() {
+    TimeService.registerFrameListener(() => {
+      this.onFrame();
+    });
+  }
+
+  addVirtualObject(object) {
+    object.userData.__instancedSceneUid__ = this.objects.length;
+    this.objects.push(object);
+    this.markDirty(object);
+  }
+
+  markDirty(object) {
+    this.dirty.push(object);
+  }
+
+  onFrame() {
+    if (this.dirty.length > 0) {
+      this.root.instanceMatrix.needsUpdate = true;
+    }
+
+    this.dirty = this.dirty.filter(object => {
+      const {
+        __instancedSceneUid__
+      } = object.userData;
+      this.root.setMatrixAt(__instancedSceneUid__, object.matrixWorld);
+      return false;
+    });
+  }
+
+  dispose() {
+    this.dirty = null;
+    this.objects = null;
+  }
+
+}
+
 class ParticleServiceClass {
   constructor() {
     _defineProperty(this, "emitters", []);
@@ -2845,13 +2920,15 @@ class ParticleServiceClass {
           particles,
           onFrame,
           onReset,
-          active
+          active,
+          instanced,
+          instancedScene
         } = emitter;
         particles.forEach(target => {
           if (!target.visible) {
             if (!active) {
               return;
-            } else {
+            } else if (!instanced) {
               target.visible = true;
             }
           }
@@ -2862,6 +2939,11 @@ class ParticleServiceClass {
             target.visible = false;
             return;
           }
+
+          const originalMatrix = MathService.getMatrix4();
+          const originalMatrixWorld = MathService.getMatrix4();
+          originalMatrix.copy(target.children[0].matrix);
+          originalMatrixWorld.copy(target.children[0].matrixWorld);
 
           if (onFrame({
             target: target.children[0],
@@ -2878,6 +2960,17 @@ class ParticleServiceClass {
               this.createRandomParticle(target, emitter);
             } else {
               target.visible = false;
+            }
+          }
+
+          if (instanced) {
+            target.visible = false;
+            target.children[0].visible = false;
+            target.updateMatrix();
+            target.updateMatrixWorld();
+
+            if (!target.children[0].matrix.equals(originalMatrix) || !target.children[0].matrixWorld.equals(originalMatrixWorld)) {
+              instancedScene.markDirty(target.children[0]);
             }
           }
         });
@@ -2898,7 +2991,8 @@ class ParticleServiceClass {
     globalTransforms,
     onCreate,
     onFrame,
-    onReset
+    onReset,
+    instanced
   } = {}) {
     const emitterProps = {
       particleDensity: defaultTo(particleDensity, 10),
@@ -2914,7 +3008,9 @@ class ParticleServiceClass {
       root: object,
       onFrame,
       onReset,
-      active: true
+      active: true,
+      instanced,
+      instancedScene: null
     };
     const scene = RenderService.getScene();
 
@@ -2928,6 +3024,11 @@ class ParticleServiceClass {
 
     if (!onFrame || !particleObject) {
       return;
+    }
+
+    if (instanced) {
+      emitterProps.instancedScene = new InstancedScene(particleObject, emitterProps.particleDensity);
+      scene.add(emitterProps.instancedScene);
     }
 
     AssetsService.registerDisposable(particleObject);
@@ -2947,6 +3048,11 @@ class ParticleServiceClass {
         scene.add(particle);
       } else {
         object.add(particle);
+      }
+
+      if (instanced) {
+        particle.visible = false;
+        emitterProps.instancedScene.addVirtualObject(particle.children[0]);
       }
 
       AssetsService.registerDisposable(particle);

@@ -2,7 +2,7 @@ export const ParticleService: ParticleServiceClass;
 declare class ParticleServiceClass {
     emitters: any[];
     init(): void;
-    registerParticleEmitter(object: any, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset }?: {
+    registerParticleEmitter(object: any, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset, instanced }?: {
         particleObject: any;
         particleDensity: any;
         positionBase: any;
@@ -16,6 +16,7 @@ declare class ParticleServiceClass {
         onCreate: any;
         onFrame: any;
         onReset: any;
+        instanced: any;
     }): {
         particleDensity: any;
         positionBase: any;
@@ -31,6 +32,8 @@ declare class ParticleServiceClass {
         onFrame: any;
         onReset: any;
         active: boolean;
+        instanced: any;
+        instancedScene: any;
     };
     createRandomParticle(pivot: any, emitterProps: any): void;
     getUniformBase(value: any): any[];

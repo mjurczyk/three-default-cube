@@ -517,7 +517,7 @@ declare class ParserServiceClass {
 }
 declare class ParticleServiceClass {
     init(): void;
-    registerParticleEmitter(object?: any, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset }?: {
+    registerParticleEmitter(object?: any, { particleObject, particleDensity, positionBase, rotationBase, scaleBase, positionJitter, rotationJitter, scaleJitter, spawnJitter, globalTransforms, onCreate, onFrame, onReset, instanced }?: {
         particleObject?: any;
         particleDensity?: any;
         positionBase?: any;
@@ -531,6 +531,7 @@ declare class ParticleServiceClass {
         onCreate?: any;
         onFrame?: any;
         onReset?: any;
+        instanced?: boolean;
     }): {
         particleDensity?: any;
         positionBase?: any;
@@ -546,6 +547,7 @@ declare class ParticleServiceClass {
         onFrame?: any;
         onReset?: any;
         active?: boolean;
+        instanced?: boolean;
     };
     createRandomParticle(pivot?: any, emitterProps?: any): void;
     getUniformBase(value?: any): any[];

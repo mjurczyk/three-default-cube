@@ -5,10 +5,12 @@ class MathServiceClass {
   poolVec2 = [];
   poolVec3 = [];
   poolQuaternions = [];
+  poolMatrix4 = [];
 
   poolVec2Total = 0;
   poolVec3Total = 0;
   poolQuaternionsTotal = 0;
+  poolMatrix4Total = 0;
 
   leakRegistry = {};
 
@@ -59,6 +61,31 @@ class MathServiceClass {
 
     this.poolQuaternions.push(quaternion);
   }
+
+  getMatrix4(id) {
+    const pooled = this.poolMatrix4.pop();
+
+    if (pooled) {
+      return pooled.identity();
+    }
+
+    this.poolMatrix4Total++;
+
+    const matrix = new Three.Matrix4();
+
+    this.registerId(matrix, id);
+
+    return matrix;
+  }
+
+  releaseMatrix4(matrix) {
+    matrix.identity();
+
+    this.unregisterId(matrix);
+
+    this.poolMatrix4.push(matrix);
+  }
+
 
   getVec3(x = 0.0, y = 0.0, z = 0.0, id) {
     const pooled = this.poolVec3.pop();
