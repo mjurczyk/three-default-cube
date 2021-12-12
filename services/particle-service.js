@@ -15,6 +15,19 @@ class ParticleServiceClass {
       this.emitters.forEach(emitter => {
         const { particles, onFrame, onReset, active, instanced, instancedScene } = emitter;
 
+        if (!particles.length) {
+          return;
+        }
+
+        let visible = true;
+        particles[0].parent.traverseAncestors(parent => {
+          visible = parent.visible && visible;
+        });
+
+        if (!visible) {
+          return;
+        }
+
         particles.forEach(target => {
           if (!target.visible) {
             if (!active) {
