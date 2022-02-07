@@ -5,6 +5,7 @@ import {
   Preloader,
   AssetsService,
   RenderService,
+  SceneService
 } from 'three-default-cube';
 
 export class TemplateView extends ViewClass {
