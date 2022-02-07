@@ -29,6 +29,7 @@
   "devDependencies": {
     "@capacitor/cli": "2.4.7",
     "@ionic/cli": "^6.16.3",
+    "chess.js": "^0.12.1",
     "three-default-cube": "0.1.10"
   },
   "scripts": {

@@ -86,6 +86,10 @@
   </url><url>
     <loc>/downloads/</loc>
   </url><url>
+    <loc>/examples/example-chess/</loc>
+  </url><url>
+    <loc>/examples/</loc>
+  </url><url>
     <loc>/templates/</loc>
   </url><url>
     <loc>/todo/</loc>
@@ -95,6 +99,8 @@
     <loc>/categories/</loc>
   </url><url>
     <loc>/</loc>
+  </url><url>
+    <loc>/examples/</loc>
   </url><url>
     <loc>/game-objects/</loc>
   </url><url>

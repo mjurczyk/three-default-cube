@@ -580,6 +580,24 @@ Splices and returns a random element from an array.</description>
     </item>
     
     <item>
+      <title>Example: Chess</title>
+      <link>/examples/example-chess/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/examples/example-chess/</guid>
+      <description>Download .glb</description>
+    </item>
+    
+    <item>
+      <title>Examples</title>
+      <link>/examples/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/examples/</guid>
+      <description>  Chess  </description>
+    </item>
+    
+    <item>
       <title>Templates</title>
       <link>/templates/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>

@@ -14,6 +14,7 @@ import { DemoPersistence } from './game-views/demo-persistence';
 import { DemoPhysics } from './game-views/demo-physics';
 import { DemoAi } from './game-views/demo-ai';
 import { DemoUiAlignment } from './game-views/demo-ui-alignment';
+import { DemoChessBoardView } from './game-views/demo-example-chess-board';
 const { demoId } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
 
 DummyDebug.on(DebugFlags.DEBUG_ENABLE);
@@ -28,7 +29,7 @@ if (demoId === 'debugging') {
 }
 
 GameInfoService
-  .system(60, 1.0, true, true, 0x000000)
+  .system(60, window.devicePixelRatio, true, true, 0x000000)
   .camera(50, 0.1, 1000.0)
   .texture('spinner', require('./assets/ui/spinner-default.png'))
   .font('default', require('./assets/ui/font.ttf'))
@@ -49,6 +50,7 @@ SystemService.onReady(async () => {
     'physics': new DemoPhysics(),
     'ai': new DemoAi(),
     'ui-alignment': new DemoUiAlignment(),
+    'example-chess-board': new DemoChessBoardView(),
   })[demoId]);
 
   RenderService.run();
