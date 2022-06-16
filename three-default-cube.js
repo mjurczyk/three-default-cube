@@ -2924,6 +2924,20 @@ class ParticleServiceClass {
           instanced,
           instancedScene
         } = emitter;
+
+        if (!particles.length) {
+          return;
+        }
+
+        let visible = true;
+        particles[0].parent.traverseAncestors(parent => {
+          visible = parent.visible && visible;
+        });
+
+        if (!visible) {
+          return;
+        }
+
         particles.forEach(target => {
           if (!target.visible) {
             if (!active) {
@@ -3158,6 +3172,8 @@ class RenderServiceClass {
 
     _defineProperty(this, "postProcessingEffects", {});
 
+    _defineProperty(this, "smaaPostprocessingTextures", {});
+
     _defineProperty(this, "scene", null);
 
     _defineProperty(this, "controls", null);
@@ -3205,7 +3221,7 @@ class RenderServiceClass {
     }
 
     const renderer = new Three__namespace.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing,
+      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
     renderer.toneMapping = Three__namespace.ACESFilmicToneMapping;
@@ -3271,6 +3287,22 @@ class RenderServiceClass {
     uiRenderPass.clear = false;
     this.composer.addPass(uiRenderPass);
     this.composer.addPass(new postprocessing.ClearPass(false, true, false));
+
+    if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
+      const smaaEffect = new postprocessing.SMAAEffect(this.smaaPostprocessingTextures.search, this.smaaPostprocessingTextures.area, postprocessing.SMAAPreset.HIGH, postprocessing.EdgeDetectionMode.COLOR);
+      smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
+      smaaEffect.edgeDetectionMaterial.setPredicationMode(postprocessing.PredicationMode.DEPTH);
+      smaaEffect.edgeDetectionMaterial.setPredicationThreshold(0.002);
+      smaaEffect.edgeDetectionMaterial.setPredicationScale(1.0);
+      const smaaPass = new postprocessing.EffectPass(this.camera, smaaEffect);
+      this.composer.addPass(smaaPass);
+    } else {
+      console.info('RenderService', 'initPostProcessing', 'SMAA textures not available', {
+        area: this.smaaPostprocessingTextures.area,
+        search: this.smaaPostprocessingTextures.search
+      });
+    }
+
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -3316,6 +3348,18 @@ class RenderServiceClass {
   resetPostProcessing() {
     Object.keys(this.postProcessingEffects).forEach(effect => {
       this.resetPostProcessingEffect(effect);
+    });
+  }
+
+  createSMAATextures() {
+    return new Promise(resolve => {
+      const smaaImageLoader = new postprocessing.SMAAImageLoader();
+      smaaImageLoader.disableCache = true;
+      smaaImageLoader.load(([search, area]) => {
+        this.smaaPostprocessingTextures.search = search;
+        this.smaaPostprocessingTextures.area = area;
+        resolve();
+      });
     });
   }
 
@@ -5952,6 +5996,10 @@ class SystemServiceClass {
     }
 
     this.promised.push(VarService.retrievePersistentVars());
+
+    if (GameInfoService.config.system.postprocessing) {
+      this.promised.push(RenderService.createSMAATextures());
+    }
 
     if (this.isCordova) {
       this.promised.push(new Promise(resolve => {

@@ -3,7 +3,7 @@ import { MathUtils as MathUtils$1 } from 'three';
 import * as uuid from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
-import { EffectComposer, RenderPass, ClearPass, BloomEffect, EffectPass } from 'postprocessing';
+import { EffectComposer, RenderPass, ClearPass, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode, EffectPass, BloomEffect, SMAAImageLoader } from 'postprocessing';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { Plugins } from '@capacitor/core';
 import { AdSize, AdPosition } from '@capacitor-community/admob';
@@ -1167,11 +1167,15 @@ class MathServiceClass {
 
     _defineProperty(this, "poolQuaternions", []);
 
+    _defineProperty(this, "poolMatrix4", []);
+
     _defineProperty(this, "poolVec2Total", 0);
 
     _defineProperty(this, "poolVec3Total", 0);
 
     _defineProperty(this, "poolQuaternionsTotal", 0);
+
+    _defineProperty(this, "poolMatrix4Total", 0);
 
     _defineProperty(this, "leakRegistry", {});
   }
@@ -1212,6 +1216,25 @@ class MathServiceClass {
     quaternion.identity();
     this.unregisterId(quaternion);
     this.poolQuaternions.push(quaternion);
+  }
+
+  getMatrix4(id) {
+    const pooled = this.poolMatrix4.pop();
+
+    if (pooled) {
+      return pooled.identity();
+    }
+
+    this.poolMatrix4Total++;
+    const matrix = new Three.Matrix4();
+    this.registerId(matrix, id);
+    return matrix;
+  }
+
+  releaseMatrix4(matrix) {
+    matrix.identity();
+    this.unregisterId(matrix);
+    this.poolMatrix4.push(matrix);
   }
 
   getVec3(x = 0.0, y = 0.0, z = 0.0, id) {
@@ -2801,6 +2824,58 @@ const removePlaceholder = target => {
   target.isMesh = false;
 };
 
+class InstancedScene extends Three.Group {
+  constructor(sourceMesh, count) {
+    super();
+
+    _defineProperty(this, "objects", []);
+
+    _defineProperty(this, "dirty", []);
+
+    _defineProperty(this, "root", null);
+
+    this.root = new Three.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
+    this.add(this.root);
+    this.onCreate();
+  }
+
+  onCreate() {
+    TimeService.registerFrameListener(() => {
+      this.onFrame();
+    });
+  }
+
+  addVirtualObject(object) {
+    object.userData.__instancedSceneUid__ = this.objects.length;
+    this.objects.push(object);
+    this.markDirty(object);
+  }
+
+  markDirty(object) {
+    this.dirty.push(object);
+  }
+
+  onFrame() {
+    if (this.dirty.length > 0) {
+      this.root.instanceMatrix.needsUpdate = true;
+    }
+
+    this.dirty = this.dirty.filter(object => {
+      const {
+        __instancedSceneUid__
+      } = object.userData;
+      this.root.setMatrixAt(__instancedSceneUid__, object.matrixWorld);
+      return false;
+    });
+  }
+
+  dispose() {
+    this.dirty = null;
+    this.objects = null;
+  }
+
+}
+
 class ParticleServiceClass {
   constructor() {
     _defineProperty(this, "emitters", []);
@@ -2815,13 +2890,29 @@ class ParticleServiceClass {
           particles,
           onFrame,
           onReset,
-          active
+          active,
+          instanced,
+          instancedScene
         } = emitter;
+
+        if (!particles.length) {
+          return;
+        }
+
+        let visible = true;
+        particles[0].parent.traverseAncestors(parent => {
+          visible = parent.visible && visible;
+        });
+
+        if (!visible) {
+          return;
+        }
+
         particles.forEach(target => {
           if (!target.visible) {
             if (!active) {
               return;
-            } else {
+            } else if (!instanced) {
               target.visible = true;
             }
           }
@@ -2832,6 +2923,11 @@ class ParticleServiceClass {
             target.visible = false;
             return;
           }
+
+          const originalMatrix = MathService.getMatrix4();
+          const originalMatrixWorld = MathService.getMatrix4();
+          originalMatrix.copy(target.children[0].matrix);
+          originalMatrixWorld.copy(target.children[0].matrixWorld);
 
           if (onFrame({
             target: target.children[0],
@@ -2848,6 +2944,17 @@ class ParticleServiceClass {
               this.createRandomParticle(target, emitter);
             } else {
               target.visible = false;
+            }
+          }
+
+          if (instanced) {
+            target.visible = false;
+            target.children[0].visible = false;
+            target.updateMatrix();
+            target.updateMatrixWorld();
+
+            if (!target.children[0].matrix.equals(originalMatrix) || !target.children[0].matrixWorld.equals(originalMatrixWorld)) {
+              instancedScene.markDirty(target.children[0]);
             }
           }
         });
@@ -2868,7 +2975,8 @@ class ParticleServiceClass {
     globalTransforms,
     onCreate,
     onFrame,
-    onReset
+    onReset,
+    instanced
   } = {}) {
     const emitterProps = {
       particleDensity: defaultTo(particleDensity, 10),
@@ -2884,7 +2992,9 @@ class ParticleServiceClass {
       root: object,
       onFrame,
       onReset,
-      active: true
+      active: true,
+      instanced,
+      instancedScene: null
     };
     const scene = RenderService.getScene();
 
@@ -2898,6 +3008,11 @@ class ParticleServiceClass {
 
     if (!onFrame || !particleObject) {
       return;
+    }
+
+    if (instanced) {
+      emitterProps.instancedScene = new InstancedScene(particleObject, emitterProps.particleDensity);
+      scene.add(emitterProps.instancedScene);
     }
 
     AssetsService.registerDisposable(particleObject);
@@ -2917,6 +3032,11 @@ class ParticleServiceClass {
         scene.add(particle);
       } else {
         object.add(particle);
+      }
+
+      if (instanced) {
+        particle.visible = false;
+        emitterProps.instancedScene.addVirtualObject(particle.children[0]);
       }
 
       AssetsService.registerDisposable(particle);
@@ -3022,6 +3142,8 @@ class RenderServiceClass {
 
     _defineProperty(this, "postProcessingEffects", {});
 
+    _defineProperty(this, "smaaPostprocessingTextures", {});
+
     _defineProperty(this, "scene", null);
 
     _defineProperty(this, "controls", null);
@@ -3069,7 +3191,7 @@ class RenderServiceClass {
     }
 
     const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing,
+      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
     renderer.toneMapping = Three.ACESFilmicToneMapping;
@@ -3135,6 +3257,22 @@ class RenderServiceClass {
     uiRenderPass.clear = false;
     this.composer.addPass(uiRenderPass);
     this.composer.addPass(new ClearPass(false, true, false));
+
+    if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
+      const smaaEffect = new SMAAEffect(this.smaaPostprocessingTextures.search, this.smaaPostprocessingTextures.area, SMAAPreset.HIGH, EdgeDetectionMode.COLOR);
+      smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
+      smaaEffect.edgeDetectionMaterial.setPredicationMode(PredicationMode.DEPTH);
+      smaaEffect.edgeDetectionMaterial.setPredicationThreshold(0.002);
+      smaaEffect.edgeDetectionMaterial.setPredicationScale(1.0);
+      const smaaPass = new EffectPass(this.camera, smaaEffect);
+      this.composer.addPass(smaaPass);
+    } else {
+      console.info('RenderService', 'initPostProcessing', 'SMAA textures not available', {
+        area: this.smaaPostprocessingTextures.area,
+        search: this.smaaPostprocessingTextures.search
+      });
+    }
+
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -3180,6 +3318,18 @@ class RenderServiceClass {
   resetPostProcessing() {
     Object.keys(this.postProcessingEffects).forEach(effect => {
       this.resetPostProcessingEffect(effect);
+    });
+  }
+
+  createSMAATextures() {
+    return new Promise(resolve => {
+      const smaaImageLoader = new SMAAImageLoader();
+      smaaImageLoader.disableCache = true;
+      smaaImageLoader.load(([search, area]) => {
+        this.smaaPostprocessingTextures.search = search;
+        this.smaaPostprocessingTextures.area = area;
+        resolve();
+      });
     });
   }
 
@@ -3423,7 +3573,7 @@ class AssetsServiceClass {
     return promised;
   }
 
-  getImage(path) {
+  getTexture(path) {
     return this.registerAsyncAsset(resolve => {
       this.getImageSync(path, image => {
         resolve(image);
@@ -3431,7 +3581,7 @@ class AssetsServiceClass {
     });
   }
 
-  getImageSync(path, then) {
+  getTextureSync(path, then) {
     return loaders.images.load(path, image => {
       this.registerDisposable(image);
       image.encoding = Three.sRGBEncoding;
@@ -3440,6 +3590,16 @@ class AssetsServiceClass {
         then(image);
       }
     });
+  }
+
+  getImage(path) {
+    console.warn('AssetsService', 'getImage', 'AssetsService.getImage is deprecated, please use AssetsService.getTexture instead');
+    return this.getTexture(path);
+  }
+
+  getImageSync(path, then) {
+    console.warn('AssetsService', 'getImageSync', 'AssetsService.getImageSync is deprecated, please use AssetsService.getTextureSync instead');
+    return this.getTextureSync(path, then);
   }
 
   getHDRI(path, encoding = Three.RGBEEncoding) {
@@ -3461,7 +3621,7 @@ class AssetsServiceClass {
 
   getReflectionsTexture(path) {
     return this.registerAsyncAsset(resolve => {
-      this.getImage(path).then(texture => {
+      this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
         const generator = new Three.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
@@ -5422,7 +5582,7 @@ class Preloader extends GameObjectClass {
     }));
     background.name = 'background';
     const spinner = new Three.Mesh(new Three.PlaneBufferGeometry(1.0, 1.0), new Three.MeshBasicMaterial({
-      map: await AssetsService.getImage(this.spinnerTexture),
+      map: await AssetsService.getTexture(this.spinnerTexture),
       transparent: true
     }));
     spinner.name = 'spinner';
@@ -5806,6 +5966,10 @@ class SystemServiceClass {
     }
 
     this.promised.push(VarService.retrievePersistentVars());
+
+    if (GameInfoService.config.system.postprocessing) {
+      this.promised.push(RenderService.createSMAATextures());
+    }
 
     if (this.isCordova) {
       this.promised.push(new Promise(resolve => {

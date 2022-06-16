@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.45",
+  "version": "0.1.57",
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
   "types": "./types/three-default-cube.d.ts",
@@ -13,11 +13,10 @@
     "types": "./types"
   },
   "scripts": {
-    "build:all": "npm run build:js && npm run build:types && npm pack",
-    "build": "rollup --config ./rollup-config/cjs.config.js && npx -p typescript tsc three-default-cube.js --declaration --allowJs --emitDeclarationOnly --outDir types",
-    "build:module": "rollup --config ./rollup-config/es.config.js && npx -p typescript tsc three-default-cube.module.js --declaration --allowJs --emitDeclarationOnly --outDir types",
+    "build:all": "npm run build:js && npm pack",
+    "build": "rollup --config ./rollup-config/cjs.config.js",
+    "build:module": "rollup --config ./rollup-config/es.config.js",
     "build:js": "npm run build && npm run build:module",
-    "build:types": "npx -p typescript tsc index.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "build:docs": "cd ./docs && hugo && cd ../",
     "docs": "cd docs && hugo server -D"
   },
@@ -50,8 +49,8 @@
     "@ionic-native/screen-orientation": "5.30.0",
     "@capacitor-community/admob": "1.2.6",
     "howler": "2.2.1",
-    "postprocessing": "6.18.0",
     "troika-three-text": "0.35.0",
-    "three-pathfinding": "0.14.1"
+    "three-pathfinding": "0.14.1",
+    "postprocessing": "6.19.0"
   }
 }

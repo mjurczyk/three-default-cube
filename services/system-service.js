@@ -5,6 +5,8 @@ import { ScreenOrientation } from '@ionic-native/screen-orientation';
 import { StorageService } from './storage-service';
 import { DebugFlags, DummyDebug } from './dummy-debug';
 import { VarService } from './var-service';
+import { RenderService } from './render-service';
+import { GameInfoService } from './game-info-service';
 
 const { App, StatusBar } = Plugins;
 
@@ -41,6 +43,10 @@ class SystemServiceClass {
     }
 
     this.promised.push(VarService.retrievePersistentVars());
+
+    if (GameInfoService.config.system.postprocessing) {
+      this.promised.push(RenderService.createSMAATextures());
+    }
 
     if (this.isCordova) {
       this.promised.push(new Promise((resolve) => {

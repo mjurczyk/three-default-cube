@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import { EffectComposer, RenderPass, EffectPass, BloomEffect, ClearPass } from 'postprocessing';
+import { EffectComposer, RenderPass, EffectPass, BloomEffect, ClearPass, SMAAImageLoader, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode } from 'postprocessing';
 import { AnimationService } from './animation-service';
 import { AssetsService } from './assets-service';
 import { CameraService } from './camera-service';
@@ -22,6 +22,7 @@ class RenderServiceClass {
   renderer = null;
   composer = null;
   postProcessingEffects = {};
+  smaaPostprocessingTextures = {};
   scene = null;
   controls = null;
   currentView = null;
@@ -69,7 +70,7 @@ class RenderServiceClass {
     }
 
     const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing,
+      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
 
@@ -139,6 +140,28 @@ class RenderServiceClass {
 
     this.composer.addPass(new ClearPass(false, true, false));
 
+    if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
+      const smaaEffect = new SMAAEffect(
+        this.smaaPostprocessingTextures.search,
+        this.smaaPostprocessingTextures.area,
+        SMAAPreset.HIGH,
+        EdgeDetectionMode.COLOR
+      );
+
+      smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
+      smaaEffect.edgeDetectionMaterial.setPredicationMode(PredicationMode.DEPTH);
+      smaaEffect.edgeDetectionMaterial.setPredicationThreshold(0.002);
+      smaaEffect.edgeDetectionMaterial.setPredicationScale(1.0);
+
+      const smaaPass = new EffectPass(this.camera, smaaEffect);
+      this.composer.addPass(smaaPass);
+    } else {
+      console.info('RenderService', 'initPostProcessing', 'SMAA textures not available', {
+        area: this.smaaPostprocessingTextures.area,
+        search: this.smaaPostprocessingTextures.search
+      });
+    }
+
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -189,6 +212,20 @@ class RenderServiceClass {
   resetPostProcessing() {
     Object.keys(this.postProcessingEffects).forEach(effect => {
       this.resetPostProcessingEffect(effect);
+    });
+  }
+
+  createSMAATextures() {
+    return new Promise(resolve => {
+      const smaaImageLoader = new SMAAImageLoader();
+      smaaImageLoader.disableCache = true;
+
+      smaaImageLoader.load(([ search, area ]) => {
+        this.smaaPostprocessingTextures.search = search;
+        this.smaaPostprocessingTextures.area = area;
+
+        resolve();
+      });
     });
   }
 
