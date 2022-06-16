@@ -1,7 +1,6 @@
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { AssetsService } from './assets-service';
 import { MathService } from './math-service';
-import { MoneyService } from './money-service';
 import { RenderService } from './render-service';
 import { StorageService } from './storage-service';
 import { TimeService } from './time-service';
@@ -21,8 +20,6 @@ export const DebugFlags = {
   DEBUG_SCROLL_VISIBLE: 'DEBUG_SCROLL_VISIBLE',
   DEBUG_TIME_LISTENERS: 'DEBUG_TIME_LISTENERS',
   DEBUG_SKINNING_SKELETONS: 'DEBUG_SKINNING_SKELETONS',
-  DEBUG_ADS: 'DEBUG_ADS',
-  DEBUG_DISABLE_ADS: 'DEBUG_DISABLE_ADS',
   DEBUG_STORAGE: 'DEBUG_STORAGE',
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
@@ -186,15 +183,6 @@ class DummyDebugClass {
           { text: Object.keys(TimeService.persistentFrameListeners).length, color: LogsHighlightColor },
           { text: 'Vars:' },
           { text: Object.keys(VarService.listeners).flatMap(key => VarService.listeners[key]).length, color: LogsHighlightColor }
-        ));
-      }
-
-      if (this.get(DebugFlags.DEBUG_ADS)) {
-        outputElement.appendChild(this.createLogLine(
-          { text: 'Ads:' },
-          { text: MoneyService.adsDisabled ? 'disabled' : 'enabled', color: LogsHighlightColor },
-          { text: 'AdStat:' },
-          { text: MoneyService.adsInitialised ? 'ok' : 'error', color: LogsHighlightColor },
         ));
       }
 

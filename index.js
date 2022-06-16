@@ -36,7 +36,6 @@ export * from './services/game-info-service';
 export * from './services/input-service';
 export * from './services/interactions-service';
 export * from './services/math-service';
-export * from './services/money-service';
 export * from './services/parser-service';
 export * from './services/particle-service';
 export * from './services/physics-service';

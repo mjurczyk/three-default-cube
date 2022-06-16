@@ -53,7 +53,6 @@ export class IntroView extends ViewClass {
             VarService.registerPersistentVar('playerMapRecords', []),
             VarService.registerPersistentVar('optionsShowDriver', true),
             VarService.registerPersistentVar('optionsAudioVolume', 0.2),
-            VarService.registerPersistentVar('optionsAdsEnabled', true),
             VarService.registerPersistentVar('optionsPerformanceMode', false),
             VarService.registerPersistentVar('statsTotalPlaytime', 0),
             VarService.registerPersistentVar('statsMapPlays', []),

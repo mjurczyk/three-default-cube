@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.1.57",
+  "version": "0.1.58",
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
   "types": "./types/three-default-cube.d.ts",
@@ -47,7 +47,6 @@
     "@ionic-native/native-storage": "5.33.1",
     "@ionic-native/navigation-bar": "5.33.1",
     "@ionic-native/screen-orientation": "5.30.0",
-    "@capacitor-community/admob": "1.2.6",
     "howler": "2.2.1",
     "troika-three-text": "0.35.0",
     "three-pathfinding": "0.14.1",

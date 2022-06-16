@@ -5,8 +5,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { EffectComposer, RenderPass, ClearPass, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode, EffectPass, BloomEffect, SMAAImageLoader } from 'postprocessing';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { Plugins } from '@capacitor/core';
-import { AdSize, AdPosition } from '@capacitor-community/admob';
 import { NativeStorage } from '@ionic-native/native-storage';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
@@ -14,6 +12,7 @@ import { Pathfinding } from 'three-pathfinding';
 import { Howler, Howl } from 'howler';
 import { preloadFont, Text as Text$1 } from 'troika-three-text';
 import { isDefined as isDefined$1, AssetsService as AssetsService$1 } from 'three-default-cube';
+import { Plugins } from '@capacitor/core';
 import { NavigationBar } from '@ionic-native/navigation-bar';
 import { ScreenOrientation } from '@ionic-native/screen-orientation';
 
@@ -305,6 +304,95 @@ class AnimationServiceClass {
 
 const AnimationService = new AnimationServiceClass();
 
+class StorageServiceClass {
+  constructor() {
+    _defineProperty(this, "reads", 0);
+
+    _defineProperty(this, "writes", 0);
+
+    _defineProperty(this, "useNative", true);
+
+    this.useNative = typeof cordova !== 'undefined';
+  }
+
+  init() {
+    this.set('system.control', Date.now());
+  }
+
+  getAllKeys() {
+    return new Promise(resolve => {
+      if (!this.useNative) {
+        return resolve(Object.keys(localStorage));
+      }
+
+      return NativeStorage.keys(keys => resolve(keys), error => {
+        if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+          console.info('StorageServiceClass', 'getAllKeys', 'error', {
+            error
+          });
+        }
+
+        return resolve([]);
+      });
+    });
+  }
+
+  set(key, value) {
+    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      console.info('StorageServiceClass', 'set', {
+        key,
+        value
+      });
+    }
+
+    this.writes++;
+
+    if (!this.useNative) {
+      return Promise.resolve(localStorage.setItem(key, JSON.stringify(value)));
+    }
+
+    return NativeStorage.setItem(key, value).catch(error => {
+      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+        console.info('StorageServiceClass', 'set', 'not saved', {
+          key,
+          value,
+          error
+        });
+      }
+
+      return Promise.resolve(null);
+    });
+  }
+
+  get(key) {
+    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      console.info('StorageServiceClass', 'get', {
+        key
+      });
+    }
+
+    this.reads++;
+
+    if (!this.useNative) {
+      return Promise.resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+    }
+
+    return NativeStorage.getItem(key).catch(error => {
+      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+        console.info('StorageServiceClass', 'get', 'not read', {
+          key,
+          error
+        });
+      }
+
+      return Promise.resolve(null);
+    });
+  }
+
+}
+
+const StorageService = new StorageServiceClass();
+
 class GameInfoServiceClass {
   constructor() {
     _defineProperty(this, "config", {
@@ -446,283 +534,6 @@ class GameInfoServiceClass {
 
 const GameInfoService = new GameInfoServiceClass();
 
-class StorageServiceClass {
-  constructor() {
-    _defineProperty(this, "reads", 0);
-
-    _defineProperty(this, "writes", 0);
-
-    _defineProperty(this, "useNative", true);
-
-    this.useNative = typeof cordova !== 'undefined';
-  }
-
-  init() {
-    this.set('system.control', Date.now());
-  }
-
-  getAllKeys() {
-    return new Promise(resolve => {
-      if (!this.useNative) {
-        return resolve(Object.keys(localStorage));
-      }
-
-      return NativeStorage.keys(keys => resolve(keys), error => {
-        if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
-          console.info('StorageServiceClass', 'getAllKeys', 'error', {
-            error
-          });
-        }
-
-        return resolve([]);
-      });
-    });
-  }
-
-  set(key, value) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
-      console.info('StorageServiceClass', 'set', {
-        key,
-        value
-      });
-    }
-
-    this.writes++;
-
-    if (!this.useNative) {
-      return Promise.resolve(localStorage.setItem(key, JSON.stringify(value)));
-    }
-
-    return NativeStorage.setItem(key, value).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
-        console.info('StorageServiceClass', 'set', 'not saved', {
-          key,
-          value,
-          error
-        });
-      }
-
-      return Promise.resolve(null);
-    });
-  }
-
-  get(key) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
-      console.info('StorageServiceClass', 'get', {
-        key
-      });
-    }
-
-    this.reads++;
-
-    if (!this.useNative) {
-      return Promise.resolve(JSON.parse(localStorage.getItem(key) || 'null'));
-    }
-
-    return NativeStorage.getItem(key).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
-        console.info('StorageServiceClass', 'get', 'not read', {
-          key,
-          error
-        });
-      }
-
-      return Promise.resolve(null);
-    });
-  }
-
-}
-
-const StorageService = new StorageServiceClass();
-
-class VarServiceClass {
-  constructor() {
-    _defineProperty(this, "variables", {});
-
-    _defineProperty(this, "listeners", {});
-
-    _defineProperty(this, "persistentVars", {});
-  }
-
-  init({
-    language
-  } = {}) {
-    if (GameInfoService.config.labels) {
-      const defaultLabels = GameInfoService.config.labels[language || 'en'] || {};
-      Object.keys(defaultLabels).forEach(key => {
-        this.setVar(key, defaultLabels[key]);
-      });
-    }
-
-    if (GameInfoService.config.vars) {
-      const defaultGameState = GameInfoService.config.vars;
-      Object.keys(defaultGameState).forEach(key => {
-        this.setVar(key, defaultGameState[key]);
-      });
-    }
-  }
-
-  setVar(id, value) {
-    this.variables[id] = value;
-
-    if (!this.listeners[id]) {
-      this.listeners[id] = [];
-    } else {
-      this.listeners[id] = this.listeners[id].filter(callback => {
-        if (callback) {
-          return callback(value) !== false;
-        }
-
-        return false;
-      });
-    }
-
-    if (this.persistentVars[id]) {
-      this.persistentVars[id](value);
-    }
-  }
-
-  getVar(id, onUpdate, onCreate) {
-    if (!this.listeners[id]) {
-      this.listeners[id] = [];
-    }
-
-    if (onUpdate) {
-      this.listeners[id].push(onUpdate);
-      onUpdate(this.variables[id]);
-    }
-
-    if (onCreate) {
-      onCreate(onUpdate);
-    }
-
-    return this.variables[id];
-  }
-
-  removeVar(id) {
-    delete this.variables[id];
-    delete this.listeners[id];
-  }
-
-  registerPersistentVar(id, defaultValue) {
-    return StorageService.get(id).then(initialValue => {
-      this.persistentVars[id] = newValue => {
-        StorageService.set(id, newValue);
-      };
-
-      if (initialValue !== null || typeof defaultValue !== 'undefined') {
-        VarService.setVar(id, initialValue !== null ? initialValue : defaultValue);
-      }
-
-      return Promise.resolve();
-    });
-  }
-
-  retrievePersistentVars() {
-    return new Promise(async resolve => {
-      const keys = await StorageService.getAllKeys();
-      await Promise.all(keys.map(key => {
-        return this.registerPersistentVar(key);
-      }));
-      resolve();
-    });
-  }
-
-  resolveVar(variableString, onResolve, onCreate) {
-    if (!variableString) {
-      return onResolve();
-    }
-
-    if (variableString[0] === ':' && variableString[variableString.length - 1] === ':') {
-      return this.getVar(variableString.substr(1, variableString.length - 2), value => {
-        onResolve ? onResolve(value) : null;
-      }, listener => {
-        onCreate ? onCreate(listener) : null;
-      });
-    }
-
-    return onResolve(variableString);
-  }
-
-  disposeListener(id, callback) {
-    if (id && this.listeners[id]) {
-      this.listeners[id] = this.listeners[id].filter(match => match !== callback);
-    } else {
-      Object.keys(this.listeners).forEach(id => {
-        this.listeners[id] = this.listeners[id].filter(match => match !== callback);
-      });
-    }
-  }
-
-  disposeListeners() {
-    Object.keys(this.listeners).forEach(key => {
-      delete this.listeners[key];
-    });
-    this.listeners = {};
-  }
-
-}
-
-const VarService = new VarServiceClass();
-
-const {
-  AdMob,
-  Modals
-} = Plugins;
-
-class MoneyServiceClass {
-  constructor() {
-    _defineProperty(this, "platformId", null);
-
-    _defineProperty(this, "adsInitialised", false);
-
-    this.platformId = GameInfoService.config.system.adMobId;
-  }
-
-  async init() {
-    return AdMob.initialize({
-      requestTrackingAuthorization: false
-    }).then(() => {
-      this.adsInitialised = true;
-    });
-  }
-
-  async showAd(then = () => {}) {
-    if (!this.adsInitialised) {
-      await this.init();
-    }
-
-    const options = {
-      adId: this.platformAdId,
-      adSize: AdSize.FLUID,
-      position: AdPosition.CENTER
-    };
-    return new Promise(resolve => {
-      AdMob.addListener('onInterstitialAdFailedToLoad', info => {
-        then();
-        resolve();
-      });
-      AdMob.addListener('onInterstitialAdClosed', info => {
-        then();
-        resolve();
-      });
-      AdMob.addListener('onInterstitialAdLeftApplication', info => {
-        then();
-        resolve();
-      });
-      AdMob.prepareInterstitial(options).then(() => {
-        AdMob.showInterstitial();
-      }).catch(() => {
-        then();
-        resolve();
-      });
-    });
-  }
-
-}
-
-const MoneyService = new MoneyServiceClass();
-
 class UtilsServiceClass {
   constructor() {
     _defineProperty(this, "poolRaycaster", []);
@@ -854,6 +665,136 @@ class UtilsServiceClass {
 
 const UtilsService = new UtilsServiceClass();
 
+class VarServiceClass {
+  constructor() {
+    _defineProperty(this, "variables", {});
+
+    _defineProperty(this, "listeners", {});
+
+    _defineProperty(this, "persistentVars", {});
+  }
+
+  init({
+    language
+  } = {}) {
+    if (GameInfoService.config.labels) {
+      const defaultLabels = GameInfoService.config.labels[language || 'en'] || {};
+      Object.keys(defaultLabels).forEach(key => {
+        this.setVar(key, defaultLabels[key]);
+      });
+    }
+
+    if (GameInfoService.config.vars) {
+      const defaultGameState = GameInfoService.config.vars;
+      Object.keys(defaultGameState).forEach(key => {
+        this.setVar(key, defaultGameState[key]);
+      });
+    }
+  }
+
+  setVar(id, value) {
+    this.variables[id] = value;
+
+    if (!this.listeners[id]) {
+      this.listeners[id] = [];
+    } else {
+      this.listeners[id] = this.listeners[id].filter(callback => {
+        if (callback) {
+          return callback(value) !== false;
+        }
+
+        return false;
+      });
+    }
+
+    if (this.persistentVars[id]) {
+      this.persistentVars[id](value);
+    }
+  }
+
+  getVar(id, onUpdate, onCreate) {
+    if (!this.listeners[id]) {
+      this.listeners[id] = [];
+    }
+
+    if (onUpdate) {
+      this.listeners[id].push(onUpdate);
+      onUpdate(this.variables[id]);
+    }
+
+    if (onCreate) {
+      onCreate(onUpdate);
+    }
+
+    return this.variables[id];
+  }
+
+  removeVar(id) {
+    delete this.variables[id];
+    delete this.listeners[id];
+  }
+
+  registerPersistentVar(id, defaultValue) {
+    return StorageService.get(id).then(initialValue => {
+      this.persistentVars[id] = newValue => {
+        StorageService.set(id, newValue);
+      };
+
+      if (initialValue !== null || typeof defaultValue !== 'undefined') {
+        VarService.setVar(id, initialValue !== null ? initialValue : defaultValue);
+      }
+
+      return Promise.resolve();
+    });
+  }
+
+  retrievePersistentVars() {
+    return new Promise(async resolve => {
+      const keys = await StorageService.getAllKeys();
+      await Promise.all(keys.map(key => {
+        return this.registerPersistentVar(key);
+      }));
+      resolve();
+    });
+  }
+
+  resolveVar(variableString, onResolve, onCreate) {
+    if (!variableString) {
+      return onResolve();
+    }
+
+    if (variableString[0] === ':' && variableString[variableString.length - 1] === ':') {
+      return this.getVar(variableString.substr(1, variableString.length - 2), value => {
+        onResolve ? onResolve(value) : null;
+      }, listener => {
+        onCreate ? onCreate(listener) : null;
+      });
+    }
+
+    return onResolve(variableString);
+  }
+
+  disposeListener(id, callback) {
+    if (id && this.listeners[id]) {
+      this.listeners[id] = this.listeners[id].filter(match => match !== callback);
+    } else {
+      Object.keys(this.listeners).forEach(id => {
+        this.listeners[id] = this.listeners[id].filter(match => match !== callback);
+      });
+    }
+  }
+
+  disposeListeners() {
+    Object.keys(this.listeners).forEach(key => {
+      delete this.listeners[key];
+    });
+    this.listeners = {};
+  }
+
+}
+
+const VarService = new VarServiceClass();
+
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
 const DebugFlags = {
@@ -866,8 +807,6 @@ const DebugFlags = {
   DEBUG_SCROLL_VISIBLE: 'DEBUG_SCROLL_VISIBLE',
   DEBUG_TIME_LISTENERS: 'DEBUG_TIME_LISTENERS',
   DEBUG_SKINNING_SKELETONS: 'DEBUG_SKINNING_SKELETONS',
-  DEBUG_ADS: 'DEBUG_ADS',
-  DEBUG_DISABLE_ADS: 'DEBUG_DISABLE_ADS',
   DEBUG_STORAGE: 'DEBUG_STORAGE',
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
@@ -1104,20 +1043,6 @@ class DummyDebugClass {
           text: 'Vars:'
         }, {
           text: Object.keys(VarService.listeners).flatMap(key => VarService.listeners[key]).length,
-          color: LogsHighlightColor
-        }));
-      }
-
-      if (this.get(DebugFlags.DEBUG_ADS)) {
-        outputElement.appendChild(this.createLogLine({
-          text: 'Ads:'
-        }, {
-          text: MoneyService.adsDisabled ? 'disabled' : 'enabled',
-          color: LogsHighlightColor
-        }, {
-          text: 'AdStat:'
-        }, {
-          text: MoneyService.adsInitialised ? 'ok' : 'error',
           color: LogsHighlightColor
         }));
       }
@@ -5847,7 +5772,7 @@ class IntroView extends ViewClass {
         }) => {
           CameraService.useCamera(CameraService.getCamera('intro'), true);
           scene.add(introModel);
-          Promise.all([VarService.registerPersistentVar('playerBike', 'fusion'), VarService.registerPersistentVar('playerOutfit', 'safety'), VarService.registerPersistentVar('playerPoints', 0), VarService.registerPersistentVar('playerSunracePoints', 0), VarService.registerPersistentVar('playerTierUnlocks', [3, 0, 0, 0]), VarService.registerPersistentVar('playerMapRecords', []), VarService.registerPersistentVar('optionsShowDriver', true), VarService.registerPersistentVar('optionsAudioVolume', 0.2), VarService.registerPersistentVar('optionsAdsEnabled', true), VarService.registerPersistentVar('optionsPerformanceMode', false), VarService.registerPersistentVar('statsTotalPlaytime', 0), VarService.registerPersistentVar('statsMapPlays', [])]).then(() => {
+          Promise.all([VarService.registerPersistentVar('playerBike', 'fusion'), VarService.registerPersistentVar('playerOutfit', 'safety'), VarService.registerPersistentVar('playerPoints', 0), VarService.registerPersistentVar('playerSunracePoints', 0), VarService.registerPersistentVar('playerTierUnlocks', [3, 0, 0, 0]), VarService.registerPersistentVar('playerMapRecords', []), VarService.registerPersistentVar('optionsShowDriver', true), VarService.registerPersistentVar('optionsAudioVolume', 0.2), VarService.registerPersistentVar('optionsPerformanceMode', false), VarService.registerPersistentVar('statsTotalPlaytime', 0), VarService.registerPersistentVar('statsMapPlays', [])]).then(() => {
             this.showPlaques(['plaque-1', 'plaque-2'], gameObjectRefs);
           });
         }
@@ -6019,4 +5944,4 @@ class SystemServiceClass {
 
 const SystemService = new SystemServiceClass();
 
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, MoneyService, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };

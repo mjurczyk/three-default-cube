@@ -25,7 +25,6 @@ to not support React, not support memory leaks, and also not support other thing
 - Dynamic team and free office fruits on Thursdays.
 - 100% focused on making gamedev as easy as possible.
 - Seamless interaction controls. This one is actually pretty cool - you can change cameras on the fly, follow characters without a million lines of code, all the cool stuff.
-- Support for ads and IAPs, because money.
 
 <p align="center">
   <img width="800" alt="default-cube-logo-sm" src="https://user-images.githubusercontent.com/9549760/174091649-51c8dfde-b4c6-4b30-b3ad-976f6fe0a1ab.gif">
