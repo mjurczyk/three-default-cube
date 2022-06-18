@@ -399,7 +399,6 @@ class PhysicsServiceClass {
     this.dynamicBodies = [];
     this.navmaps = [];
     this.surfaces = [];
-    this.surfaceHandlers = {};
 
     MathService.releaseVec3(this.emptyVector3);
 
