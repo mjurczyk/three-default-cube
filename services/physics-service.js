@@ -26,6 +26,8 @@ class PhysicsServiceClass {
 
   maxDynamicBodySize = 1.0;
 
+  emptyVector3 = MathService.getVec3(0.0, 0.0, 0.0, 'physics-7');
+
   init() {
     TimeService.registerPersistentFrameListener(() => {
       this.updateDynamicBodies();
@@ -43,10 +45,6 @@ class PhysicsServiceClass {
     const raycaster = UtilsService.getRaycaster();
 
     this.bodies = this.bodies.filter(body => {
-      if (!body.simpleGravity) {
-        return false;
-      }
-
       raycaster.near = -0.00001;
       raycaster.far = 500.0; // NOTE If navmap is not found within this limit, it's assumed body left the navmap
 
@@ -57,69 +55,74 @@ class PhysicsServiceClass {
         return false;
       }
 
-      if (body.grounded) {
-        body.simpleGravity.y = 0.0;
-      } else {
-        body.simpleGravity.y = MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
+      if (body.simpleGravity) {
+        if (body.grounded) {
+          body.simpleGravity.y = 0.0;
+        } else {
+          body.simpleGravity.y = MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
+        }
       }
 
       const simpleVelocity = body.getSimpleVelocity();
-      const simpleGravity = body.simpleGravity;
+      const simpleGravity = body.simpleGravity || this.emptyVector3;
+
+      body.target.getWorldPosition(position);
 
       if (simpleVelocity) {
-        body.target.getWorldPosition(position);
         position.add(simpleVelocity);
+      }
 
-        const slopeVector = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1')
-          .copy(simpleGravity)
-          .normalize()
-          .multiplyScalar(-this.slopeTolerance);
+      const slopeVector = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1')
+        .copy(simpleGravity)
+        .normalize()
+        .multiplyScalar(-this.slopeTolerance);
 
-        position.add(slopeVector);
+      position.add(slopeVector);
 
-        const gravityDirection = MathService.getVec3(0.0, -1.0, 0.0, 'physics-2');
+      const gravityDirection = MathService.getVec3(0.0, -1.0, 0.0, 'physics-2');
 
-        position.sub(gravityDirection);
-        raycaster.set(position, gravityDirection);
+      position.sub(gravityDirection);
+      raycaster.set(position, gravityDirection);
 
-        MathService.releaseVec3(gravityDirection);
+      MathService.releaseVec3(gravityDirection);
 
-        // Surfaces
-        let collisions = raycaster.intersectObjects(this.surfaces, true);
-        let cachedCollisions = Object.keys(body.surfaceCollisions || {});
+      // Surfaces
+      let collisions = raycaster.intersectObjects(this.surfaces, true);
+      let cachedCollisions = Object.keys(body.surfaceCollisions || {});
 
-        collisions.forEach(collision => {
-          const { surface: surfaceType, surfaceRef } = collision.object.userData;
-          const { onInteraction, onEnter, onLeave } = this.surfaceHandlers[surfaceType];
+      collisions.forEach(collision => {
+        const { surface: surfaceType, surfaceRef } = collision.object.userData;
+        const { onInteraction, onEnter, onLeave } = this.surfaceHandlers[surfaceType];
 
-          if (surfaceRef[onEnter] && !body.surfaceCollisions[collision.object.uuid]) {
-            surfaceRef[onEnter]({
-              body,
-              hit: collision
-            });
-          }
+        if (surfaceRef[onEnter] && !body.surfaceCollisions[collision.object.uuid]) {
+          surfaceRef[onEnter]({
+            body,
+            hit: collision
+          });
+        }
 
-          if (surfaceRef[onInteraction]) {
-            surfaceRef[onInteraction]({
-              body,
-              hit: collision
-            });
-          }
+        if (surfaceRef[onInteraction]) {
+          surfaceRef[onInteraction]({
+            body,
+            hit: collision
+          });
+        }
 
-          body.surfaceCollisions[collision.object.uuid] = { onLeave: surfaceRef[onLeave] };
-          cachedCollisions = cachedCollisions.filter(uuid => uuid !== collision.object.uuid);
-        });
+        body.surfaceCollisions[collision.object.uuid] = { onLeave: surfaceRef[onLeave] };
+        cachedCollisions = cachedCollisions.filter(uuid => uuid !== collision.object.uuid);
+      });
 
-        cachedCollisions.forEach(collisionUuid => {
-          if (body.surfaceCollisions[collisionUuid].onLeave) {
-            body.surfaceCollisions[collisionUuid].onLeave({ body, hit: null });
-          }
+      cachedCollisions.forEach(collisionUuid => {
+        if (body.surfaceCollisions[collisionUuid].onLeave) {
+          body.surfaceCollisions[collisionUuid].onLeave({ body, hit: null });
+        }
 
-          delete body.surfaceCollisions[collisionUuid];
-        });
+        delete body.surfaceCollisions[collisionUuid];
+      });
 
-        MathService.releaseVec3(slopeVector);
+      MathService.releaseVec3(slopeVector);
 
+      if (simpleVelocity) {
         // Collisions
         collisions = raycaster.intersectObjects(
           this.navmaps,
@@ -363,7 +366,13 @@ class PhysicsServiceClass {
 
     const surfaceConstructor = surfaceHandler.cls;
 
-    object.userData.surfaceRef = new surfaceConstructor(object);
+    const surface = new surfaceConstructor(object);
+
+    if (surface.onInteraction) surface.onInteraction = surface.onInteraction.bind(surface);
+    if (surface.onEnter) surface.onEnter = surface.onEnter.bind(surface);
+    if (surface.onLeave) surface.onLeave = surface.onLeave.bind(surface);
+
+    object.userData.surfaceRef = surface;
 
     this.surfaces.push(object);
   }
@@ -391,6 +400,8 @@ class PhysicsServiceClass {
     this.navmaps = [];
     this.surfaces = [];
     this.surfaceHandlers = {};
+
+    MathService.releaseVec3(this.emptyVector3);
 
     if (this.pathfinder) {
       this.pathfinder = null;

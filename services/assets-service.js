@@ -301,6 +301,7 @@ class AssetsServiceClass {
 
   cloneTexture(texture) {
     const copy = texture.clone();
+    copy.needsUpdate = true;
 
     this.registerDisposable(copy);
 
