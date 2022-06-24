@@ -11,7 +11,7 @@ class InputServiceClass {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
-  key(key) {
+  key(id) {
     return this.keys[id];
   }
 

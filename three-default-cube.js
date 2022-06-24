@@ -2573,7 +2573,7 @@ class InputServiceClass {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
-  key(key) {
+  key(id) {
     return this.keys[id];
   }
 
@@ -2611,7 +2611,7 @@ class UiServiceClass {
   }
 
   createUiScene() {
-    const scene = new Three__namespace.Object3D();
+    const scene = new Three__namespace.Scene();
     const ambientLight = new Three__namespace.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     return scene;

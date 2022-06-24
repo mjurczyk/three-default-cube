@@ -9,7 +9,7 @@ class UiServiceClass {
   tween = 0.8;
 
   createUiScene() {
-    const scene = new Three.Object3D();
+    const scene = new Three.Scene();
     const ambientLight = new Three.AmbientLight(0xffffff, 1.0);
 
     scene.add(ambientLight);
