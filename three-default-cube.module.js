@@ -2726,9 +2726,11 @@ class AudioServiceClass {
   }
 
   stopAudio(sound) {
-    sound.stop();
-    sound.mute();
-    sound.unload();
+    try {
+      sound.stop();
+      sound.mute();
+      sound.unload();
+    } catch {}
   }
 
   resetAudio() {

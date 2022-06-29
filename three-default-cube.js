@@ -1278,6 +1278,17 @@ class MathServiceClass {
     }
   }
 
+  disposeAll() {
+    this.poolVec2 = [];
+    this.poolVec3 = [];
+    this.poolQuaternions = [];
+    this.poolMatrix4 = [];
+    this.poolVec2Total = 0;
+    this.poolVec3Total = 0;
+    this.poolQuaternionsTotal = 0;
+    this.poolMatrix4Total = 0;
+  }
+
 }
 
 const MathService = new MathServiceClass();
@@ -2246,10 +2257,9 @@ class PhysicsServiceClass {
       return;
     }
 
-    const direction = new Three.Vector3();
-    const position =  new Three.Vector3();
+    const direction = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
+    const position = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
     const raycaster = UtilsService.getRaycaster();
-
     this.bodies = this.bodies.filter(body => {
       raycaster.near = -0.00001;
       raycaster.far = 500.0; // NOTE If navmap is not found within this limit, it's assumed body left the navmap
@@ -2285,7 +2295,6 @@ class PhysicsServiceClass {
 
       let collisions = raycaster.intersectObjects(this.surfaces, true);
       let cachedCollisions = Object.keys(body.surfaceCollisions || {});
-
       collisions.forEach(collision => {
         const {
           surface: surfaceType,
@@ -2449,7 +2458,6 @@ class PhysicsServiceClass {
   }
 
   registerBody(object) {
-    console.info('register body', this.bodies.length, object.target.userData?.gameObject);
     this.bodies.push(object);
   }
 
@@ -2535,7 +2543,6 @@ class PhysicsServiceClass {
   }
 
   disposeBody(object) {
-    console.info('dispose body', this.bodies.length);
     this.bodies = this.bodies.filter(match => match !== object);
     this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
   }
@@ -2577,7 +2584,7 @@ class InputServiceClass {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
-  key(key) {
+  key(id) {
     return this.keys[id];
   }
 
@@ -3703,9 +3710,6 @@ class AssetsServiceClass {
         rate: 1.0,
         onload: () => {
           this.registerDisposable(audio);
-        },
-        onloaderror: (id, error) => {
-          console.info('preloadAudio', 'Howler error', { path, error });
         }
       });
       resolve(audio);
@@ -5116,6 +5120,7 @@ class ViewClass {
     UtilsService.disposeAll();
     AssetsService.disposeAll();
     MathService.handleLeaks();
+    MathService.disposeAll();
   }
 
 }
