@@ -86,7 +86,6 @@ class MathServiceClass {
     this.poolMatrix4.push(matrix);
   }
 
-
   getVec3(x = 0.0, y = 0.0, z = 0.0, id) {
     const pooled = this.poolVec3.pop();
 
@@ -172,6 +171,18 @@ class MathServiceClass {
     if (leaks.length > 0) {
       console.info('MathService', 'handleLeaks', 'leakedPools', { leaks: this.leakRegistry });
     }
+  }
+
+  disposeAll() {
+    this.poolVec2 = [];
+    this.poolVec3 = [];
+    this.poolQuaternions = [];
+    this.poolMatrix4 = [];
+
+    this.poolVec2Total = 0;
+    this.poolVec3Total = 0;
+    this.poolQuaternionsTotal = 0;
+    this.poolMatrix4Total = 0;
   }
 }
 

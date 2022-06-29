@@ -43,5 +43,6 @@ export class ViewClass {
     AssetsService.disposeAll();
 
     MathService.handleLeaks();
+    MathService.disposeAll();
   }
 }

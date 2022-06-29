@@ -1248,6 +1248,17 @@ class MathServiceClass {
     }
   }
 
+  disposeAll() {
+    this.poolVec2 = [];
+    this.poolVec3 = [];
+    this.poolQuaternions = [];
+    this.poolMatrix4 = [];
+    this.poolVec2Total = 0;
+    this.poolVec3Total = 0;
+    this.poolQuaternionsTotal = 0;
+    this.poolMatrix4Total = 0;
+  }
+
 }
 
 const MathService = new MathServiceClass();
@@ -5077,6 +5088,7 @@ class ViewClass {
     UtilsService.disposeAll();
     AssetsService.disposeAll();
     MathService.handleLeaks();
+    MathService.disposeAll();
   }
 
 }
