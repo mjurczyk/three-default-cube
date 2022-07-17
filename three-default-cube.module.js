@@ -418,7 +418,7 @@ class GameInfoServiceClass {
     return this;
   }
 
-  system(fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true) {
+  system(fps = 60, pixelRatio = 1.5, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true, useSingleLoop = false) {
     return this.addConfig({
       system: { ...(this.config.system || {}),
         fps,
@@ -426,7 +426,8 @@ class GameInfoServiceClass {
         antialiasing,
         postprocessing,
         sceneBackgroundDefault,
-        correctBlenderLights
+        correctBlenderLights,
+        useSingleLoop
       }
     });
   }
@@ -1358,7 +1359,7 @@ class CameraServiceClass {
         MathService.releaseVec3(distanceToTarget);
       }
 
-      this.followPivot.position.copy(this.followPivotPosition);
+      this.followPivot.position.lerp(this.followPivotPosition, this.tween);
 
       if (this.followPivot && !this.occlusionSettings.faceTarget) {
         this.followPivot.lookAt(this.cameraPosition);
@@ -2212,6 +2213,8 @@ class PhysicsServiceClass {
 
     _defineProperty(this, "maxDynamicBodySize", 1.0);
 
+    _defineProperty(this, "maxSurfaceInteractionDistance", 0.01);
+
     _defineProperty(this, "emptyVector3", MathService.getVec3(0.0, 0.0, 0.0, 'physics-7'));
   }
 
@@ -2263,6 +2266,7 @@ class PhysicsServiceClass {
       raycaster.set(position, gravityDirection);
       MathService.releaseVec3(gravityDirection); // Surfaces
 
+      raycaster.far = this.maxSurfaceInteractionDistance;
       let collisions = raycaster.intersectObjects(this.surfaces, true);
       let cachedCollisions = Object.keys(body.surfaceCollisions || {});
       collisions.forEach(collision => {
@@ -2306,6 +2310,7 @@ class PhysicsServiceClass {
         delete body.surfaceCollisions[collisionUuid];
       });
       MathService.releaseVec3(slopeVector);
+      raycaster.far = 500.0;
 
       if (simpleVelocity) {
         // Collisions
@@ -2855,6 +2860,13 @@ class ParticleServiceClass {
         }
 
         particles.forEach(target => {
+          target.userData.lifeTime += dt;
+
+          if (target.userData.lifeTime < 0.0) {
+            target.visible = false;
+            return;
+          }
+
           if (!target.visible) {
             if (!active) {
               return;
@@ -2863,11 +2875,9 @@ class ParticleServiceClass {
             }
           }
 
-          target.userData.lifeTime += dt;
-
-          if (target.userData.lifeTime < 0.0) {
-            target.visible = false;
-            return;
+          if (target.userData.delayedCreateParticle) {
+            target.userData.delayedCreateParticle();
+            delete target.userData.delayedCreateParticle;
           }
 
           const originalMatrix = MathService.getMatrix4();
@@ -3005,37 +3015,45 @@ class ParticleServiceClass {
       globalTransforms,
       root
     } = emitterProps;
-    const object = pivot.children[0];
-    const position = this.getUniformBase(positionBase);
-    const rotation = this.getUniformBase(rotationBase);
-    const scale = this.getUniformBase(scaleBase);
-    const positionShift = this.getUniformRandomness(positionJitter);
-    const rotationShift = this.getUniformRandomness(rotationJitter);
-    const scaleShift = this.getUniformRandomness(scaleJitter);
-    object.position.x = position[0] + positionShift[0];
-    object.position.y = position[1] + positionShift[1];
-    object.position.z = position[2] + positionShift[2];
-    object.rotation.x = rotation[0] + rotationShift[0];
-    object.rotation.y = rotation[1] + rotationShift[1];
-    object.rotation.z = rotation[2] + rotationShift[2];
-    object.scale.x = scale[0] + scaleShift[0];
-    object.scale.y = scale[0] + scaleShift[1];
-    object.scale.z = scale[0] + scaleShift[2];
-
-    if (globalTransforms) {
-      const transformVector = MathService.getVec3(0.0, 0.0, 0.0, 'particle-1');
-      const transformQuaternion = MathService.getQuaternion();
-      root.getWorldPosition(transformVector);
-      root.getWorldQuaternion(transformQuaternion);
-      pivot.position.copy(transformVector);
-      pivot.quaternion.copy(transformQuaternion);
-      pivot.scale.copy(root.scale);
-      MathService.releaseVec3(transformVector);
-      MathService.releaseQuaternion(transformQuaternion);
-    }
-
     pivot.userData.lifeTime = spawnJitter ? -Math.random() * spawnJitter : 0.0;
     pivot.userData.particleEmitterRandom = Math.random();
+
+    const createParticle = () => {
+      const object = pivot.children[0];
+      const position = this.getUniformBase(positionBase);
+      const rotation = this.getUniformBase(rotationBase);
+      const scale = this.getUniformBase(scaleBase);
+      const positionShift = this.getUniformRandomness(positionJitter);
+      const rotationShift = this.getUniformRandomness(rotationJitter);
+      const scaleShift = this.getUniformRandomness(scaleJitter);
+      object.position.x = position[0] + positionShift[0];
+      object.position.y = position[1] + positionShift[1];
+      object.position.z = position[2] + positionShift[2];
+      object.rotation.x = rotation[0] + rotationShift[0];
+      object.rotation.y = rotation[1] + rotationShift[1];
+      object.rotation.z = rotation[2] + rotationShift[2];
+      object.scale.x = scale[0] + scaleShift[0];
+      object.scale.y = scale[0] + scaleShift[1];
+      object.scale.z = scale[0] + scaleShift[2];
+
+      if (globalTransforms) {
+        const transformVector = MathService.getVec3(0.0, 0.0, 0.0, 'particle-1');
+        const transformQuaternion = MathService.getQuaternion();
+        root.getWorldPosition(transformVector);
+        root.getWorldQuaternion(transformQuaternion);
+        pivot.position.copy(transformVector);
+        pivot.quaternion.copy(transformQuaternion);
+        pivot.scale.copy(root.scale);
+        MathService.releaseVec3(transformVector);
+        MathService.releaseQuaternion(transformQuaternion);
+      }
+    };
+
+    if (pivot.userData.lifeTime < 0.0) {
+      pivot.userData.delayedCreateParticle = createParticle;
+    } else {
+      createParticle();
+    }
   }
 
   getUniformBase(value) {

@@ -81,7 +81,7 @@ class CameraServiceClass {
         MathService.releaseVec3(distanceToTarget);
       }
 
-      this.followPivot.position.copy(this.followPivotPosition);
+      this.followPivot.position.lerp(this.followPivotPosition, this.tween);
 
       if (this.followPivot && !this.occlusionSettings.faceTarget) {
         this.followPivot.lookAt(this.cameraPosition);

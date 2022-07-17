@@ -25,6 +25,7 @@ class PhysicsServiceClass {
   gravityConstant = -0.986;
 
   maxDynamicBodySize = 1.0;
+  maxSurfaceInteractionDistance = 0.01;
 
   emptyVector3 = MathService.getVec3(0.0, 0.0, 0.0, 'physics-7');
 
@@ -87,6 +88,8 @@ class PhysicsServiceClass {
       MathService.releaseVec3(gravityDirection);
 
       // Surfaces
+      raycaster.far = this.maxSurfaceInteractionDistance;
+
       let collisions = raycaster.intersectObjects(this.surfaces, true);
       let cachedCollisions = Object.keys(body.surfaceCollisions || {});
 
@@ -122,6 +125,8 @@ class PhysicsServiceClass {
 
       MathService.releaseVec3(slopeVector);
 
+      raycaster.far = 500.0;
+      
       if (simpleVelocity) {
         // Collisions
         collisions = raycaster.intersectObjects(
