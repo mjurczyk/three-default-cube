@@ -1362,7 +1362,17 @@ class CameraServiceClass {
       this.followPivot.position.lerp(this.followPivotPosition, this.tween);
 
       if (this.followPivot && !this.occlusionSettings.faceTarget) {
-        this.followPivot.lookAt(this.cameraPosition);
+        const mock = UtilsService.getEmpty();
+        mock.position.copy(this.followPivot.position);
+        mock.quaternion.copy(this.followPivot.quaternion);
+        mock.matrix.copy(this.followPivot.matrix);
+        mock.matrixWorld.copy(this.followPivot.matrixWorld);
+        mock.isCamera = true;
+        this.followPivot.parent.add(mock);
+        mock.lookAt(this.cameraPosition);
+        this.followPivot.quaternion.slerp(mock.quaternion, this.tween);
+        mock.isCamera = false;
+        UtilsService.releaseEmpty(mock);
       }
     }
 
