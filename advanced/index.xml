@@ -31,7 +31,7 @@ bottom Value: absolute offset (number or percentage suffixed with %) or variable
       <guid>/advanced/mobile-platforms/</guid>
       <description>Android To release a game on Android, consider following Ionic / Capacitor release process.
 General overview:
- Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ cordova-res ios --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
+ Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
     </item>
     
     <item>

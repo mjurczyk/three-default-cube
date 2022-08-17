@@ -785,7 +785,6 @@
 <li>Build an Android project:</li>
 </ol>
 <pre tabindex="0"><code class="language-cli" data-lang="cli">$ cordova-res android --skip-config --copy
-$ cordova-res ios --skip-config --copy
 $ ionic cap build android
 # For consecutive updates, you can also use &quot;ionic cap copy android&quot;
 </code></pre><ol start="5">
@@ -840,7 +839,23 @@ apply from: &#39;capacitor.settings.gradle&#39;
 </li>
 </ol>
 <h2 id="ios">iOS</h2>
-<p>Version <code>0.1.x</code> of Default Cube hasn&rsquo;t been tested on iOS, yet. Primary goal of version <code>0.2.x</code> is to make the framework work nicely on Apple devices.</p>
+<p>To release a game on iOS, consider following Ionic / Capacitor release process.</p>
+<p>General overview:</p>
+<ol>
+<li>Create the game.</li>
+<li>Make sure you have the latest version of XCode installed (MacOS is required to build iOS apps.)</li>
+<li>If platform hasn&rsquo;t been added yet, add it:</li>
+</ol>
+<pre tabindex="0"><code class="language-cli" data-lang="cli">$ npm add ios
+</code></pre><ol start="4">
+<li>Build an iOS project:</li>
+</ol>
+<pre tabindex="0"><code class="language-cli" data-lang="cli">$ cordova-res ios --skip-config --copy
+$ ionic cap build ios
+# For consecutive updates, you can also use &quot;ionic cap copy ios&quot;
+</code></pre><ol start="5">
+<li>Run XCode and test the app in the emulator or remote device. To release the app, prepare the bundle and upload it to an active AppStore distribution account.</li>
+</ol>
 
           </div>
         </div>
