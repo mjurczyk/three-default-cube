@@ -145,7 +145,7 @@ bottom Value: absolute offset (number or percentage suffixed with %) or variable
       <guid>/advanced/mobile-platforms/</guid>
       <description>Android To release a game on Android, consider following Ionic / Capacitor release process.
 General overview:
- Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ cordova-res ios --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
+ Create the game. Install Android Studio. If platform hasn&amp;rsquo;t been added yet, add it:  $ npm add android Build an Android project:  $ cordova-res android --skip-config --copy $ ionic cap build android # For consecutive updates, you can also use &amp;quot;ionic cap copy android&amp;quot; In Android Studio, either run a development preview of the game, or build the project as an Android App Bundle to release it.</description>
     </item>
     
     <item>
@@ -260,7 +260,7 @@ By default, rendering is paused on the first frame to prevent jumpy frames. To d
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/services/dummy-debug/</guid>
-      <description>DebugFlags DebugFlags = { DEBUG_ENABLE, DEBUG_LIVE, DEBUG_LOG_MEMORY, DEBUG_LOG_POOLS, DEBUG_LOG_ASSETS, DEBUG_ORBIT_CONTROLS, DEBUG_SCROLL_VISIBLE, DEBUG_TIME_LISTENERS, DEBUG_SKINNING_SKELETONS, DEBUG_ADS, DEBUG_DISABLE_ADS, DEBUG_STORAGE, DEBUG_AI_NODES, DEBUG_AI_TARGETS, DEBUG_PHYSICS, DEBUG_PHYSICS_DYNAMIC, } on () on(flag)
+      <description>DebugFlags DebugFlags = { DEBUG_ENABLE, DEBUG_LIVE, DEBUG_LOG_MEMORY, DEBUG_LOG_POOLS, DEBUG_LOG_ASSETS, DEBUG_ORBIT_CONTROLS, DEBUG_SCROLL_VISIBLE, DEBUG_TIME_LISTENERS, DEBUG_SKINNING_SKELETONS, DEBUG_STORAGE, DEBUG_AI_NODES, DEBUG_AI_TARGETS, DEBUG_PHYSICS, DEBUG_PHYSICS_DYNAMIC, } on () on(flag)
 Enables specific debugging flag. Cannot be called after game is initialized.
 off () off(flag)
 Disables specific debugging flag. Cannot be called after game is initialized.</description>

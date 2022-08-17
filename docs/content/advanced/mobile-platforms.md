@@ -22,7 +22,6 @@ $ npm add android
 
 ```cli
 $ cordova-res android --skip-config --copy
-$ cordova-res ios --skip-config --copy
 $ ionic cap build android
 # For consecutive updates, you can also use "ionic cap copy android"
 ```
@@ -83,4 +82,25 @@ apply from: 'capacitor.settings.gradle'
 
 ## iOS
 
-Version `0.1.x` of Default Cube hasn't been tested on iOS, yet. Primary goal of version `0.2.x` is to make the framework work nicely on Apple devices.
+To release a game on iOS, consider following Ionic / Capacitor release process.
+
+General overview:
+
+1. Create the game.
+2. Make sure you have the latest version of XCode installed (MacOS is required to build iOS apps.)
+3. If platform hasn't been added yet, add it:
+
+```cli
+$ npm add ios
+```
+
+4. Build an iOS project:
+
+```cli
+$ cordova-res ios --skip-config --copy
+$ ionic cap build ios
+# For consecutive updates, you can also use "ionic cap copy ios"
+```
+
+5. Run XCode and test the app in the emulator or remote device. To release the app, prepare the bundle and upload it to an active AppStore distribution account.
+
