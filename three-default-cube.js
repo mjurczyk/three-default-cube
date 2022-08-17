@@ -3148,6 +3148,10 @@ class RenderServiceClass {
 
     _defineProperty(this, "smaaPostprocessingTextures", {});
 
+    _defineProperty(this, "depthMaterial", null);
+
+    _defineProperty(this, "depthRenderTarget", null);
+
     _defineProperty(this, "scene", null);
 
     _defineProperty(this, "controls", null);
@@ -3159,6 +3163,14 @@ class RenderServiceClass {
     _defineProperty(this, "onPaused", null);
 
     _defineProperty(this, "onResumed", null);
+
+    _defineProperty(this, "onBeforeRenderFrame", null);
+
+    _defineProperty(this, "onBeforeRenderDepth", null);
+
+    _defineProperty(this, "onAfterRenderDepth", null);
+
+    _defineProperty(this, "onAfterRenderFrame", null);
 
     _defineProperty(this, "animationLoop", null);
 
@@ -3233,6 +3245,26 @@ class RenderServiceClass {
     if (DummyDebug.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
       CameraService.detachCamera();
     }
+
+    const depthMaterial = new Three__namespace.MeshDepthMaterial();
+    depthMaterial.depthPacking = Three__namespace.RGBADepthPacking;
+    depthMaterial.blending = Three__namespace.NoBlending;
+    const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
+    const depthRenderTarget = new Three__namespace.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+    depthRenderTarget.texture.minFilter = Three__namespace.NearestFilter;
+    depthRenderTarget.texture.magFilter = Three__namespace.NearestFilter;
+    depthRenderTarget.texture.generateMipmaps = false;
+    depthRenderTarget.stencilBuffer = false;
+
+    if (depthTexturesSupport) {
+      depthRenderTarget.depthTexture = new Three__namespace.DepthTexture();
+      depthRenderTarget.depthTexture.type = Three__namespace.UnsignedShortType;
+      depthRenderTarget.depthTexture.minFilter = Three__namespace.NearestFilter;
+      depthRenderTarget.depthTexture.maxFilter = Three__namespace.NearestFilter;
+    }
+
+    this.depthMaterial = depthMaterial;
+    this.depthRenderTarget = depthRenderTarget;
   }
 
   initEssentialServices() {
@@ -3387,6 +3419,26 @@ class RenderServiceClass {
     const dt = this.animationClock.getDelta();
 
     if (!this.paused) {
+      if (this.onBeforeRenderFrame) {
+        this.onBeforeRenderFrame();
+      }
+
+      if (this.depthMaterial && this.depthRenderTarget) {
+        if (this.onBeforeRenderDepth) {
+          this.onBeforeRenderDepth();
+        }
+
+        this.scene.overrideMaterial = this.depthMaterial;
+        this.renderer.setRenderTarget(this.depthRenderTarget);
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.setRenderTarget(null);
+        this.scene.overrideMaterial = null;
+
+        if (this.onAfterRenderDepth) {
+          this.onAfterRenderDepth();
+        }
+      }
+
       if (this.composer) {
         this.composer.render(dt);
       } else {
@@ -3396,6 +3448,10 @@ class RenderServiceClass {
       if (this.onResumed) {
         this.onResumed();
         this.onResumed = null;
+      }
+
+      if (this.onAfterRenderFrame) {
+        this.onAfterRenderFrame();
       }
     } else {
       if (this.onPaused) {
@@ -3419,6 +3475,10 @@ class RenderServiceClass {
 
     if (this.composer) {
       this.composer.setSize(windowInfo.width, windowInfo.height);
+    }
+
+    if (this.depthRenderTarget) {
+      this.depthRenderTarget.setSize(windowInfo.width, windowInfo.height);
     }
   }
 

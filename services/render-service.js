@@ -23,12 +23,18 @@ class RenderServiceClass {
   composer = null;
   postProcessingEffects = {};
   smaaPostprocessingTextures = {};
+  depthMaterial = null;
+  depthRenderTarget = null;
   scene = null;
   controls = null;
   currentView = null;
   paused = false;
   onPaused = null;
   onResumed = null;
+  onBeforeRenderFrame = null;
+  onBeforeRenderDepth = null;
+  onAfterRenderDepth = null;
+  onAfterRenderFrame = null;
 
   animationLoop = null;
   systemLoop = null;
@@ -116,6 +122,31 @@ class RenderServiceClass {
     if (DummyDebug.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
       CameraService.detachCamera();
     }
+
+    const depthMaterial = new Three.MeshDepthMaterial();
+    depthMaterial.depthPacking = Three.RGBADepthPacking;
+    depthMaterial.blending = Three.NoBlending;
+
+    const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
+
+    const depthRenderTarget = new Three.WebGLRenderTarget(
+      window.innerWidth,
+      window.innerHeight
+    );
+    depthRenderTarget.texture.minFilter = Three.NearestFilter;
+    depthRenderTarget.texture.magFilter = Three.NearestFilter;
+    depthRenderTarget.texture.generateMipmaps = false;
+    depthRenderTarget.stencilBuffer = false;
+  
+    if (depthTexturesSupport) {
+      depthRenderTarget.depthTexture = new Three.DepthTexture();
+      depthRenderTarget.depthTexture.type = Three.UnsignedShortType;
+      depthRenderTarget.depthTexture.minFilter = Three.NearestFilter;
+      depthRenderTarget.depthTexture.maxFilter = Three.NearestFilter;
+    }
+
+    this.depthMaterial = depthMaterial;
+    this.depthRenderTarget = depthRenderTarget;
   }
 
   initEssentialServices() {
@@ -281,6 +312,28 @@ class RenderServiceClass {
     const dt = this.animationClock.getDelta();
 
     if (!this.paused) {
+      if (this.onBeforeRenderFrame) {
+        this.onBeforeRenderFrame();
+      }
+
+      if (this.depthMaterial && this.depthRenderTarget) {
+        if (this.onBeforeRenderDepth) {
+          this.onBeforeRenderDepth();
+        }
+
+        this.scene.overrideMaterial = this.depthMaterial;
+
+        this.renderer.setRenderTarget(this.depthRenderTarget);
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.setRenderTarget(null);
+
+        this.scene.overrideMaterial = null;
+
+        if (this.onAfterRenderDepth) {
+          this.onAfterRenderDepth();
+        }
+      }
+
       if (this.composer) {
         this.composer.render(dt);
       } else {
@@ -291,6 +344,10 @@ class RenderServiceClass {
         this.onResumed();
 
         this.onResumed = null;
+      }
+
+      if (this.onAfterRenderFrame) {
+        this.onAfterRenderFrame();
       }
     } else {
       if (this.onPaused) {
@@ -315,6 +372,13 @@ class RenderServiceClass {
 
     if (this.composer) {
       this.composer.setSize(windowInfo.width, windowInfo.height);
+    }
+
+    if (this.depthRenderTarget) {
+      this.depthRenderTarget.setSize(
+        windowInfo.width,
+        windowInfo.height
+      );
     }
   }
 
