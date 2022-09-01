@@ -1,9 +1,13 @@
 import * as uuid from 'uuid';
+import { defaultTo } from '../utils/shared';
 
 class TimeServiceClass {
   frameListeners = [];
   intervals = {};
   persistentFrameListeners = {};
+  lastDt = 0.0;
+  lastInverseDt = 0.0;
+  totalElapsedTime = 0.0;
 
   createTimeoutPromise(timeout = 1000) {
     return new Promise(resolve => {
@@ -39,14 +43,20 @@ class TimeServiceClass {
   }
 
   onFrame({ dt, elapsedTime }) {
+    const inverseDt = dt / (1 / defaultTo(GameInfoService.config.system.camera.fov, 60.0));
+
+    this.lastDt = dt;
+    this.lastInverseDt = inverseDt;
+    this.totalElapsedTime = elapsedTime;
+
     this.frameListeners = this.frameListeners.filter(listener => {
-      return listener({ dt, elapsedTime }) !== false;
+      return listener({ dt, elapsedTime, inverseDt }) !== false;
     });
 
     Object.keys(this.persistentFrameListeners).forEach(uid => {
       const listener = this.persistentFrameListeners[uid];
 
-      if (listener({ dt, elapsedTime }) === false) {
+      if (listener({ dt, elapsedTime, inverseDt }) === false) {
         this.disposePersistentListener(listener);
       }
     });
@@ -58,7 +68,7 @@ class TimeServiceClass {
 
       if (intervals.time <= 0.0) {
         intervals.listeners = intervals.listeners.filter(listener => {
-          return listener({ dt, elapsedTime }) !== false;
+          return listener({ dt, elapsedTime, inverseDt }) !== false;
         });
 
         if (intervals.listeners.length === 0) {
@@ -68,6 +78,18 @@ class TimeServiceClass {
         intervals.time = key;
       }
     });
+  }
+
+  getLastDt() {
+    return this.lastDt;
+  }
+
+  getLastInverseDt() {
+    return this.lastInverseDt;
+  }
+
+  getTotalElapsedTime() {
+    return this.totalElapsedTime;
   }
 
   disposeFrameListener(frameListener) {

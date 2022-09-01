@@ -31,279 +31,6 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-class TimeServiceClass {
-  constructor() {
-    _defineProperty(this, "frameListeners", []);
-
-    _defineProperty(this, "intervals", {});
-
-    _defineProperty(this, "persistentFrameListeners", {});
-  }
-
-  createTimeoutPromise(timeout = 1000) {
-    return new Promise(resolve => {
-      setTimeout(resolve, timeout);
-    });
-  }
-
-  registerFrameListener(onFrame) {
-    this.frameListeners.push(onFrame);
-    return onFrame;
-  }
-
-  registerIntervalListener(onIntervalStep, intervalTime = 1000) {
-    const interval = intervalTime / 1000.0;
-
-    if (!this.intervals[interval]) {
-      this.intervals[interval] = {
-        time: interval,
-        listeners: []
-      };
-    }
-
-    this.intervals[interval].listeners.push(onIntervalStep);
-  }
-
-  registerPersistentFrameListener(onFrame) {
-    const persistentUid = uuid.v4();
-    this.persistentFrameListeners[persistentUid] = onFrame;
-    return persistentUid;
-  }
-
-  onFrame({
-    dt,
-    elapsedTime
-  }) {
-    this.frameListeners = this.frameListeners.filter(listener => {
-      return listener({
-        dt,
-        elapsedTime
-      }) !== false;
-    });
-    Object.keys(this.persistentFrameListeners).forEach(uid => {
-      const listener = this.persistentFrameListeners[uid];
-
-      if (listener({
-        dt,
-        elapsedTime
-      }) === false) {
-        this.disposePersistentListener(listener);
-      }
-    });
-    Object.keys(this.intervals).forEach(key => {
-      const intervals = this.intervals[key];
-      intervals.time -= dt;
-
-      if (intervals.time <= 0.0) {
-        intervals.listeners = intervals.listeners.filter(listener => {
-          return listener({
-            dt,
-            elapsedTime
-          }) !== false;
-        });
-
-        if (intervals.listeners.length === 0) {
-          delete this.intervals[key];
-        }
-
-        intervals.time = key;
-      }
-    });
-  }
-
-  disposeFrameListener(frameListener) {
-    this.frameListeners = this.frameListeners.filter(match => match !== frameListener);
-  }
-
-  disposePersistentListener(uid) {
-    delete this.persistentFrameListeners[uid];
-  }
-
-  disposeIntervalListener(intervalListener, intervalTime) {
-    if (intervalTime) {
-      if (this.intervals[intervalTime]) {
-        this.intervals[intervalTime].listeners = this.intervals[intervalTime].listeners.filter(match => match !== intervalListener);
-
-        if (this.intervals[intervalTime].listeners.length === 0) {
-          delete this.intervals[intervalTime];
-        }
-      }
-
-      return;
-    }
-
-    Object.keys(this.intervals).forEach(key => {
-      this.intervals[key].listeners = this.intervals[key].listeners.filter(match => match !== intervalListener);
-
-      if (this.intervals[key].listeners.length === 0) {
-        delete this.intervals[key];
-      }
-    });
-  }
-
-  disposeAll() {
-    this.frameListeners = [];
-    this.intervals = {};
-  }
-
-}
-
-const TimeService = new TimeServiceClass();
-
-const animateLinearInverse = (x, duration = 1.0, offset = 1.0) => offset - Math.min(x, duration) / duration * offset;
-const animateLinear = (x, duration = 1.0, offset = 1.0) => Math.min(x, duration) / duration * offset;
-const animateDelay = (x, delay = 0.0) => Math.max(0.0, x - delay);
-const AnimationOverrideType = {
-  default: 0,
-  noOverride: 0,
-  overrideIfExists: 1,
-  ignoreIfExists: 2
-};
-
-class AnimationServiceClass {
-  constructor() {
-    _defineProperty(this, "animations", []);
-
-    _defineProperty(this, "frameListenerUid", null);
-
-    this.initLoop();
-  }
-
-  initLoop() {
-    this.frameListenerUid = TimeService.registerPersistentFrameListener(({
-      dt,
-      elapsedTime
-    }) => {
-      this.onStep({
-        dt,
-        elapsedTime
-      });
-    });
-  }
-
-  onStep({
-    dt,
-    elapsedTime
-  }) {
-    const time = elapsedTime;
-    this.animations = this.animations.filter(animation => {
-      const {
-        onStep,
-        target,
-        interval
-      } = animation;
-
-      if (typeof onStep !== 'function' || !target) {
-        return false;
-      }
-
-      if (target.__disposed__) {
-        AssetsService.disposeAsset(target);
-        return false;
-      }
-
-      animation.animationTime += dt;
-      animation.intervalTime += dt;
-
-      if (interval === 0 || animation.intervalTime >= interval) {
-        const result = onStep({
-          target,
-          dt,
-          time,
-          animationTime: animation.animationTime,
-          intervalTime: animation.intervalTime
-        });
-        animation.intervalTime = animation.intervalTime - interval;
-
-        if (result === false) {
-          animation.dispose();
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  registerAnimation({
-    target,
-    onCreate,
-    onStep,
-    onDispose: customDispose,
-    interval,
-    override = AnimationOverrideType.default,
-    randomSeed = 0.0
-  } = {}) {
-    if (!target || !onStep) {
-      return;
-    }
-
-    if (target.userData.animationServiceRef) {
-      if (override === AnimationOverrideType.ignoreIfExists) {
-        return target.userData.animationServiceRef;
-      } else if (override === AnimationOverrideType.overrideIfExists) {
-        this.cancelAnimation(target.userData.animationServiceRef);
-      }
-    }
-
-    const animation = {
-      target,
-      onStep,
-      interval: interval ? interval / 1000.0 : 0.0,
-      animationTime: randomSeed,
-      intervalTime: 0.0,
-      dispose: () => {
-        if (customDispose) {
-          customDispose({
-            target
-          });
-        }
-
-        this.animations = this.animations.filter(item => item !== animation);
-        delete target.userData.animationServiceRef;
-      }
-    };
-
-    if (onCreate) {
-      onCreate(animation);
-    }
-
-    this.animations.push(animation);
-    target.userData.animationServiceRef = animation;
-    return animation;
-  }
-
-  cancelAnimation(animation) {
-    if (animation.dispose) {
-      animation.dispose();
-    }
-
-    this.animations = this.animations.filter(item => item !== animation);
-  }
-
-  disposeAll() {
-    this.animations = this.animations.filter(({
-      target
-    }) => {
-      if (target.userData) {
-        delete target.userData.animationServiceRef;
-      }
-
-      return false;
-    });
-    this.animations = [];
-  }
-
-  dispose() {
-    if (this.frameListenerUid) {
-      TimeService.disposePersistentListener(this.frameListenerUid);
-    }
-  }
-
-}
-
-const AnimationService = new AnimationServiceClass();
-
 class StorageServiceClass {
   constructor() {
     _defineProperty(this, "reads", 0);
@@ -533,7 +260,7 @@ class GameInfoServiceClass {
 
 }
 
-const GameInfoService = new GameInfoServiceClass();
+const GameInfoService$1 = new GameInfoServiceClass();
 
 class UtilsServiceClass {
   constructor() {
@@ -599,7 +326,7 @@ class UtilsServiceClass {
     }
 
     this.poolCameraTotal++;
-    return new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
+    return new Three.PerspectiveCamera(GameInfoService$1.config.system.camera.fov, 1.0);
   }
 
   releaseCamera(camera) {
@@ -678,15 +405,15 @@ class VarServiceClass {
   init({
     language
   } = {}) {
-    if (GameInfoService.config.labels) {
-      const defaultLabels = GameInfoService.config.labels[language || 'en'] || {};
+    if (GameInfoService$1.config.labels) {
+      const defaultLabels = GameInfoService$1.config.labels[language || 'en'] || {};
       Object.keys(defaultLabels).forEach(key => {
         this.setVar(key, defaultLabels[key]);
       });
     }
 
-    if (GameInfoService.config.vars) {
-      const defaultGameState = GameInfoService.config.vars;
+    if (GameInfoService$1.config.vars) {
+      const defaultGameState = GameInfoService$1.config.vars;
       Object.keys(defaultGameState).forEach(key => {
         this.setVar(key, defaultGameState[key]);
       });
@@ -1263,6 +990,329 @@ class MathServiceClass {
 }
 
 const MathService = new MathServiceClass();
+
+const MathUtils = Three.MathUtils;
+const isDefined = value => typeof value !== 'undefined';
+const cloneValue = value => JSON.parse(JSON.stringify(value));
+const getRandomColor = () => new Three.Color(Math.random() * 0xffffff);
+const getRandomElement = set => set[Math.floor(Math.random() * set.length)];
+const spliceRandomElement = set => set.splice(Math.floor(Math.random() * set.length), 1)[0];
+const moduloAngle = x => Math.atan2(Math.sin(x), Math.cos(x));
+const defaultTo = (value, defaultValue) => typeof value === 'undefined' ? defaultValue : value;
+const swapVectors = (vectorA, vectorB) => {
+  const helper = MathService.getVec3(0.0, 0.0, 0.0, 'swap-vectors-1');
+  helper.copy(vectorA);
+  vectorA.copy(vectorB);
+  vectorB.copy(helper);
+  MathService.releaseVec3(helper);
+};
+const textureFields = [// NOTE Excluding lightMap and envMap
+'alphaMap', 'aoMap', 'bumpMap', 'clearcoatMap', 'clearcoatNormalMap', 'clearcoatRoughnessMap', 'emissiveMap', 'gradientMap', 'displacementMap', 'map', 'metalnessMap', 'matcap', 'normalMap', 'transmissionMap', 'roughnessMap', 'specularMap'];
+const forAllMaterialTextures = (material, callback) => {
+  textureFields.forEach(key => {
+    if (material[key] && material[key].isTexture) {
+      callback(material[key], key);
+    }
+  });
+};
+
+class TimeServiceClass {
+  constructor() {
+    _defineProperty(this, "frameListeners", []);
+
+    _defineProperty(this, "intervals", {});
+
+    _defineProperty(this, "persistentFrameListeners", {});
+
+    _defineProperty(this, "lastDt", 0.0);
+
+    _defineProperty(this, "lastInverseDt", 0.0);
+
+    _defineProperty(this, "totalElapsedTime", 0.0);
+  }
+
+  createTimeoutPromise(timeout = 1000) {
+    return new Promise(resolve => {
+      setTimeout(resolve, timeout);
+    });
+  }
+
+  registerFrameListener(onFrame) {
+    this.frameListeners.push(onFrame);
+    return onFrame;
+  }
+
+  registerIntervalListener(onIntervalStep, intervalTime = 1000) {
+    const interval = intervalTime / 1000.0;
+
+    if (!this.intervals[interval]) {
+      this.intervals[interval] = {
+        time: interval,
+        listeners: []
+      };
+    }
+
+    this.intervals[interval].listeners.push(onIntervalStep);
+  }
+
+  registerPersistentFrameListener(onFrame) {
+    const persistentUid = uuid.v4();
+    this.persistentFrameListeners[persistentUid] = onFrame;
+    return persistentUid;
+  }
+
+  onFrame({
+    dt,
+    elapsedTime
+  }) {
+    const inverseDt = dt / (1 / defaultTo(GameInfoService.config.system.camera.fov, 60.0));
+    this.lastDt = dt;
+    this.lastInverseDt = inverseDt;
+    this.totalElapsedTime = elapsedTime;
+    this.frameListeners = this.frameListeners.filter(listener => {
+      return listener({
+        dt,
+        elapsedTime,
+        inverseDt
+      }) !== false;
+    });
+    Object.keys(this.persistentFrameListeners).forEach(uid => {
+      const listener = this.persistentFrameListeners[uid];
+
+      if (listener({
+        dt,
+        elapsedTime,
+        inverseDt
+      }) === false) {
+        this.disposePersistentListener(listener);
+      }
+    });
+    Object.keys(this.intervals).forEach(key => {
+      const intervals = this.intervals[key];
+      intervals.time -= dt;
+
+      if (intervals.time <= 0.0) {
+        intervals.listeners = intervals.listeners.filter(listener => {
+          return listener({
+            dt,
+            elapsedTime,
+            inverseDt
+          }) !== false;
+        });
+
+        if (intervals.listeners.length === 0) {
+          delete this.intervals[key];
+        }
+
+        intervals.time = key;
+      }
+    });
+  }
+
+  getLastDt() {
+    return this.lastDt;
+  }
+
+  getLastInverseDt() {
+    return this.lastInverseDt;
+  }
+
+  getTotalElapsedTime() {
+    return this.totalElapsedTime;
+  }
+
+  disposeFrameListener(frameListener) {
+    this.frameListeners = this.frameListeners.filter(match => match !== frameListener);
+  }
+
+  disposePersistentListener(uid) {
+    delete this.persistentFrameListeners[uid];
+  }
+
+  disposeIntervalListener(intervalListener, intervalTime) {
+    if (intervalTime) {
+      if (this.intervals[intervalTime]) {
+        this.intervals[intervalTime].listeners = this.intervals[intervalTime].listeners.filter(match => match !== intervalListener);
+
+        if (this.intervals[intervalTime].listeners.length === 0) {
+          delete this.intervals[intervalTime];
+        }
+      }
+
+      return;
+    }
+
+    Object.keys(this.intervals).forEach(key => {
+      this.intervals[key].listeners = this.intervals[key].listeners.filter(match => match !== intervalListener);
+
+      if (this.intervals[key].listeners.length === 0) {
+        delete this.intervals[key];
+      }
+    });
+  }
+
+  disposeAll() {
+    this.frameListeners = [];
+    this.intervals = {};
+  }
+
+}
+
+const TimeService = new TimeServiceClass();
+
+const animateLinearInverse = (x, duration = 1.0, offset = 1.0) => offset - Math.min(x, duration) / duration * offset;
+const animateLinear = (x, duration = 1.0, offset = 1.0) => Math.min(x, duration) / duration * offset;
+const animateDelay = (x, delay = 0.0) => Math.max(0.0, x - delay);
+const AnimationOverrideType = {
+  default: 0,
+  noOverride: 0,
+  overrideIfExists: 1,
+  ignoreIfExists: 2
+};
+
+class AnimationServiceClass {
+  constructor() {
+    _defineProperty(this, "animations", []);
+
+    _defineProperty(this, "frameListenerUid", null);
+
+    this.initLoop();
+  }
+
+  initLoop() {
+    this.frameListenerUid = TimeService.registerPersistentFrameListener(({
+      dt,
+      elapsedTime
+    }) => {
+      this.onStep({
+        dt,
+        elapsedTime
+      });
+    });
+  }
+
+  onStep({
+    dt,
+    elapsedTime
+  }) {
+    const time = elapsedTime;
+    this.animations = this.animations.filter(animation => {
+      const {
+        onStep,
+        target,
+        interval
+      } = animation;
+
+      if (typeof onStep !== 'function' || !target) {
+        return false;
+      }
+
+      if (target.__disposed__) {
+        AssetsService.disposeAsset(target);
+        return false;
+      }
+
+      animation.animationTime += dt;
+      animation.intervalTime += dt;
+
+      if (interval === 0 || animation.intervalTime >= interval) {
+        const result = onStep({
+          target,
+          dt,
+          time,
+          animationTime: animation.animationTime,
+          intervalTime: animation.intervalTime
+        });
+        animation.intervalTime = animation.intervalTime - interval;
+
+        if (result === false) {
+          animation.dispose();
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  registerAnimation({
+    target,
+    onCreate,
+    onStep,
+    onDispose: customDispose,
+    interval,
+    override = AnimationOverrideType.default,
+    randomSeed = 0.0
+  } = {}) {
+    if (!target || !onStep) {
+      return;
+    }
+
+    if (target.userData.animationServiceRef) {
+      if (override === AnimationOverrideType.ignoreIfExists) {
+        return target.userData.animationServiceRef;
+      } else if (override === AnimationOverrideType.overrideIfExists) {
+        this.cancelAnimation(target.userData.animationServiceRef);
+      }
+    }
+
+    const animation = {
+      target,
+      onStep,
+      interval: interval ? interval / 1000.0 : 0.0,
+      animationTime: randomSeed,
+      intervalTime: 0.0,
+      dispose: () => {
+        if (customDispose) {
+          customDispose({
+            target
+          });
+        }
+
+        this.animations = this.animations.filter(item => item !== animation);
+        delete target.userData.animationServiceRef;
+      }
+    };
+
+    if (onCreate) {
+      onCreate(animation);
+    }
+
+    this.animations.push(animation);
+    target.userData.animationServiceRef = animation;
+    return animation;
+  }
+
+  cancelAnimation(animation) {
+    if (animation.dispose) {
+      animation.dispose();
+    }
+
+    this.animations = this.animations.filter(item => item !== animation);
+  }
+
+  disposeAll() {
+    this.animations = this.animations.filter(({
+      target
+    }) => {
+      if (target.userData) {
+        delete target.userData.animationServiceRef;
+      }
+
+      return false;
+    });
+    this.animations = [];
+  }
+
+  dispose() {
+    if (this.frameListenerUid) {
+      TimeService.disposePersistentListener(this.frameListenerUid);
+    }
+  }
+
+}
+
+const AnimationService = new AnimationServiceClass();
 
 const OcclusionStepEnum = {
   progressive: 'progressive'
@@ -2118,31 +2168,6 @@ class InteractionsServiceClass {
 }
 
 const InteractionsService = new InteractionsServiceClass();
-
-const MathUtils = Three.MathUtils;
-const isDefined = value => typeof value !== 'undefined';
-const cloneValue = value => JSON.parse(JSON.stringify(value));
-const getRandomColor = () => new Three.Color(Math.random() * 0xffffff);
-const getRandomElement = set => set[Math.floor(Math.random() * set.length)];
-const spliceRandomElement = set => set.splice(Math.floor(Math.random() * set.length), 1)[0];
-const moduloAngle = x => Math.atan2(Math.sin(x), Math.cos(x));
-const defaultTo = (value, defaultValue) => typeof value === 'undefined' ? defaultValue : value;
-const swapVectors = (vectorA, vectorB) => {
-  const helper = MathService.getVec3(0.0, 0.0, 0.0, 'swap-vectors-1');
-  helper.copy(vectorA);
-  vectorA.copy(vectorB);
-  vectorB.copy(helper);
-  MathService.releaseVec3(helper);
-};
-const textureFields = [// NOTE Excluding lightMap and envMap
-'alphaMap', 'aoMap', 'bumpMap', 'clearcoatMap', 'clearcoatNormalMap', 'clearcoatRoughnessMap', 'emissiveMap', 'gradientMap', 'displacementMap', 'map', 'metalnessMap', 'matcap', 'normalMap', 'transmissionMap', 'roughnessMap', 'specularMap'];
-const forAllMaterialTextures = (material, callback) => {
-  textureFields.forEach(key => {
-    if (material[key] && material[key].isTexture) {
-      callback(material[key], key);
-    }
-  });
-};
 
 const createArrowHelper = (container, id, vector, origin, color) => {
   let helper = container.getObjectByName(id);
@@ -3166,26 +3191,26 @@ class RenderServiceClass {
     pixelRatio
   } = {}) {
     const windowInfo = this.getWindowSize();
-    const camera = new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
+    const camera = new Three.PerspectiveCamera(GameInfoService$1.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService$1.config.system.camera.near, GameInfoService$1.config.system.camera.far);
     this.camera = camera;
     const scene = new Three.Scene();
-    scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
+    scene.background = new Three.Color(GameInfoService$1.config.system.sceneBackgroundDefault);
     this.scene = scene;
 
-    if (GameInfoService.config.system.vr) {
-      GameInfoService.config.system.postprocessing = false;
+    if (GameInfoService$1.config.system.vr) {
+      GameInfoService$1.config.system.postprocessing = false;
     }
 
     const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
+      antialias: GameInfoService$1.config.system.antialiasing && !GameInfoService$1.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
     renderer.toneMapping = Three.ACESFilmicToneMapping;
     renderer.outputEncoding = Three.sRGBEncoding;
     renderer.autoClear = false;
     renderer.physicallyCorrectLights = true;
-    renderer.xr.enabled = GameInfoService.config.system.vr || false;
-    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
+    renderer.xr.enabled = GameInfoService$1.config.system.vr || false;
+    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService$1.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.position = 'absolute';
@@ -3197,7 +3222,7 @@ class RenderServiceClass {
     this.renderer = renderer;
     this.scene.add(this.camera);
 
-    if (GameInfoService.config.system.postprocessing) {
+    if (GameInfoService$1.config.system.postprocessing) {
       const composer = new EffectComposer(this.renderer, {
         frameBufferType: Three.HalfFloatType
       });
@@ -3264,7 +3289,7 @@ class RenderServiceClass {
     this.composer.addPass(uiRenderPass);
     this.composer.addPass(new ClearPass(false, true, false));
 
-    if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
+    if (GameInfoService$1.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
       const smaaEffect = new SMAAEffect(this.smaaPostprocessingTextures.search, this.smaaPostprocessingTextures.area, SMAAPreset.HIGH, EdgeDetectionMode.COLOR);
       smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
       smaaEffect.edgeDetectionMaterial.setPredicationMode(PredicationMode.DEPTH);
@@ -3702,7 +3727,7 @@ class AssetsServiceClass {
             }
           }
 
-          if (GameInfoService.config.system.correctBlenderLights) {
+          if (GameInfoService$1.config.system.correctBlenderLights) {
             // NOTE More arbitrary that you dare to imagine 👀
             if (child instanceof Three.Light) {
               child.intensity /= 68.3;
@@ -4131,7 +4156,7 @@ const parseLabel = object => {
 
   if (isDefined(userData.label)) {
     const label = new Text({
-      font: GameInfoService.config.fonts[userData.labelFont] || GameInfoService.config.fonts.default,
+      font: GameInfoService$1.config.fonts[userData.labelFont] || GameInfoService$1.config.fonts.default,
       fontSize: userData.labelSize || 1.0,
       textAlign: userData.labelAlign || 'center',
       color: '#ffffff',
@@ -4383,7 +4408,7 @@ const parseAnimation = object => {
   } = object;
 
   if (isDefined(userData.animation)) {
-    const animation = GameInfoService.config.animations[userData.animation];
+    const animation = GameInfoService$1.config.animations[userData.animation];
 
     if (animation) {
       animation(object);
@@ -4611,7 +4636,7 @@ const parseShader = object => {
   } = object;
 
   if (isDefined(userData.shader)) {
-    const shaderFunction = GameInfoService.config.shaders[userData.shader];
+    const shaderFunction = GameInfoService$1.config.shaders[userData.shader];
 
     if (!shaderFunction || typeof shaderFunction !== 'function') {
       console.info('parseShader', 'shader does not exist or not a valid shader', userData.shader, {
@@ -5136,7 +5161,7 @@ class SceneServiceClass {
 
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
-      scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
+      scene.background = new Three.Color(GameInfoService$1.config.system.sceneBackgroundDefault);
     }
 
     if (this.gameObjectRefs) {
@@ -5592,7 +5617,7 @@ class Preloader extends GameObjectClass {
 
     _defineProperty(this, "spinnerTexture", null);
 
-    this.spinnerTexture = spinnerTexture || GameInfoService.config.textures.spinner || null;
+    this.spinnerTexture = spinnerTexture || GameInfoService$1.config.textures.spinner || null;
     Promise.all([...(requireAssets || []), TimeService.createTimeoutPromise(3000)]).then(assets => {
       const complete = onComplete(assets);
 
@@ -5850,7 +5875,7 @@ const IntroFadeShader = ({
   return shader;
 };
 
-GameInfoService.shader('introFade', IntroFadeShader);
+GameInfoService$1.shader('introFade', IntroFadeShader);
 class IntroView extends ViewClass {
   constructor(nextView) {
     super();
@@ -5870,7 +5895,7 @@ class IntroView extends ViewClass {
     MathService.releaseVec3(cameraTarget);
     const ambientLight = AssetsService.getAmbientLight();
     scene.add(ambientLight);
-    AssetsService.getModel(GameInfoService.config.models.intro).then(introModel => {
+    AssetsService.getModel(GameInfoService$1.config.models.intro).then(introModel => {
       SceneService.parseScene({
         target: introModel,
         actions: {
@@ -6003,7 +6028,7 @@ class SystemServiceClass {
 
     this.promised.push(VarService.retrievePersistentVars());
 
-    if (GameInfoService.config.system.postprocessing) {
+    if (GameInfoService$1.config.system.postprocessing) {
       this.promised.push(RenderService.createSMAATextures());
     }
 
@@ -6055,4 +6080,4 @@ class SystemServiceClass {
 
 const SystemService = new SystemServiceClass();
 
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService$1 as GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
