@@ -1,5 +1,6 @@
 import * as uuid from 'uuid';
 import { defaultTo } from '../utils/shared';
+import { GameInfoService } from './game-info-service';
 
 class TimeServiceClass {
   frameListeners = [];

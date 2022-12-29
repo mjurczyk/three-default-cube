@@ -260,7 +260,7 @@ class GameInfoServiceClass {
 
 }
 
-const GameInfoService$1 = new GameInfoServiceClass();
+const GameInfoService = new GameInfoServiceClass();
 
 class UtilsServiceClass {
   constructor() {
@@ -326,7 +326,7 @@ class UtilsServiceClass {
     }
 
     this.poolCameraTotal++;
-    return new Three.PerspectiveCamera(GameInfoService$1.config.system.camera.fov, 1.0);
+    return new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
   }
 
   releaseCamera(camera) {
@@ -405,15 +405,15 @@ class VarServiceClass {
   init({
     language
   } = {}) {
-    if (GameInfoService$1.config.labels) {
-      const defaultLabels = GameInfoService$1.config.labels[language || 'en'] || {};
+    if (GameInfoService.config.labels) {
+      const defaultLabels = GameInfoService.config.labels[language || 'en'] || {};
       Object.keys(defaultLabels).forEach(key => {
         this.setVar(key, defaultLabels[key]);
       });
     }
 
-    if (GameInfoService$1.config.vars) {
-      const defaultGameState = GameInfoService$1.config.vars;
+    if (GameInfoService.config.vars) {
+      const defaultGameState = GameInfoService.config.vars;
       Object.keys(defaultGameState).forEach(key => {
         this.setVar(key, defaultGameState[key]);
       });
@@ -3191,26 +3191,26 @@ class RenderServiceClass {
     pixelRatio
   } = {}) {
     const windowInfo = this.getWindowSize();
-    const camera = new Three.PerspectiveCamera(GameInfoService$1.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService$1.config.system.camera.near, GameInfoService$1.config.system.camera.far);
+    const camera = new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
     this.camera = camera;
     const scene = new Three.Scene();
-    scene.background = new Three.Color(GameInfoService$1.config.system.sceneBackgroundDefault);
+    scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
     this.scene = scene;
 
-    if (GameInfoService$1.config.system.vr) {
-      GameInfoService$1.config.system.postprocessing = false;
+    if (GameInfoService.config.system.vr) {
+      GameInfoService.config.system.postprocessing = false;
     }
 
     const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService$1.config.system.antialiasing && !GameInfoService$1.config.system.postprocessing,
+      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
     renderer.toneMapping = Three.ACESFilmicToneMapping;
     renderer.outputEncoding = Three.sRGBEncoding;
     renderer.autoClear = false;
     renderer.physicallyCorrectLights = true;
-    renderer.xr.enabled = GameInfoService$1.config.system.vr || false;
-    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService$1.config.system.pixelRatio);
+    renderer.xr.enabled = GameInfoService.config.system.vr || false;
+    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.position = 'absolute';
@@ -3222,7 +3222,7 @@ class RenderServiceClass {
     this.renderer = renderer;
     this.scene.add(this.camera);
 
-    if (GameInfoService$1.config.system.postprocessing) {
+    if (GameInfoService.config.system.postprocessing) {
       const composer = new EffectComposer(this.renderer, {
         frameBufferType: Three.HalfFloatType
       });
@@ -3289,7 +3289,7 @@ class RenderServiceClass {
     this.composer.addPass(uiRenderPass);
     this.composer.addPass(new ClearPass(false, true, false));
 
-    if (GameInfoService$1.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
+    if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
       const smaaEffect = new SMAAEffect(this.smaaPostprocessingTextures.search, this.smaaPostprocessingTextures.area, SMAAPreset.HIGH, EdgeDetectionMode.COLOR);
       smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
       smaaEffect.edgeDetectionMaterial.setPredicationMode(PredicationMode.DEPTH);
@@ -3727,7 +3727,7 @@ class AssetsServiceClass {
             }
           }
 
-          if (GameInfoService$1.config.system.correctBlenderLights) {
+          if (GameInfoService.config.system.correctBlenderLights) {
             // NOTE More arbitrary that you dare to imagine 👀
             if (child instanceof Three.Light) {
               child.intensity /= 68.3;
@@ -4156,7 +4156,7 @@ const parseLabel = object => {
 
   if (isDefined(userData.label)) {
     const label = new Text({
-      font: GameInfoService$1.config.fonts[userData.labelFont] || GameInfoService$1.config.fonts.default,
+      font: GameInfoService.config.fonts[userData.labelFont] || GameInfoService.config.fonts.default,
       fontSize: userData.labelSize || 1.0,
       textAlign: userData.labelAlign || 'center',
       color: '#ffffff',
@@ -4408,7 +4408,7 @@ const parseAnimation = object => {
   } = object;
 
   if (isDefined(userData.animation)) {
-    const animation = GameInfoService$1.config.animations[userData.animation];
+    const animation = GameInfoService.config.animations[userData.animation];
 
     if (animation) {
       animation(object);
@@ -4636,7 +4636,7 @@ const parseShader = object => {
   } = object;
 
   if (isDefined(userData.shader)) {
-    const shaderFunction = GameInfoService$1.config.shaders[userData.shader];
+    const shaderFunction = GameInfoService.config.shaders[userData.shader];
 
     if (!shaderFunction || typeof shaderFunction !== 'function') {
       console.info('parseShader', 'shader does not exist or not a valid shader', userData.shader, {
@@ -5161,7 +5161,7 @@ class SceneServiceClass {
 
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
-      scene.background = new Three.Color(GameInfoService$1.config.system.sceneBackgroundDefault);
+      scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
     }
 
     if (this.gameObjectRefs) {
@@ -5617,7 +5617,7 @@ class Preloader extends GameObjectClass {
 
     _defineProperty(this, "spinnerTexture", null);
 
-    this.spinnerTexture = spinnerTexture || GameInfoService$1.config.textures.spinner || null;
+    this.spinnerTexture = spinnerTexture || GameInfoService.config.textures.spinner || null;
     Promise.all([...(requireAssets || []), TimeService.createTimeoutPromise(3000)]).then(assets => {
       const complete = onComplete(assets);
 
@@ -5875,7 +5875,7 @@ const IntroFadeShader = ({
   return shader;
 };
 
-GameInfoService$1.shader('introFade', IntroFadeShader);
+GameInfoService.shader('introFade', IntroFadeShader);
 class IntroView extends ViewClass {
   constructor(nextView) {
     super();
@@ -5895,7 +5895,7 @@ class IntroView extends ViewClass {
     MathService.releaseVec3(cameraTarget);
     const ambientLight = AssetsService.getAmbientLight();
     scene.add(ambientLight);
-    AssetsService.getModel(GameInfoService$1.config.models.intro).then(introModel => {
+    AssetsService.getModel(GameInfoService.config.models.intro).then(introModel => {
       SceneService.parseScene({
         target: introModel,
         actions: {
@@ -6028,7 +6028,7 @@ class SystemServiceClass {
 
     this.promised.push(VarService.retrievePersistentVars());
 
-    if (GameInfoService$1.config.system.postprocessing) {
+    if (GameInfoService.config.system.postprocessing) {
       this.promised.push(RenderService.createSMAATextures());
     }
 
@@ -6080,4 +6080,4 @@ class SystemServiceClass {
 
 const SystemService = new SystemServiceClass();
 
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService$1 as GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
