@@ -26,8 +26,8 @@ class GameInfoServiceClass {
   }
 
   system(
-    fps = 60,
-    pixelRatio = 1.5,
+    fps = 0,
+    pixelRatio,
     antialiasing = true,
     postprocessing = true,
     sceneBackgroundDefault = 0x000000,
@@ -38,7 +38,7 @@ class GameInfoServiceClass {
       system: {
         ...(this.config.system || {}),
         fps,
-        pixelRatio,
+        pixelRatio: typeof pixelRatio !== 'undefined' ? pixelRatio : window.devicePixelRatio,
         antialiasing,
         postprocessing,
         sceneBackgroundDefault,

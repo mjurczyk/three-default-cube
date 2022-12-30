@@ -37,7 +37,7 @@ class RenderServiceClass {
   onAfterRenderFrame = null;
 
   animationLoop = null;
-  systemLoop = null;
+  logicLoop = null;
 
   constructor() {
     window.addEventListener('resize', () => this.onResize());
@@ -240,6 +240,21 @@ class RenderServiceClass {
     this.updatePostProcessingEffect(id);
   }
 
+  renderView(viewInstance) {
+    if (this.currentView) {
+      this.currentView.dispose();
+
+      delete this.currentView;
+    }
+
+    this.currentView = viewInstance;
+
+    DummyDebug.leaks.geometries = Math.max(DummyDebug.leaks.geometries, this.renderer.info.memory.geometries);
+    DummyDebug.leaks.textures = Math.max(DummyDebug.leaks.textures, this.renderer.info.memory.textures);
+
+    viewInstance.onCreate();
+  }
+
   resetPostProcessing() {
     Object.keys(this.postProcessingEffects).forEach(effect => {
       this.resetPostProcessingEffect(effect);
@@ -261,37 +276,43 @@ class RenderServiceClass {
   }
 
   run() {
+    this.runAnimationLoop();
+    this.runLogicLoop();
+  }
+
+  runAnimationLoop() {
     if (!this.renderer.xr.enabled) {
       this.onAnimationFrame();
     } else {
       this.renderer.setAnimationLoop(() => this.onAnimationFrame());
     }
-
-    this.onSystemFrame();
   }
 
-  renderView(viewInstance) {
-    if (this.currentView) {
-      this.currentView.dispose();
+  lastFrameTimestamp = 0;
+  logicFixedStep = 1000.0 / 60.0;
 
-      delete this.currentView;
+  runLogicLoop() {
+    if (this.logicLoop) {
+      cancelAnimationFrame(this.logicLoop);
     }
 
-    this.currentView = viewInstance;
+    this.logicLoop = requestAnimationFrame(() => this.runLogicLoop());
 
-    DummyDebug.leaks.geometries = Math.max(DummyDebug.leaks.geometries, this.renderer.info.memory.geometries);
-    DummyDebug.leaks.textures = Math.max(DummyDebug.leaks.textures, this.renderer.info.memory.textures);
+    const now = performance.now();
+    const dt = now - this.lastFrameTimestamp;
 
-    viewInstance.onCreate();
+    if (dt >= this.logicFixedStep) {
+      this.lastFrameTimestamp = now;
+
+      const steps = Math.floor(dt / this.logicFixedStep);
+
+      for (let i = 0; i < steps; i++) {
+        this.onLogicFrame();
+      }
+    }
   }
 
-  onSystemFrame() {
-    if (this.systemLoop) {
-      clearTimeout(this.systemLoop);
-    }
-
-    this.systemLoop = setTimeout(() => this.onSystemFrame(), 1000 / 60);
-
+  onLogicFrame() {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
 
@@ -303,10 +324,18 @@ class RenderServiceClass {
   onAnimationFrame() {
     if (!this.renderer.xr.enabled) {
       if (this.animationLoop) {
-        cancelAnimationFrame(this.animationLoop);
+        if (GameInfoService.config.system.fps) {
+          clearTimeout(this.animationLoop);
+        } else {
+          cancelAnimationFrame(this.animationLoop);
+        }
       }
 
-      this.animationLoop = requestAnimationFrame(() => this.onAnimationFrame());
+      if (GameInfoService.config.system.fps) {
+        this.animationLoop = setTimeout(() => this.onAnimationFrame(), 1000.0 / GameInfoService.config.system.fps);
+      } else {
+        this.animationLoop = requestAnimationFrame(() => this.onAnimationFrame());
+      }
     }
 
     const dt = this.animationClock.getDelta();
@@ -355,6 +384,10 @@ class RenderServiceClass {
 
         this.onPaused = null;
       }
+    }
+
+    if (DummyDebug.stats) {
+      DummyDebug.stats.update();
     }
   }
 

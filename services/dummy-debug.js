@@ -6,6 +6,7 @@ import { StorageService } from './storage-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { VarService } from './var-service';
+import * as packageInfo from '../package.json';
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -56,12 +57,6 @@ class DummyDebugClass {
     document.body.appendChild(stats.dom);
 
     this.stats = stats;
-
-    TimeService.registerPersistentFrameListener(() => {
-      this.stats.update();
-
-      return !!this.stats;
-    });
   }
 
   hideStats() {
@@ -195,6 +190,11 @@ class DummyDebugClass {
           { text: StorageService.writes, color: LogsHighlightColor },
         ));
       }
+      outputElement.appendChild(this.createLogLine(
+        { text: 'Version:' },
+        { text: packageInfo.version, color: LogsHighlightColor },
+        { text: packageInfo.stable ? '(stable)' : '(dev)', color: LogsHighlightColor },
+      ));
     });
   }
 
