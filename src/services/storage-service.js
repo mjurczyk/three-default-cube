@@ -1,4 +1,4 @@
-import { NativeStorage } from '@ionic-native/native-storage';
+import { MobileAdapter } from '../adapters/mobile-adapter';
 import { DebugFlags, DebugService } from './debug-service';
 
 class StorageServiceClass {
@@ -7,7 +7,7 @@ class StorageServiceClass {
   useNative = true;
 
   constructor() {
-    this.useNative = typeof cordova !== 'undefined';
+    this.useNative = MobileAdapter.isMobile();
   }
 
   init() {
@@ -20,7 +20,7 @@ class StorageServiceClass {
         return resolve(Object.keys(localStorage));
       }
 
-      return NativeStorage.keys(
+      return MobileAdapter.getNativeStorage().keys(
         keys => resolve(keys),
         error => {
           if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
@@ -44,7 +44,7 @@ class StorageServiceClass {
       return Promise.resolve(localStorage.setItem(key, JSON.stringify(value)));
     }
 
-    return NativeStorage.setItem(key, value).catch((error) => {
+    return MobileAdapter.getNativeStorage().setItem(key, value).catch((error) => {
       if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'set', 'not saved', { key, value, error });
       }
@@ -64,7 +64,7 @@ class StorageServiceClass {
       return Promise.resolve(JSON.parse(localStorage.getItem(key) || 'null'));
     }
 
-    return NativeStorage.getItem(key).catch((error) => {
+    return MobileAdapter.getNativeStorage().getItem(key).catch((error) => {
       if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'get', 'not read', { key, error });
       }

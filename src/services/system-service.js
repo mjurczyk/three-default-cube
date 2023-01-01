@@ -1,34 +1,15 @@
-/* global cordova */
-import { Plugins } from '@capacitor/core';
-import { NavigationBar } from '@ionic-native/navigation-bar';
-import { ScreenOrientation } from '@ionic-native/screen-orientation';
 import { StorageService } from './storage-service';
 import { DebugFlags, DebugService } from './debug-service';
 import { VarService } from './var-service';
 import { RenderService } from './render-service';
 import { GameInfoService } from './game-info-service';
-
-const { App, StatusBar } = Plugins;
+import { MobileAdapter, MobileAdapterConstants } from '../adapters/mobile-adapter';
 
 class SystemServiceClass {
-  isCordova = false;
-  appStateListeners = [];
   promised = [];
-
-  constructor() {
-    this.isCordova = typeof cordova !== 'undefined';
-  }
 
   init({ statusBar } = {}) {
     StorageService.init();
-
-    App.addListener('appStateChange', (state) => {
-      this.appStateListeners.forEach(callback => {
-        if (typeof callback === 'function') {
-          callback(state);
-        }
-      });
-    });
 
     if (statusBar !== true) {
       SystemService.hideStatusBar();
@@ -48,7 +29,7 @@ class SystemServiceClass {
       this.promised.push(RenderService.createSMAATextures());
     }
 
-    if (this.isCordova) {
+    if (MobileAdapter.isMobile()) {
       this.promised.push(new Promise((resolve) => {
         document.addEventListener('deviceready', () => resolve(), false);
       }));
@@ -56,25 +37,12 @@ class SystemServiceClass {
   }
 
   hideStatusBar() {
-    try {
-      NavigationBar.setUp(true);
-      
-      setTimeout(() => {
-        StatusBar.hide();
-        StatusBar.setOverlaysWebView(false);
-      }, 500);
-
-      this.appStateListeners.push(({ isActive }) => {
-        if (isActive) {
-          StatusBar.hide();
-        }
-      });
-    } catch {}
+    MobileAdapter.getNavigationBar().hide();
   }
 
-  lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE) {
-    if (this.isCordova) {
-      ScreenOrientation.lock(orientation);
+  lockOrientation(orientation = MobileAdapterConstants.screenOrientation.landscape) {
+    if (MobileAdapter.isMobile()) {
+      MobileAdapter.getScreenOrientation().lock(orientation);
     }
   }
 
@@ -89,7 +57,7 @@ class SystemServiceClass {
   }
 
   disposeAll() {
-    this.appStateListeners = [];
+    MobileAdapter.disposeAll();
   }
 }
 

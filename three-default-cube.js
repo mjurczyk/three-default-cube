@@ -8,16 +8,16 @@ var GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader');
 var RGBELoader = require('three/examples/jsm/loaders/RGBELoader');
 var postprocessing = require('postprocessing');
 var Stats = require('three/examples/jsm/libs/stats.module');
+var core = require('@capacitor/core');
 var nativeStorage = require('@ionic-native/native-storage');
+var navigationBar = require('@ionic-native/navigation-bar');
+var screenOrientation = require('@ionic-native/screen-orientation');
 var OrbitControls = require('three/examples/jsm/controls/OrbitControls');
 var BufferGeometryScope = require('three/examples/jsm/utils/BufferGeometryUtils');
 var threePathfinding = require('three-pathfinding');
 var howler = require('howler');
 var troikaThreeText = require('troika-three-text');
 var threeDefaultCube = require('three-default-cube');
-var core = require('@capacitor/core');
-var navigationBar = require('@ionic-native/navigation-bar');
-var screenOrientation = require('@ionic-native/screen-orientation');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -75,12 +75,74 @@ function _toPropertyKey(arg) {
   return typeof key === "symbol" ? key : String(key);
 }
 
+const {
+  App,
+  StatusBar
+} = core.Plugins;
+const MobileAdapterConstants = {
+  screenOrientation: {
+    landscape: screenOrientation.ScreenOrientation.ORIENTATIONS.LANDSCAPE,
+    portrait: screenOrientation.ScreenOrientation.ORIENTATIONS.PORTRAIT
+  }
+};
+class MobileAdapterClass {
+  constructor() {
+    _defineProperty(this, "appStateListeners", []);
+    App.addListener('appStateChange', state => {
+      this.appStateListeners.forEach(callback => {
+        if (typeof callback === 'function') {
+          callback(state);
+        }
+      });
+    });
+  }
+  isMobile() {
+    return typeof cordova !== 'undefined';
+  }
+  getNativeStorage() {
+    return {
+      keys: nativeStorage.NativeStorage.keys,
+      getItem: nativeStorage.NativeStorage.getItem,
+      setItem: nativeStorage.NativeStorage.setItem
+    };
+  }
+  getNavigationBar() {
+    return {
+      hide: () => {
+        try {
+          navigationBar.NavigationBar.setUp(true);
+          setTimeout(() => {
+            StatusBar.hide();
+            StatusBar.setOverlaysWebView(false);
+          }, 500);
+          this.appStateListeners.push(({
+            isActive
+          }) => {
+            if (isActive) {
+              StatusBar.hide();
+            }
+          });
+        } catch {}
+      }
+    };
+  }
+  getScreenOrientation() {
+    return {
+      lock: orientation => screenOrientation.ScreenOrientation.lock(orientation)
+    };
+  }
+  disposeAll() {
+    this.appStateListeners = [];
+  }
+}
+const MobileAdapter = new MobileAdapterClass();
+
 class StorageServiceClass {
   constructor() {
     _defineProperty(this, "reads", 0);
     _defineProperty(this, "writes", 0);
     _defineProperty(this, "useNative", true);
-    this.useNative = typeof cordova !== 'undefined';
+    this.useNative = MobileAdapter.isMobile();
   }
   init() {
     this.set('system.control', Date.now());
@@ -90,7 +152,7 @@ class StorageServiceClass {
       if (!this.useNative) {
         return resolve(Object.keys(localStorage));
       }
-      return nativeStorage.NativeStorage.keys(keys => resolve(keys), error => {
+      return MobileAdapter.getNativeStorage().keys(keys => resolve(keys), error => {
         if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
           console.info('StorageServiceClass', 'getAllKeys', 'error', {
             error
@@ -111,7 +173,7 @@ class StorageServiceClass {
     if (!this.useNative) {
       return Promise.resolve(localStorage.setItem(key, JSON.stringify(value)));
     }
-    return nativeStorage.NativeStorage.setItem(key, value).catch(error => {
+    return MobileAdapter.getNativeStorage().setItem(key, value).catch(error => {
       if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'set', 'not saved', {
           key,
@@ -132,7 +194,7 @@ class StorageServiceClass {
     if (!this.useNative) {
       return Promise.resolve(JSON.parse(localStorage.getItem(key) || 'null'));
     }
-    return nativeStorage.NativeStorage.getItem(key).catch(error => {
+    return MobileAdapter.getNativeStorage().getItem(key).catch(error => {
       if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'get', 'not read', {
           key,
@@ -4485,28 +4547,14 @@ const parse = (object, payload) => {
   }
 };
 
-const {
-  App,
-  StatusBar
-} = core.Plugins;
 class SystemServiceClass {
   constructor() {
-    _defineProperty(this, "isCordova", false);
-    _defineProperty(this, "appStateListeners", []);
     _defineProperty(this, "promised", []);
-    this.isCordova = typeof cordova !== 'undefined';
   }
   init({
     statusBar
   } = {}) {
     StorageService.init();
-    App.addListener('appStateChange', state => {
-      this.appStateListeners.forEach(callback => {
-        if (typeof callback === 'function') {
-          callback(state);
-        }
-      });
-    });
     if (statusBar !== true) {
       SystemService.hideStatusBar();
     }
@@ -4520,31 +4568,18 @@ class SystemServiceClass {
     if (GameInfoService.config.system.postprocessing) {
       this.promised.push(RenderService.createSMAATextures());
     }
-    if (this.isCordova) {
+    if (MobileAdapter.isMobile()) {
       this.promised.push(new Promise(resolve => {
         document.addEventListener('deviceready', () => resolve(), false);
       }));
     }
   }
   hideStatusBar() {
-    try {
-      navigationBar.NavigationBar.setUp(true);
-      setTimeout(() => {
-        StatusBar.hide();
-        StatusBar.setOverlaysWebView(false);
-      }, 500);
-      this.appStateListeners.push(({
-        isActive
-      }) => {
-        if (isActive) {
-          StatusBar.hide();
-        }
-      });
-    } catch {}
+    MobileAdapter.getNavigationBar().hide();
   }
-  lockOrientation(orientation = screenOrientation.ScreenOrientation.ORIENTATIONS.LANDSCAPE) {
-    if (this.isCordova) {
-      screenOrientation.ScreenOrientation.lock(orientation);
+  lockOrientation(orientation = MobileAdapterConstants.screenOrientation.landscape) {
+    if (MobileAdapter.isMobile()) {
+      MobileAdapter.getScreenOrientation().lock(orientation);
     }
   }
   onReady(then) {
@@ -4556,7 +4591,7 @@ class SystemServiceClass {
     });
   }
   disposeAll() {
-    this.appStateListeners = [];
+    MobileAdapter.disposeAll();
   }
 }
 const SystemService = new SystemServiceClass();
