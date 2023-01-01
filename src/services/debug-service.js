@@ -191,9 +191,11 @@ class DebugServiceClass {
         ));
       }
       outputElement.appendChild(this.createLogLine(
-        { text: 'Version:' },
+        { text: 'DQ Ver:' },
         { text: packageInfo.version, color: LogsHighlightColor },
         { text: packageInfo.stable ? '(stable)' : '(dev)', color: LogsHighlightColor },
+        { text: 'Three.js Ver:' },
+        { text: packageInfo.peerDependencies.three, color: LogsHighlightColor },
       ));
     });
   }

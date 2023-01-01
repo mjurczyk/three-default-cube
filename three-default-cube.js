@@ -485,6 +485,16 @@ class VarServiceClass {
 const VarService = new VarServiceClass();
 
 var version = "0.3.0";
+var peerDependencies = {
+	"@ionic-native/native-storage": "5.33.1",
+	"@ionic-native/navigation-bar": "5.33.1",
+	"@ionic-native/screen-orientation": "5.30.0",
+	howler: "2.2.3",
+	postprocessing: "6.29.2",
+	three: "0.148.0",
+	"three-pathfinding": "1.1.0",
+	"troika-three-text": "0.47.1"
+};
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -734,12 +744,17 @@ class DebugServiceClass {
         }));
       }
       outputElement.appendChild(this.createLogLine({
-        text: 'Version:'
+        text: 'DQ Ver:'
       }, {
         text: version,
         color: LogsHighlightColor
       }, {
         text: '(dev)',
+        color: LogsHighlightColor
+      }, {
+        text: 'Three.js Ver:'
+      }, {
+        text: peerDependencies.three,
         color: LogsHighlightColor
       }));
     });
