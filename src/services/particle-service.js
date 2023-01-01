@@ -5,7 +5,7 @@ import { AssetsService } from './assets-service';
 import { MathService } from './math-service';
 import { RenderService } from './render-service';
 import { TimeService } from './time-service';
-import { InstancedScene } from '../game-objects/built-in/instanced-scene';
+import { InstancedScene } from '../extras/game-objects/built-in/instanced-scene';
 
 class ParticleServiceClass {
   emitters = [];

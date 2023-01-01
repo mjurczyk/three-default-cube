@@ -1,12 +1,12 @@
 import * as Three from 'three';
 import { MathUtils } from 'three';
-import { GameObjectClass } from '../../classes/game-object-class';
-import { DebugFlags, DummyDebug } from '../../services/dummy-debug';
-import { InteractionEnums, InteractionsService } from '../../services/interactions-service';
-import { MathService } from '../../services/math-service';
-import { TimeService } from '../../services/time-service';
-import { UtilsService } from '../../services/utils-service';
-import { getRandomColor } from '../../utils/shared';
+import { GameObjectClass } from '../../../classes/game-object-class';
+import { DebugFlags, DebugService } from '../../../services/debug-service';
+import { InteractionEnums, InteractionsService } from '../../../services/interactions-service';
+import { MathService } from '../../../services/math-service';
+import { TimeService } from '../../../services/time-service';
+import { UtilsService } from '../../../services/utils-service';
+import { getRandomColor } from '../../../utils/shared';
 
 export class ScrollList extends GameObjectClass {
   scrollX = false;
@@ -36,7 +36,7 @@ export class ScrollList extends GameObjectClass {
   }
 
   onCreate() {
-    const debugScrollVisible = DummyDebug.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
+    const debugScrollVisible = DebugService.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
 
     GameObjectClass.prototype.onCreate.call(this);
     this.scrollHitbox = new Three.Mesh(

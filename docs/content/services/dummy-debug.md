@@ -1,5 +1,5 @@
 ---
-title: "DummyDebug"
+title: "DebugService"
 draft: false
 weight: 15
 ---

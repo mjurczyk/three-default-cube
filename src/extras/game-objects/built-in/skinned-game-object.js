@@ -1,9 +1,9 @@
 import * as Three from 'three';
-import { GameObjectClass } from '../../classes/game-object-class';
-import { AssetsService } from '../../services/assets-service';
-import { DebugFlags, DummyDebug } from '../../services/dummy-debug';
-import { RenderService } from '../../services/render-service';
-import { TimeService } from '../../services/time-service';
+import { GameObjectClass } from '../../../classes/game-object-class';
+import { AssetsService } from '../../../services/assets-service';
+import { DebugFlags, DebugService } from '../../../services/debug-service';
+import { RenderService } from '../../../services/render-service';
+import { TimeService } from '../../../services/time-service';
 
 export class SkinnedGameObject extends GameObjectClass {
   mixer = null;
@@ -20,7 +20,7 @@ export class SkinnedGameObject extends GameObjectClass {
       return;
     }
 
-    if (DummyDebug.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
+    if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
       const skeletorHelper = new Three.SkeletonHelper(model);
       scene.add(skeletorHelper);

@@ -1,12 +1,12 @@
-import { ViewClass } from "../classes/view-class";
-import { AnimationOverrideType, AnimationService } from "../services/animation-service";
-import { AssetsService } from "../services/assets-service";
-import { CameraService } from "../services/camera-service";
-import { GameInfoService } from "../services/game-info-service";
-import { MathService } from "../services/math-service";
-import { RenderService } from "../services/render-service";
-import { SceneService } from "../services/scene-service";
-import { VarService } from "../services/var-service";
+import { ViewClass } from "../../classes/view-class";
+import { AnimationOverrideType, AnimationService } from "../../services/animation-service";
+import { AssetsService } from "../../services/assets-service";
+import { CameraService } from "../../services/camera-service";
+import { GameInfoService } from "../../services/game-info-service";
+import { MathService } from "../../services/math-service";
+import { RenderService } from "../../services/render-service";
+import { SceneService } from "../../services/scene-service";
+import { VarService } from "../../services/var-service";
 import { IntroFadeShader } from '../game-shaders/intro-fade-shader';
 
 GameInfoService.shader('introFade', IntroFadeShader);

@@ -1,7 +1,7 @@
-import { AssetsService } from '../../services/assets-service';
-import { MathService } from '../../services/math-service';
-import { PhysicsService } from '../../services/physics-service';
-import { UtilsService } from '../../services/utils-service';
+import { AssetsService } from '../../../services/assets-service';
+import { MathService } from '../../../services/math-service';
+import { PhysicsService } from '../../../services/physics-service';
+import { UtilsService } from '../../../services/utils-service';
 
 export class PhysicsWrapper {
   target = null;

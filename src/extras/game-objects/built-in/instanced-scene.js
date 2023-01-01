@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import { TimeService } from '../../services/time-service';
+import { TimeService } from '../../../services/time-service';
 
 export class InstancedScene extends Three.Group {
   objects = [];

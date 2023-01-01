@@ -1,6 +1,6 @@
 {
   "name": "three-default-cube",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "stable": false,
   "description": "Game Development Toolkit for Three.js",
   "main": "./three-default-cube.js",
@@ -19,7 +19,8 @@
     "build:module": "rollup --config ./rollup-config/es.config.js",
     "build:js": "npm run build && npm run build:module",
     "build:docs": "cd ./docs && hugo && cd ../",
-    "docs": "cd docs && hugo server -D"
+    "docs": "cd docs && hugo server -D",
+    "dev": "npm run build && cd docs/demos && npm start"
   },
   "keywords": [
     "three",

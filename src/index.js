@@ -1,17 +1,7 @@
+// NOTE Core functionality
+
 export * from './classes/game-object-class';
 export * from './classes/view-class';
-
-export * from './game-objects/built-in/ai-wrapper';
-export * from './game-objects/built-in/animation-wrapper';
-export * from './game-objects/built-in/physics-wrapper';
-export * from './game-objects/built-in/preloader';
-export * from './game-objects/built-in/scroll-list';
-export * from './game-objects/built-in/skinned-game-object';
-export * from './game-objects/built-in/text';
-
-export * from './game-shaders/intro-fade-shader';
-
-export * from './game-views/intro-view';
 
 export * from './scene-parsers/navmap';
 export * from './scene-parsers/rotate-xyz';
@@ -31,7 +21,7 @@ export * from './services/animation-service';
 export * from './services/assets-service';
 export * from './services/audio-service';
 export * from './services/camera-service';
-export * from './services/dummy-debug';
+export * from './services/debug-service';
 export * from './services/game-info-service';
 export * from './services/input-service';
 export * from './services/interactions-service';
@@ -55,3 +45,17 @@ export * from './utils/remove-placeholder';
 export * from './utils/replace-placeholder';
 export * from './utils/screen-size';
 export * from './utils/shared';
+
+// NOTE Extra helpers
+
+export * from './extras/game-objects/built-in/ai-wrapper';
+export * from './extras/game-objects/built-in/animation-wrapper';
+export * from './extras/game-objects/built-in/physics-wrapper';
+export * from './extras/game-objects/built-in/preloader';
+export * from './extras/game-objects/built-in/scroll-list';
+export * from './extras/game-objects/built-in/skinned-game-object';
+export * from './extras/game-objects/built-in/text';
+
+export * from './extras/game-shaders/intro-fade-shader';
+
+export * from './extras/game-views/intro-view';

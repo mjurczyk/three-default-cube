@@ -6,7 +6,7 @@ import { StorageService } from './storage-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { VarService } from './var-service';
-import * as packageInfo from '../package.json';
+import * as packageInfo from '../../package.json';
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -28,7 +28,7 @@ export const DebugFlags = {
   DEBUG_PHYSICS_DYNAMIC: 'DEBUG_PHYSICS_DYNAMIC',
 };
 
-class DummyDebugClass {
+class DebugServiceClass {
   stats = null;
   logs = null;
   leaks = {
@@ -215,4 +215,4 @@ class DummyDebugClass {
   }
 }
 
-export const DummyDebug = new DummyDebugClass();
+export const DebugService = new DebugServiceClass();

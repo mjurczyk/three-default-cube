@@ -1,7 +1,7 @@
 import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createArrowHelper, createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
-import { DebugFlags, DummyDebug } from './dummy-debug';
+import { DebugFlags, DebugService } from './debug-service';
 import { MathService } from './math-service';
 import { RenderService } from './render-service';
 import { TimeService } from './time-service';
@@ -235,7 +235,7 @@ class PhysicsServiceClass {
       bodyA.boundingBox.setFromObject(bodyA.target);
       bodyB.boundingBox.setFromObject(bodyB.target);
 
-      if (DummyDebug.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
+      if (DebugService.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
         createArrowHelper(
           RenderService.getScene(),
           `physicsService-updateDynamicBodies-${index}-distance`,

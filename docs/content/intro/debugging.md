@@ -5,12 +5,12 @@ weight: 8
 demoId: 'debugging'
 ---
 
-## DummyDebugger
+## DebugService
 
-`DummyDebugger` is the main debugging tool of Default Cube games. To enable it, turn `DEBUG_ENABLE` flag on:
+`DebugService` is the main debugging tool of Default Cube games. To enable it, turn `DEBUG_ENABLE` flag on:
 
 ```js
-DummyDebug.on(DebugFlags.DEBUG_ENABLE);
+DebugService.on(DebugFlags.DEBUG_ENABLE);
 ```
 
 Afterwards, you can toggle various feature flags on and off to see different stats.

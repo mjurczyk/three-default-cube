@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import { GameObjectClass } from '../../classes/game-object-class';
+import { GameObjectClass } from '../../../classes/game-object-class';
 import { Text as TroikaText } from 'troika-three-text';
 
 export class Text extends GameObjectClass {

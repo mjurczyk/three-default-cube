@@ -1,4 +1,4 @@
-import { Text } from "../game-objects/built-in/text";
+import { Text } from "../extras/game-objects/built-in/text";
 import { MathService } from "../services/math-service";
 import { VarService } from "../services/var-service";
 import { replacePlaceholder } from "../utils/replace-placeholder";

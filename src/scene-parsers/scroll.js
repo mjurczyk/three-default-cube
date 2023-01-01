@@ -1,4 +1,4 @@
-import { ScrollList } from "../game-objects/built-in/scroll-list";
+import { ScrollList } from "../extras/game-objects/built-in/scroll-list";
 import { isDefined } from "../utils/shared";
 
 export const parseScroll = (object, { scene, scrollLists }) => {

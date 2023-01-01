@@ -3,7 +3,7 @@ import { Plugins } from '@capacitor/core';
 import { NavigationBar } from '@ionic-native/navigation-bar';
 import { ScreenOrientation } from '@ionic-native/screen-orientation';
 import { StorageService } from './storage-service';
-import { DebugFlags, DummyDebug } from './dummy-debug';
+import { DebugFlags, DebugService } from './debug-service';
 import { VarService } from './var-service';
 import { RenderService } from './render-service';
 import { GameInfoService } from './game-info-service';
@@ -34,12 +34,12 @@ class SystemServiceClass {
       SystemService.hideStatusBar();
     }
 
-    if (DummyDebug.get(DebugFlags.DEBUG_ENABLE)) {
-      DummyDebug.showStats();
+    if (DebugService.get(DebugFlags.DEBUG_ENABLE)) {
+      DebugService.showStats();
     }
 
-    if (DummyDebug.get(DebugFlags.DEBUG_LIVE)) {
-      DummyDebug.showLogs();
+    if (DebugService.get(DebugFlags.DEBUG_LIVE)) {
+      DebugService.showLogs();
     }
 
     this.promised.push(VarService.retrievePersistentVars());

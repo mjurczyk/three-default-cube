@@ -2,7 +2,7 @@ import {
   RenderService,
   SystemService,
   DebugFlags,
-  DummyDebug,
+  DebugService,
   GameInfoService
 } from 'three-default-cube';
 import { DemoViewsAndScenes } from './game-views/demo-views-and-scenes';
@@ -17,15 +17,15 @@ import { DemoUiAlignment } from './game-views/demo-ui-alignment';
 import { DemoChessBoardView } from './game-views/demo-example-chess-board';
 const { demoId } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
 
-DummyDebug.on(DebugFlags.DEBUG_ENABLE);
+DebugService.on(DebugFlags.DEBUG_ENABLE);
 
-if (demoId === 'debugging') {
-  DummyDebug.on(DebugFlags.DEBUG_LIVE);
-  DummyDebug.on(DebugFlags.DEBUG_LOG_ASSETS);
-  DummyDebug.on(DebugFlags.DEBUG_LOG_MEMORY);
-  DummyDebug.on(DebugFlags.DEBUG_LOG_POOLS);
-  DummyDebug.on(DebugFlags.DEBUG_STORAGE);
-  DummyDebug.on(DebugFlags.DEBUG_TIME_LISTENERS);
+if (demoId === 'debugging' || !demoId) {
+  DebugService.on(DebugFlags.DEBUG_LIVE);
+  DebugService.on(DebugFlags.DEBUG_LOG_ASSETS);
+  DebugService.on(DebugFlags.DEBUG_LOG_MEMORY);
+  DebugService.on(DebugFlags.DEBUG_LOG_POOLS);
+  DebugService.on(DebugFlags.DEBUG_STORAGE);
+  DebugService.on(DebugFlags.DEBUG_TIME_LISTENERS);
 }
 
 GameInfoService
@@ -51,7 +51,7 @@ SystemService.onReady(async () => {
     'ai': new DemoAi(),
     'ui-alignment': new DemoUiAlignment(),
     'example-chess-board': new DemoChessBoardView(),
-  })[demoId]);
+  })[demoId || 'camera']);
 
   RenderService.run();
 });

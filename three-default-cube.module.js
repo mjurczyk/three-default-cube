@@ -53,7 +53,7 @@ class StorageServiceClass {
       }
 
       return NativeStorage.keys(keys => resolve(keys), error => {
-        if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+        if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
           console.info('StorageServiceClass', 'getAllKeys', 'error', {
             error
           });
@@ -65,7 +65,7 @@ class StorageServiceClass {
   }
 
   set(key, value) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'set', {
         key,
         value
@@ -79,7 +79,7 @@ class StorageServiceClass {
     }
 
     return NativeStorage.setItem(key, value).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'set', 'not saved', {
           key,
           value,
@@ -92,7 +92,7 @@ class StorageServiceClass {
   }
 
   get(key) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'get', {
         key
       });
@@ -105,7 +105,7 @@ class StorageServiceClass {
     }
 
     return NativeStorage.getItem(key).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'get', 'not read', {
           key,
           error
@@ -523,7 +523,7 @@ class VarServiceClass {
 
 const VarService = new VarServiceClass();
 
-var version = "0.2.4";
+var version = "0.3.0";
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -544,7 +544,7 @@ const DebugFlags = {
   DEBUG_PHYSICS_DYNAMIC: 'DEBUG_PHYSICS_DYNAMIC'
 };
 
-class DummyDebugClass {
+class DebugServiceClass {
   constructor() {
     _defineProperty(this, "stats", null);
 
@@ -818,7 +818,7 @@ class DummyDebugClass {
 
 }
 
-const DummyDebug = new DummyDebugClass();
+const DebugService = new DebugServiceClass();
 
 class MathServiceClass {
   constructor() {
@@ -933,7 +933,7 @@ class MathServiceClass {
   }
 
   registerId(object, id) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
       return;
     }
 
@@ -950,7 +950,7 @@ class MathServiceClass {
   }
 
   unregisterId(object) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
       return;
     }
 
@@ -971,7 +971,7 @@ class MathServiceClass {
   }
 
   handleLeaks() {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS)) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS)) {
       return;
     }
 
@@ -2454,7 +2454,7 @@ class PhysicsServiceClass {
       bodyA.boundingBox.setFromObject(bodyA.target);
       bodyB.boundingBox.setFromObject(bodyB.target);
 
-      if (DummyDebug.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
+      if (DebugService.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
         createArrowHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-distance`, distance, positionA);
         createBoxHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-boxA`, bodyA.boundingBox);
         createBoxHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-boxB`, bodyB.boundingBox);
@@ -3249,7 +3249,7 @@ class RenderServiceClass {
 
     this.initEssentialServices();
 
-    if (DummyDebug.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
+    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
       CameraService.detachCamera();
     }
 
@@ -3365,8 +3365,8 @@ class RenderServiceClass {
     }
 
     this.currentView = viewInstance;
-    DummyDebug.leaks.geometries = Math.max(DummyDebug.leaks.geometries, this.renderer.info.memory.geometries);
-    DummyDebug.leaks.textures = Math.max(DummyDebug.leaks.textures, this.renderer.info.memory.textures);
+    DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
+    DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
     viewInstance.onCreate();
   }
 
@@ -3492,8 +3492,8 @@ class RenderServiceClass {
       }
     }
 
-    if (DummyDebug.stats) {
-      DummyDebug.stats.update();
+    if (DebugService.stats) {
+      DebugService.stats.update();
     }
   }
 
@@ -4261,7 +4261,7 @@ class ScrollList extends GameObjectClass {
   }
 
   onCreate() {
-    const debugScrollVisible = DummyDebug.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
+    const debugScrollVisible = DebugService.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
     GameObjectClass.prototype.onCreate.call(this);
     this.scrollHitbox = new Three.Mesh(new Three.BoxBufferGeometry(1.0, 1.0, 1.0), new Three.MeshBasicMaterial({
       color: getRandomColor(),
@@ -4621,7 +4621,7 @@ const parseAiNode = object => {
   } = object;
 
   if (isDefined(userData.aiNode)) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_AI_NODES)) {
+    if (!DebugService.get(DebugFlags.DEBUG_AI_NODES)) {
       removePlaceholder(object);
       object.visible = false;
     } else {
@@ -5249,6 +5249,111 @@ class ViewClass {
 
 }
 
+// NOTE Template only
+const parse = (object, payload) => {
+  const {
+    userData
+  } = object;
+
+  if (isDefined$1(userData.key)) {
+    AssetsService$1.registerDisposeCallback(object, () => {});
+  }
+};
+
+const {
+  App,
+  StatusBar
+} = Plugins;
+
+class SystemServiceClass {
+  constructor() {
+    _defineProperty(this, "isCordova", false);
+
+    _defineProperty(this, "appStateListeners", []);
+
+    _defineProperty(this, "promised", []);
+
+    this.isCordova = typeof cordova !== 'undefined';
+  }
+
+  init({
+    statusBar
+  } = {}) {
+    StorageService.init();
+    App.addListener('appStateChange', state => {
+      this.appStateListeners.forEach(callback => {
+        if (typeof callback === 'function') {
+          callback(state);
+        }
+      });
+    });
+
+    if (statusBar !== true) {
+      SystemService.hideStatusBar();
+    }
+
+    if (DebugService.get(DebugFlags.DEBUG_ENABLE)) {
+      DebugService.showStats();
+    }
+
+    if (DebugService.get(DebugFlags.DEBUG_LIVE)) {
+      DebugService.showLogs();
+    }
+
+    this.promised.push(VarService.retrievePersistentVars());
+
+    if (GameInfoService.config.system.postprocessing) {
+      this.promised.push(RenderService.createSMAATextures());
+    }
+
+    if (this.isCordova) {
+      this.promised.push(new Promise(resolve => {
+        document.addEventListener('deviceready', () => resolve(), false);
+      }));
+    }
+  }
+
+  hideStatusBar() {
+    try {
+      NavigationBar.setUp(true);
+      setTimeout(() => {
+        StatusBar.hide();
+        StatusBar.setOverlaysWebView(false);
+      }, 500);
+      this.appStateListeners.push(({
+        isActive
+      }) => {
+        if (isActive) {
+          StatusBar.hide();
+        }
+      });
+    } catch {}
+  }
+
+  lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE) {
+    if (this.isCordova) {
+      ScreenOrientation.lock(orientation);
+    }
+  }
+
+  onReady(then) {
+    if (!then) {
+      return;
+    }
+
+    Promise.all(this.promised).then(() => {
+      then();
+    });
+  }
+
+  disposeAll() {
+    this.appStateListeners = [];
+  }
+
+}
+
+const SystemService = new SystemServiceClass();
+
 class AiWrapper {
   constructor(target) {
     _defineProperty(this, "target", null);
@@ -5271,7 +5376,7 @@ class AiWrapper {
 
   getAiBehaviour() {
     if (this.tickListener) {
-      if (DummyDebug.get(DebugFlags.DEBUG_AI_TARGETS)) {
+      if (DebugService.get(DebugFlags.DEBUG_AI_TARGETS)) {
         if (this.target && this.targetNode) {
           const scene = RenderService.getScene();
           const target = MathService.getVec3(0.0, 0.0, 0.0, 'ai-1');
@@ -5429,7 +5534,7 @@ class AnimationWrapper {
       return;
     }
 
-    if (DummyDebug.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
+    if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
       const skeletorHelper = new Three.SkeletonHelper(this.target);
       scene.add(skeletorHelper);
@@ -5770,7 +5875,7 @@ class SkinnedGameObject extends GameObjectClass {
       return;
     }
 
-    if (DummyDebug.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
+    if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
       const skeletorHelper = new Three.SkeletonHelper(model);
       scene.add(skeletorHelper);
@@ -6016,109 +6121,4 @@ class IntroView extends ViewClass {
 
 }
 
-// NOTE Template only
-const parse = (object, payload) => {
-  const {
-    userData
-  } = object;
-
-  if (isDefined$1(userData.key)) {
-    AssetsService$1.registerDisposeCallback(object, () => {});
-  }
-};
-
-const {
-  App,
-  StatusBar
-} = Plugins;
-
-class SystemServiceClass {
-  constructor() {
-    _defineProperty(this, "isCordova", false);
-
-    _defineProperty(this, "appStateListeners", []);
-
-    _defineProperty(this, "promised", []);
-
-    this.isCordova = typeof cordova !== 'undefined';
-  }
-
-  init({
-    statusBar
-  } = {}) {
-    StorageService.init();
-    App.addListener('appStateChange', state => {
-      this.appStateListeners.forEach(callback => {
-        if (typeof callback === 'function') {
-          callback(state);
-        }
-      });
-    });
-
-    if (statusBar !== true) {
-      SystemService.hideStatusBar();
-    }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_ENABLE)) {
-      DummyDebug.showStats();
-    }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_LIVE)) {
-      DummyDebug.showLogs();
-    }
-
-    this.promised.push(VarService.retrievePersistentVars());
-
-    if (GameInfoService.config.system.postprocessing) {
-      this.promised.push(RenderService.createSMAATextures());
-    }
-
-    if (this.isCordova) {
-      this.promised.push(new Promise(resolve => {
-        document.addEventListener('deviceready', () => resolve(), false);
-      }));
-    }
-  }
-
-  hideStatusBar() {
-    try {
-      NavigationBar.setUp(true);
-      setTimeout(() => {
-        StatusBar.hide();
-        StatusBar.setOverlaysWebView(false);
-      }, 500);
-      this.appStateListeners.push(({
-        isActive
-      }) => {
-        if (isActive) {
-          StatusBar.hide();
-        }
-      });
-    } catch {}
-  }
-
-  lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE) {
-    if (this.isCordova) {
-      ScreenOrientation.lock(orientation);
-    }
-  }
-
-  onReady(then) {
-    if (!then) {
-      return;
-    }
-
-    Promise.all(this.promised).then(() => {
-      then();
-    });
-  }
-
-  disposeAll() {
-    this.appStateListeners = [];
-  }
-
-}
-
-const SystemService = new SystemServiceClass();
-
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DebugService, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };

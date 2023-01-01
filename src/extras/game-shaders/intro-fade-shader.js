@@ -1,4 +1,4 @@
-import { AssetsService } from '../services/assets-service';
+import { AssetsService } from '../../services/assets-service';
 
 export const IntroFadeShader = ({ target }) => {
   const shader = {

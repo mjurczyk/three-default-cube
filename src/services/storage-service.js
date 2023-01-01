@@ -1,5 +1,5 @@
 import { NativeStorage } from '@ionic-native/native-storage';
-import { DebugFlags, DummyDebug } from './dummy-debug';
+import { DebugFlags, DebugService } from './debug-service';
 
 class StorageServiceClass {
   reads = 0;
@@ -23,7 +23,7 @@ class StorageServiceClass {
       return NativeStorage.keys(
         keys => resolve(keys),
         error => {
-          if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+          if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
             console.info('StorageServiceClass', 'getAllKeys', 'error', { error });
           }
     
@@ -34,7 +34,7 @@ class StorageServiceClass {
   }
 
   set(key, value) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'set', { key, value });
     }
 
@@ -45,7 +45,7 @@ class StorageServiceClass {
     }
 
     return NativeStorage.setItem(key, value).catch((error) => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'set', 'not saved', { key, value, error });
       }
 
@@ -54,7 +54,7 @@ class StorageServiceClass {
   }
 
   get(key) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'get', { key });
     }
 
@@ -65,7 +65,7 @@ class StorageServiceClass {
     }
 
     return NativeStorage.getItem(key).catch((error) => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'get', 'not read', { key, error });
       }
 

@@ -1,10 +1,10 @@
-import { AssetsService } from '../../services/assets-service';
-import { DebugFlags, DummyDebug } from '../../services/dummy-debug';
-import { MathService } from '../../services/math-service';
-import { PhysicsService } from '../../services/physics-service';
-import { RenderService } from '../../services/render-service';
-import { UtilsService } from '../../services/utils-service';
-import { createArrowHelper } from '../../utils/helpers';
+import { AssetsService } from '../../../services/assets-service';
+import { DebugFlags, DebugService } from '../../../services/debug-service';
+import { MathService } from '../../../services/math-service';
+import { PhysicsService } from '../../../services/physics-service';
+import { RenderService } from '../../../services/render-service';
+import { UtilsService } from '../../../services/utils-service';
+import { createArrowHelper } from '../../../utils/helpers';
 
 export class AiWrapper {
   target = null;
@@ -25,7 +25,7 @@ export class AiWrapper {
 
   getAiBehaviour() {
     if (this.tickListener) {
-      if (DummyDebug.get(DebugFlags.DEBUG_AI_TARGETS)) {
+      if (DebugService.get(DebugFlags.DEBUG_AI_TARGETS)) {
         if (this.target && this.targetNode) {
           const scene = RenderService.getScene();
           const target = MathService.getVec3(0.0, 0.0, 0.0, 'ai-1');

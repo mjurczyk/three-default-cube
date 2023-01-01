@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import { DebugFlags, DummyDebug } from './dummy-debug';
+import { DebugFlags, DebugService } from './debug-service';
 
 class MathServiceClass {
   poolVec2 = [];
@@ -127,7 +127,7 @@ class MathServiceClass {
   }
 
   registerId(object, id) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
       return;
     }
 
@@ -143,7 +143,7 @@ class MathServiceClass {
   }
 
   unregisterId(object) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
       return;
     }
 
@@ -162,7 +162,7 @@ class MathServiceClass {
   }
 
   handleLeaks() {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS)) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS)) {
       return;
     }
 

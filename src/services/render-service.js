@@ -9,7 +9,7 @@ import { VarService } from './var-service';
 import { PhysicsService } from './physics-service';
 import { InputService } from './input-service';
 import { UiService } from './ui-service';
-import { DebugFlags, DummyDebug } from './dummy-debug';
+import { DebugFlags, DebugService } from './debug-service';
 import { AudioService } from './audio-service';
 import { ParticleService } from './particle-service';
 import { GameInfoService } from './game-info-service';
@@ -119,7 +119,7 @@ class RenderServiceClass {
 
     this.initEssentialServices();
 
-    if (DummyDebug.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
+    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
       CameraService.detachCamera();
     }
 
@@ -249,8 +249,8 @@ class RenderServiceClass {
 
     this.currentView = viewInstance;
 
-    DummyDebug.leaks.geometries = Math.max(DummyDebug.leaks.geometries, this.renderer.info.memory.geometries);
-    DummyDebug.leaks.textures = Math.max(DummyDebug.leaks.textures, this.renderer.info.memory.textures);
+    DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
+    DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
 
     viewInstance.onCreate();
   }
@@ -386,8 +386,8 @@ class RenderServiceClass {
       }
     }
 
-    if (DummyDebug.stats) {
-      DummyDebug.stats.update();
+    if (DebugService.stats) {
+      DebugService.stats.update();
     }
   }
 
