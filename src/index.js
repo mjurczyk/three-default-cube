@@ -1,4 +1,5 @@
 // NOTE Core functionality
+import * as _Three from 'three';
 
 export * from './classes/game-object-class';
 export * from './classes/view-class';
@@ -56,6 +57,6 @@ export * from './extras/game-objects/built-in/scroll-list';
 export * from './extras/game-objects/built-in/skinned-game-object';
 export * from './extras/game-objects/built-in/text';
 
-export * from './extras/game-shaders/intro-fade-shader';
+// NOTE Export internal Three.js instance
 
-export * from './extras/game-views/intro-view';
+export const Three = _Three;

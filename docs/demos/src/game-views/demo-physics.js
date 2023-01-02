@@ -188,7 +188,7 @@ export class DemoPhysics extends ViewClass {
             }
           },
           onCreate: () => {
-            CameraService.useCamera(CameraService.getCamera('initial'), false);
+            CameraService.useCamera('initial');
 
             scene.add(worldModel);
           }

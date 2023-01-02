@@ -127,7 +127,7 @@ export class DemoChessBoardView extends ViewClass {
           }
         },
         onCreate: () => {
-          CameraService.useCamera(CameraService.getCamera('board'), true);
+          CameraService.useCamera('board');
 
           let chessParser = new Chess();
           chessParser.load_pgn(getSampleGame());

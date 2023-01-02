@@ -17,7 +17,6 @@ export const DebugFlags = {
   DEBUG_LOG_MEMORY: 'DEBUG_LOG_MEMORY',
   DEBUG_LOG_POOLS: 'DEBUG_LOG_POOLS',
   DEBUG_LOG_ASSETS: 'DEBUG_LOG_ASSETS',
-  DEBUG_ORBIT_CONTROLS: 'DEBUG_ORBIT_CONTROLS',
   DEBUG_SCROLL_VISIBLE: 'DEBUG_SCROLL_VISIBLE',
   DEBUG_TIME_LISTENERS: 'DEBUG_TIME_LISTENERS',
   DEBUG_SKINNING_SKELETONS: 'DEBUG_SKINNING_SKELETONS',
@@ -195,7 +194,7 @@ class DebugServiceClass {
         { text: packageInfo.version, color: LogsHighlightColor },
         { text: packageInfo.stable ? '(stable)' : '(dev)', color: LogsHighlightColor },
         { text: 'Three.js Ver:' },
-        { text: packageInfo.peerDependencies.three, color: LogsHighlightColor },
+        { text: packageInfo.devDependencies.three, color: LogsHighlightColor },
       ));
     });
   }
