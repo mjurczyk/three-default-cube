@@ -29,7 +29,7 @@ if (demoId === 'debugging' || !demoId) {
 }
 
 GameInfoService
-  .system(null, window.devicePixelRatio, true, false, 0x000000)
+  .system(null, window.devicePixelRatio, true, true, 0x000000)
   .camera(50, 0.1, 1000.0)
   .texture('spinner', require('./assets/ui/spinner-default.png'))
   .font('default', require('./assets/ui/font.ttf'))

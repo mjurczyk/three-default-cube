@@ -49,7 +49,7 @@
     "camera-controls": "1.37.4",
     "howler": "2.2.3",
     "postprocessing": "6.29.2",
-    "three": "0.144.0",
+    "three": "0.148.0",
     "three-pathfinding": "1.1.0",
     "troika-three-text": "0.47.1"
   }

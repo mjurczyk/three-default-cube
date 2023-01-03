@@ -1,14 +1,23 @@
 import * as Three from 'three';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 import { AssetsService } from './assets-service';
 import { MathService } from './math-service';
 import { RenderService } from './render-service';
 import { UtilsService } from './utils-service';
+import CameraControls from 'camera-controls';
+
+CameraControls.install({ THREE: Three });
+
+const CameraMovementTypeEnums = {
+  rotateOnButtonDown: 'rotateOnButtonDown',
+  rotateOnPointerMove: 'rotateOnPointerMove'
+};
 
 class CameraServiceClass {
   cameras = {};
   renderTargets = {};
   autoUpdateRenderTargets = false;
-  cameraPosition = MathService.getVec3(0.0, 0.0, 0.0, 'camera-1');
+  cameraPosition = MathService.getVec3(0.0, 1.0, 1.0, 'camera-1');
   cameraQuaternion = MathService.getQuaternion();
   defaultTween = 0.2;
   tween = 0.2;
@@ -17,31 +26,36 @@ class CameraServiceClass {
   followListener = null;
   followListenerThreshold = 0.001;
   followOffset = new Three.Vector3(0.0, 0.0, 0.0);
-  translationLocked = false;
   rotationLocked = false;
   cameraControls = null;
+  pointerLockControls = null;
+  cameraMovementType = CameraMovementTypeEnums.rotateOnButtonDown;
 
   init({ camera, renderer } = {}) {
     this.camera = camera;
-    this.cameraPosition.copy(camera.position);
-    this.cameraQuaternion.copy(camera.quaternion);
+    this.camera.position.copy(this.cameraPosition);
+    this.camera.quaternion.copy(this.cameraQuaternion);
 
-    // if (!this.cameraControls) {
+    if (!this.cameraControls) {
       this.cameraControls = new CameraControls(RenderService.getNativeCamera(), renderer.domElement);
-      // this.cameraControls.enabled = false;
-    // }
+      this.cameraControls.enabled = false;
+    }
+
+    if (!this.pointerLockControls) {
+      this.pointerLockControls = new PointerLockControls(RenderService.getNativeCamera(), renderer.domElement);
+      this.pointerLockControls.unlock();
+    }
   }
 
   onFrame(dt) {
     this.updateCamera(dt);
 
     if (this.autoUpdateRenderTargets) {
-      // this.updateRenderTargets();
+      this.updateRenderTargets();
     }
   }
 
   resetCamera() {
-    return;
     this.camera.position.set(0.0, 0.0, 0.0);
     this.camera.rotation.set(0.0, 0.0, 0.0);
     this.camera.quaternion.identity();
@@ -50,26 +64,43 @@ class CameraServiceClass {
     this.cameraQuaternion.copy(this.camera.quaternion);
 
     this.cameraControls.enabled = false;
+
+    this.pointerLockControls.unlock();
   }
 
   updateCamera(dt = 0.0) {
-    // this.cameraControls.rotate(0.01, 0.0, 0.0);
-    this.cameraControls.update(dt);
-    return;
+    if (this.pointerLockControls.isLocked) {
+      if (this.followedObject) {
+        this.followedObject.getWorldPosition(this.cameraPosition);
+
+        this.camera.position.lerp(this.cameraPosition, this.tween);
+      }
+      return;
+    }
 
     if (this.followedObject) {
       this.followedObject.getWorldPosition(this.cameraPosition);
       this.followedObject.getWorldQuaternion(this.cameraQuaternion);
 
-      this.cameraControls.setLookAt(
-        this.cameraPosition.x + this.followOffset.x,
-        this.cameraPosition.y + this.followOffset.y,
-        this.cameraPosition.z + this.followOffset.z,
-        this.cameraPosition.x,
-        this.cameraPosition.y,
-        this.cameraPosition.z,
-        false
-      );
+      const worldAlignedOffset = MathService.getVec3();
+      worldAlignedOffset.copy(this.followOffset);
+      worldAlignedOffset.applyQuaternion(this.cameraQuaternion);
+
+      if (this.rotationLocked) {
+        this.cameraControls.setLookAt(
+          this.cameraPosition.x + worldAlignedOffset.x,
+          this.cameraPosition.y + worldAlignedOffset.y,
+          this.cameraPosition.z + worldAlignedOffset.z,
+          this.cameraPosition.x,
+          this.cameraPosition.y,
+          this.cameraPosition.z,
+          false
+        );
+      } else {
+        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z);
+      }
+
+      MathService.releaseVec3(worldAlignedOffset);
 
       if (this.followListener) {
         const distanceToTarget = MathService.getVec3(0.0, 0.0, 0.0, 'camera-3')
@@ -87,13 +118,11 @@ class CameraServiceClass {
     }
 
     if (!this.cameraControls.enabled) {
-      if (!this.translationLocked) {
-        this.camera.position.lerp(this.cameraPosition, this.tween);
-      }
-
       if (!this.rotationLocked) {
         this.camera.quaternion.slerp(this.cameraQuaternion, this.tween);
       }
+
+      this.camera.position.lerp(this.cameraPosition, this.tween);
     } else {
       this.cameraControls.update(dt);
     }
@@ -125,6 +154,8 @@ class CameraServiceClass {
       return;
     }
 
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+
     this.followedObject = null;
     this.cameraControls.enabled = false;
     this.cameraPosition.copy(camera.position);
@@ -137,36 +168,80 @@ class CameraServiceClass {
   }
 
   useStaticCamera(position, target) {
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+
     this.followedObject = null;
-    this.cameraControls.enabled = true;
-    // this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
-    // this.cameraPosition.copy(position);
+    this.cameraControls.enabled = false;
+    this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
+    this.cameraPosition.copy(position);
 
-    // if (target) {
-    //   const mock = UtilsService.getEmpty();
-    //   mock.position.copy(position);
-    //   mock.lookAt(target);
+    if (target) {
+      const mock = UtilsService.getEmpty();
+      mock.position.copy(position);
+      mock.lookAt(target);
 
-    //   this.cameraQuaternion.copy(mock.quaternion);
-    //   UtilsService.releaseEmpty(mock);
-    // }
+      this.cameraQuaternion.copy(mock.quaternion);
+      UtilsService.releaseEmpty(mock);
+    }
 
-    // if (this.tween >= 1.0) {
-    //   this.camera.position.copy(this.cameraPosition);
-    //   this.camera.quaternion.copy(this.cameraQuaternion);
-    // }
+    if (this.tween >= 1.0) {
+      this.camera.position.copy(this.cameraPosition);
+      this.camera.quaternion.copy(this.cameraQuaternion);
+    }
   }
 
   useFirstPersonCamera(object) {
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnPointerMove);
+
     this.followedObject = object;
+    this.followOffset.set(0.0, 0.0, 0.0);
+
+    this.registerCameraColliders(false);
 
     this.cameraControls.dampingFactor = 1.0;
-    this.cameraControls.enabled = true;
+    this.cameraControls.enabled = false;
   }
 
   useThirdPersonCamera(object, offset = new Three.Vector3(0.0, 1.0, 1.0), preventOcclusion = true) {
-    this.followedObject = object;
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
+    this.followedObject = object;
+    this.followedObject.getWorldPosition(this.cameraPosition);
+    
+    this.registerCameraColliders(preventOcclusion);
+    
+    this.followOffset.copy(offset);
+
+    this.cameraControls.setLookAt(
+      this.cameraPosition.x + this.followOffset.x,
+      this.cameraPosition.y + this.followOffset.y,
+      this.cameraPosition.z + this.followOffset.z,
+      this.cameraPosition.x,
+      this.cameraPosition.y,
+      this.cameraPosition.z,
+      false
+    );
+
+    this.cameraControls.dampingFactor = this.tween;
+    this.cameraControls.enabled = true;
+  }
+
+  useOrbitCamera(preventOcclusion = true) {
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+
+    this.cameraControls.dampingFactor = 0.05;
+    this.cameraControls.enabled = true;
+
+    this.registerCameraColliders(preventOcclusion);
+  }
+
+  ignoreCameraCollisions(object) {
+    object.traverse(child => {
+      child.userData._ignoreCameraCollision = true;
+    });
+  }
+
+  registerCameraColliders(preventOcclusion) {
     if (preventOcclusion) {
       const scene = RenderService.getScene();
 
@@ -174,19 +249,19 @@ class CameraServiceClass {
         this.cameraControls.colliderMeshes = [];
 
         scene.traverseVisible(child => {
-          if (child === object || !(child instanceof Three.Mesh) || child.children.length) {
+          if (child === this.followedObject || !(child instanceof Three.Mesh) || child.children.length) {
             return;
           }
 
-          let isFollowTarget = false;
+          let ignoreCollision = false;
 
           child.traverseAncestors(ancestor => {
-            if (ancestor === object) {
-              isFollowTarget = true;
+            if (ancestor && (ancestor === this.followedObject || ancestor.userData._ignoreCameraCollision)) {
+              ignoreCollision = true;
             }
           });
 
-          if (isFollowTarget) {
+          if (ignoreCollision) {
             return;
           }
 
@@ -196,16 +271,18 @@ class CameraServiceClass {
     } else {
       this.cameraControls.colliderMeshes = [];
     }
-
-    this.followOffset.copy(offset);
-
-    this.cameraControls.dampingFactor = this.tween;
-    this.cameraControls.enabled = true;
   }
 
-  useOrbitCamera() {
-    // this.cameraControls.dampingFactor = 0.05;
-    // this.cameraControls.enabled = true;
+  setCameraMovementType(cameraMovementType) {
+    this.cameraMovementType = cameraMovementType;
+    
+    if (cameraMovementType === CameraMovementTypeEnums.rotateOnButtonDown) {
+      this.cameraControls.enabled = true;
+      this.pointerLockControls.unlock();
+    } else {
+      this.cameraControls.enabled = false;
+      this.pointerLockControls.lock();
+    }
   }
 
   onReachTarget(callback) {
@@ -213,7 +290,6 @@ class CameraServiceClass {
   }
 
   getCameraAsTexture(id, { width, height, minFilter, magFilter } = {}) {
-    return;
     const camera = this.cameras[id];
 
     if (!camera) {
@@ -242,7 +318,6 @@ class CameraServiceClass {
   }
 
   updateRenderTargets() {
-    return;
     const scene = RenderService.getScene();
     const renderer = RenderService.getRenderer();
 
@@ -277,21 +352,12 @@ class CameraServiceClass {
   }
 
   disposeRenderTarget(renderTarget) {
-    return;
     AssetsService.disposeAsset(renderTarget.texture);
     AssetsService.disposeAsset(renderTarget);
   }
 
-  lockTranslation() {
-    this.translationLocked = true;
-  }
-
   lockRotation() {
     this.rotationLocked = true;
-  }
-
-  unlockTranslation() {
-    this.translationLocked = false;
   }
 
   unlockRotation() {
@@ -332,6 +398,8 @@ class CameraServiceClass {
     this.cameraControls.enabled = false;
     this.cameraControls.dampingFactor = 0.05;
     this.cameraControls.colliderMeshes = [];
+
+    this.pointerLockControls.unlock();
 
     this.resetCamera();
     this.tween = 0.2;

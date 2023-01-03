@@ -153,7 +153,7 @@ class RenderServiceClass {
     VarService.init({ language: 'en' });
     InteractionsService.init({ camera: this.camera });
     PhysicsService.init();
-    CameraService.init({ camera: this.camera });
+    CameraService.init({ camera: this.camera, renderer: this.renderer });
     InputService.init();
     ParticleService.init();
     AudioService.init({ root: this.camera });
@@ -316,7 +316,7 @@ class RenderServiceClass {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
 
-    CameraService.onFrame();
+    CameraService.onFrame(dt);
     UiService.onFrame();
     TimeService.onFrame({ dt, elapsedTime });
   }

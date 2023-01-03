@@ -89,9 +89,6 @@ class InteractionsServiceClass {
   }
 
   onTouchStart(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
     if (!this.useTouch && event.source !== 'pointer') {
       this.disposePointerListeners();
 
@@ -113,9 +110,6 @@ class InteractionsServiceClass {
   }
 
   onTouchMove(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
 
@@ -143,9 +137,6 @@ class InteractionsServiceClass {
   }
 
   onTouchEnd(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
 
