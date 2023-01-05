@@ -5,6 +5,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var Three$1 = require('three');
 var uuid = require('uuid');
 var GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader');
+var FBXLoader = require('three/examples/jsm/loaders/FBXLoader');
 var RGBELoader = require('three/examples/jsm/loaders/RGBELoader');
 var postprocessing = require('postprocessing');
 var Stats = require('three/examples/jsm/libs/stats.module');
@@ -232,7 +233,7 @@ class GameInfoServiceClass {
     };
     return this;
   }
-  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true, useSingleLoop = false) {
+  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true, shadows = true) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
@@ -242,7 +243,7 @@ class GameInfoServiceClass {
         postprocessing,
         sceneBackgroundDefault,
         correctBlenderLights,
-        useSingleLoop
+        shadows
       }
     });
   }
@@ -549,7 +550,7 @@ class VarServiceClass {
 const VarService = new VarServiceClass();
 
 var version = "0.3.0";
-var devDependencies = {
+var dependencies = {
 	"@babel/core": "7.14.6",
 	"@babel/plugin-proposal-class-properties": "7.14.5",
 	"@rollup/plugin-babel": "5.3.0",
@@ -823,7 +824,7 @@ class DebugServiceClass {
       }, {
         text: 'Three.js Ver:'
       }, {
-        text: devDependencies.three,
+        text: dependencies.three,
         color: LogsHighlightColor
       }));
     });
@@ -1325,7 +1326,7 @@ class CameraServiceClass {
       worldAlignedOffset.copy(this.followOffset);
       worldAlignedOffset.applyQuaternion(this.cameraQuaternion);
       if (this.rotationLocked) {
-        this.cameraControls.setLookAt(this.cameraPosition.x + worldAlignedOffset.x, this.cameraPosition.y + worldAlignedOffset.y, this.cameraPosition.z + worldAlignedOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, false);
+        this.cameraControls.setLookAt(this.cameraPosition.x + worldAlignedOffset.x, this.cameraPosition.y + worldAlignedOffset.y, this.cameraPosition.z + worldAlignedOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
       } else {
         this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z);
       }
@@ -1382,8 +1383,10 @@ class CameraServiceClass {
   }
   useStaticCamera(position, target) {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
-    this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
+    this.followedObject = null;
+    this.followOffset.set(0.1, 0.1, 0.1);
     this.cameraControls.enabled = false;
+    this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
     this.cameraPosition.copy(position);
     if (target) {
       const mock = UtilsService.getEmpty();
@@ -1405,21 +1408,19 @@ class CameraServiceClass {
     this.cameraControls.dampingFactor = 1.0;
     this.cameraControls.enabled = false;
   }
-  useThirdPersonCamera(object, offset = new Three__namespace.Vector3(0.0, 1.0, 1.0), preventOcclusion = true) {
+  useThirdPersonCamera(object, offset, preventOcclusion = true) {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
     this.followedObject = object;
     this.followedObject.getWorldPosition(this.cameraPosition);
     this.registerCameraColliders(preventOcclusion);
-    this.followOffset.copy(offset);
+    if (offset) {
+      this.followOffset.copy(offset);
+    } else {
+      this.followOffset.set(0.1, 0.1, 0.1);
+    }
     this.cameraControls.setLookAt(this.cameraPosition.x + this.followOffset.x, this.cameraPosition.y + this.followOffset.y, this.cameraPosition.z + this.followOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, false);
     this.cameraControls.dampingFactor = this.tween;
     this.cameraControls.enabled = true;
-  }
-  useOrbitCamera(preventOcclusion = true) {
-    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
-    this.cameraControls.dampingFactor = 0.05;
-    this.cameraControls.enabled = true;
-    this.registerCameraColliders(preventOcclusion);
   }
   ignoreCameraCollisions(object) {
     object.traverse(child => {
@@ -2717,6 +2718,10 @@ class RenderServiceClass {
     renderer.xr.enabled = GameInfoService.config.system.vr || false;
     renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);
+    if (GameInfoService.config.system.shadows) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = Three__namespace.PCFShadowMap;
+    }
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = 0;
@@ -2799,6 +2804,17 @@ class RenderServiceClass {
         search: this.smaaPostprocessingTextures.search
       });
     }
+    const toneMappingEffect = new postprocessing.ToneMappingEffect({
+      mode: postprocessing.ToneMappingMode.REINHARD2_ADAPTIVE,
+      resolution: 256,
+      whitePoint: 16.0,
+      middleGrey: 0.6,
+      minLuminance: 0.01,
+      averageLuminance: 0.01,
+      adaptationRate: 0.5
+    });
+    new postprocessing.EffectPass(this.camera, toneMappingEffect);
+    this.composer.addPass(toneMappingEffect);
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -3061,7 +3077,10 @@ const convertMaterialType = (material, targetType = 'basic') => {
 };
 
 const loaders = {
-  models: new GLTFLoader.GLTFLoader(),
+  models: {
+    gltf: new GLTFLoader.GLTFLoader(),
+    fbx: new FBXLoader.FBXLoader()
+  },
   images: new Three__namespace.TextureLoader(),
   hdri: new RGBELoader.RGBELoader(),
   audio: new Three__namespace.AudioLoader()
@@ -3125,7 +3144,7 @@ class AssetsServiceClass {
   }
   getHDRI(path, encoding = Three__namespace.RGBEEncoding) {
     return this.registerAsyncAsset(resolve => {
-      loaders.hdri.setDataType(Three__namespace.UnsignedByteType).load(path, texture => {
+      loaders.hdri.load(path, texture => {
         const renderer = RenderService.getRenderer();
         const generator = new Three__namespace.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
@@ -3169,14 +3188,25 @@ class AssetsServiceClass {
           return resolve(preloaded);
         }
       }
-      loaders.models.load(path, model => {
+      let modelType = 'gltf';
+      if (path.endsWith('.fbx')) {
+        modelType = 'fbx';
+      }
+      loaders.models[modelType].load(path, model => {
         const renderer = RenderService.getRenderer();
         const camera = RenderService.getNativeCamera();
-        model.parser.cache.removeAll();
-        delete model.parser;
-        delete model.asset;
-        delete model.scenes;
-        model.scene.traverse(child => {
+        let target;
+        if (model.scene) {
+          target = model.scene;
+          target.animations = model.animations;
+          model.parser.cache.removeAll();
+          delete model.parser;
+          delete model.asset;
+          delete model.scenes;
+        } else {
+          target = model;
+        }
+        target.traverse(child => {
           this.registerDisposable(child);
           if (child.material) {
             if (forceMaterialsType) {
@@ -3184,30 +3214,50 @@ class AssetsServiceClass {
             } else if (forceUniqueMaterials) {
               child.material = this.cloneMaterial(child.material);
             }
+            if (GameInfoService.config.system.shadows) {
+              child.material.side = Three__namespace.FrontSide;
+            }
           }
           if (GameInfoService.config.system.correctBlenderLights) {
             // NOTE More arbitrary that you dare to imagine 👀
 
             if (child instanceof Three__namespace.Light) {
               child.intensity /= 68.3;
-              if (typeof child.distance === 'number') {
-                child.distance *= 10.0;
-              }
               if (typeof child.decay === 'number') {
                 child.decay /= 2.0;
               }
             }
           }
+          if (GameInfoService.config.system.shadows && child.visible) {
+            if (child instanceof Three__namespace.Mesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            } else if (child instanceof Three__namespace.Light) {
+              child.castShadow = true;
+              child.shadow.mapSize.width = 1024;
+              child.shadow.mapSize.height = 1024;
+              child.shadow.radius = 4;
+            }
+          }
         });
-        model.scene.frustumCulled = false;
-        model.scene.onAfterRender = function () {
-          model.scene.frustumCulled = true;
-          model.scene.onAfterRender = function () {};
+        target.frustumCulled = false;
+        target.onAfterRender = function () {
+          target.frustumCulled = true;
+          target.onAfterRender = function () {};
         };
-        renderer.compile(model.scene, camera);
-        model.scene.userData.skinnedAnimations = model.animations;
-        delete model.animations;
-        resolve(model.scene);
+        renderer.compile(target, camera);
+        target.userData.skinnedAnimations = target.animations;
+        delete target.animations;
+        resolve(target);
+      });
+    });
+  }
+
+  // NOTE Use this method to load FBX animations exported from Mixamo (without model)
+  getMixamoAnimation(path) {
+    return this.registerAsyncAsset(resolve => {
+      loaders.models.fbx.load(path, model => {
+        resolve(model.animations[Object.keys(model.animations)[0]]);
       });
     });
   }
@@ -4677,6 +4727,10 @@ class AnimationWrapper {
     }
     this.mixer = new Three__namespace.AnimationMixer(this.target);
     userData.skinnedAnimations.forEach(clip => {
+      if (clip.name === 'mixamo.com') {
+        // NOTE Clean-up Mixamo exported default name
+        clip.name = 'idle';
+      }
       const action = this.mixer.clipAction(clip);
       action.reset();
       action.play();
@@ -4684,6 +4738,7 @@ class AnimationWrapper {
       // NOTE Internal only
       this.mixerActions[clip.name] = action;
       this.mixerClips.push(clip);
+      this.blendInAnimation(clip.name, 1.0);
     });
     this.stopAllAnimations();
     TimeService.registerFrameListener(({
@@ -4695,12 +4750,27 @@ class AnimationWrapper {
       this.mixer.update(dt);
     });
   }
+  renameAnimation(original, newName) {
+    this.mixerActions[newName] = this.mixerActions[original];
+    delete this.mixerActions[original];
+  }
+  addMixamoAnimation(name, animation) {
+    animation.name = name;
+    const action = this.mixer.clipAction(animation);
+    action.reset();
+    action.play();
+    this.mixerActions[name] = action;
+    this.mixerClips.push(animation);
+    this.blendInAnimation(name, 1.0);
+    this.stopAllAnimations();
+  }
   playAnimation(name, tweenDuration = 1000, reset = false, onFinish) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'playAnimation', `animation "${name}" does not exist`);
       return;
     }
     const action = this.mixerActions[name];
+    action.isStopping = false;
     if (action.isRunning()) {
       return;
     }
@@ -4730,9 +4800,10 @@ class AnimationWrapper {
       return;
     }
     const action = this.mixerActions[name];
-    if (!action.isRunning()) {
+    if (!action.isRunning() || action.isStopping) {
       return;
     }
+    action.isStopping = true;
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeOut(tweenDuration / 1000.0);
@@ -4744,6 +4815,7 @@ class AnimationWrapper {
     }
     const action = this.mixerActions[name];
     action.enabled = true;
+    action.isStopping = false;
     action.setEffectiveWeight(blendWeight);
   }
   playAllAnimations(tweenDuration = 0) {
@@ -5038,6 +5110,7 @@ exports.AnimationWrapper = AnimationWrapper;
 exports.AssetsService = AssetsService;
 exports.AudioChannelEnums = AudioChannelEnums;
 exports.AudioService = AudioService;
+exports.CameraMovementTypeEnums = CameraMovementTypeEnums;
 exports.CameraService = CameraService;
 exports.DebugFlags = DebugFlags;
 exports.DebugService = DebugService;

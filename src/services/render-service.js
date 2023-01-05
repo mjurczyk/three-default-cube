@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import { EffectComposer, RenderPass, EffectPass, BloomEffect, ClearPass, SMAAImageLoader, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode } from 'postprocessing';
+import { EffectComposer, RenderPass, EffectPass, BloomEffect, ClearPass, SMAAImageLoader, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode, ToneMappingMode, ToneMappingEffect } from 'postprocessing';
 import { AnimationService } from './animation-service';
 import { AssetsService } from './assets-service';
 import { CameraService } from './camera-service';
@@ -89,6 +89,11 @@ class RenderServiceClass {
 
     renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
     renderer.setSize(windowInfo.width, windowInfo.height);
+
+    if (GameInfoService.config.system.shadows) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = Three.PCFShadowMap;
+    }
 
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.position = 'absolute';
@@ -192,6 +197,19 @@ class RenderServiceClass {
         search: this.smaaPostprocessingTextures.search
       });
     }
+
+    const toneMappingEffect = new ToneMappingEffect({
+      mode: ToneMappingMode.REINHARD2_ADAPTIVE,
+      resolution: 256,
+      whitePoint: 16.0,
+      middleGrey: 0.6,
+      minLuminance: 0.01,
+      averageLuminance: 0.01,
+      adaptationRate: 0.5
+    });
+
+    const smaaPass = new EffectPass(this.camera, toneMappingEffect);
+    this.composer.addPass(toneMappingEffect);
 
     const bloomDefaults = {
       luminanceThreshold: 0.0,

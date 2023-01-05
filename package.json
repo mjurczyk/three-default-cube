@@ -37,7 +37,7 @@
     "url": "https://github.com/mjurczyk/three-default-cube.git"
   },
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@babel/core": "7.14.6",
     "@babel/plugin-proposal-class-properties": "7.14.5",
     "@rollup/plugin-babel": "5.3.0",

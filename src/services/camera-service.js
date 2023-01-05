@@ -8,7 +8,7 @@ import CameraControls from 'camera-controls';
 
 CameraControls.install({ THREE: Three });
 
-const CameraMovementTypeEnums = {
+export const CameraMovementTypeEnums = {
   rotateOnButtonDown: 'rotateOnButtonDown',
   rotateOnPointerMove: 'rotateOnPointerMove'
 };
@@ -94,7 +94,7 @@ class CameraServiceClass {
           this.cameraPosition.x,
           this.cameraPosition.y,
           this.cameraPosition.z,
-          false
+          true
         );
       } else {
         this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z);
@@ -171,6 +171,7 @@ class CameraServiceClass {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
     this.followedObject = null;
+    this.followOffset.set(0.1, 0.1, 0.1);
     this.cameraControls.enabled = false;
     this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
     this.cameraPosition.copy(position);
@@ -202,7 +203,7 @@ class CameraServiceClass {
     this.cameraControls.enabled = false;
   }
 
-  useThirdPersonCamera(object, offset = new Three.Vector3(0.0, 1.0, 1.0), preventOcclusion = true) {
+  useThirdPersonCamera(object, offset, preventOcclusion = true) {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
     this.followedObject = object;
@@ -210,7 +211,11 @@ class CameraServiceClass {
     
     this.registerCameraColliders(preventOcclusion);
     
-    this.followOffset.copy(offset);
+    if (offset) {
+      this.followOffset.copy(offset);
+    } else {
+      this.followOffset.set(0.1, 0.1, 0.1);
+    }
 
     this.cameraControls.setLookAt(
       this.cameraPosition.x + this.followOffset.x,
@@ -224,15 +229,6 @@ class CameraServiceClass {
 
     this.cameraControls.dampingFactor = this.tween;
     this.cameraControls.enabled = true;
-  }
-
-  useOrbitCamera(preventOcclusion = true) {
-    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
-
-    this.cameraControls.dampingFactor = 0.05;
-    this.cameraControls.enabled = true;
-
-    this.registerCameraColliders(preventOcclusion);
   }
 
   ignoreCameraCollisions(object) {

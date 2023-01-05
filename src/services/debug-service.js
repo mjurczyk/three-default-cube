@@ -194,7 +194,7 @@ class DebugServiceClass {
         { text: packageInfo.version, color: LogsHighlightColor },
         { text: packageInfo.stable ? '(stable)' : '(dev)', color: LogsHighlightColor },
         { text: 'Three.js Ver:' },
-        { text: packageInfo.devDependencies.three, color: LogsHighlightColor },
+        { text: packageInfo.dependencies.three, color: LogsHighlightColor },
       ));
     });
   }

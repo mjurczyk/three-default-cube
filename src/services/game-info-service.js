@@ -32,7 +32,7 @@ class GameInfoServiceClass {
     postprocessing = true,
     sceneBackgroundDefault = 0x000000,
     correctBlenderLights = true,
-    useSingleLoop = false,
+    shadows = true,
   ) {
     return this.addConfig({
       system: {
@@ -43,7 +43,7 @@ class GameInfoServiceClass {
         postprocessing,
         sceneBackgroundDefault,
         correctBlenderLights,
-        useSingleLoop
+        shadows
       }
     });
   }

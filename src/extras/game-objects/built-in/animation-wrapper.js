@@ -36,6 +36,11 @@ export class AnimationWrapper {
     this.mixer = new Three.AnimationMixer(this.target);
 
     userData.skinnedAnimations.forEach(clip => {
+      if (clip.name === 'mixamo.com') {
+        // NOTE Clean-up Mixamo exported default name
+        clip.name = 'idle';
+      }
+
       const action = this.mixer.clipAction(clip);
       action.reset();
       action.play();
@@ -43,6 +48,8 @@ export class AnimationWrapper {
       // NOTE Internal only
       this.mixerActions[clip.name] = action;
       this.mixerClips.push(clip);
+
+      this.blendInAnimation(clip.name, 1.0);
     });
 
     this.stopAllAnimations();
@@ -56,6 +63,26 @@ export class AnimationWrapper {
     });
   }
 
+  renameAnimation(original, newName) {
+    this.mixerActions[newName] = this.mixerActions[original];
+    delete this.mixerActions[original];
+  }
+
+  addMixamoAnimation(name, animation) {
+    animation.name = name;
+
+    const action = this.mixer.clipAction(animation);
+    action.reset();
+    action.play();
+
+    this.mixerActions[name] = action;
+    this.mixerClips.push(animation);
+
+    this.blendInAnimation(name, 1.0);
+
+    this.stopAllAnimations();
+  }
+
   playAnimation(name, tweenDuration = 1000, reset = false, onFinish) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'playAnimation', `animation "${name}" does not exist`);
@@ -63,6 +90,8 @@ export class AnimationWrapper {
     }
 
     const action = this.mixerActions[name];
+
+    action.isStopping = false;
 
     if (action.isRunning()) {
       return;
@@ -101,11 +130,12 @@ export class AnimationWrapper {
     }
 
     const action = this.mixerActions[name];
-
-    if (!action.isRunning()) {
+    
+    if (!action.isRunning() || action.isStopping) {
       return;
     }
-
+    
+    action.isStopping = true;
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeOut(tweenDuration / 1000.0);
@@ -119,6 +149,7 @@ export class AnimationWrapper {
 
     const action = this.mixerActions[name];
     action.enabled = true;
+    action.isStopping = false;
     action.setEffectiveWeight(blendWeight);
   }
 

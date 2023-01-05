@@ -1,6 +1,7 @@
 import * as Three from 'three';
 import * as uuid from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { RenderService } from './render-service';
 import {
@@ -13,7 +14,10 @@ import { convertMaterialType } from '../utils/materials';
 import { GameInfoService } from './game-info-service';
 
 const loaders = {
-  models: new GLTFLoader(),
+  models: {
+    gltf: new GLTFLoader(),
+    fbx: new FBXLoader()
+  },
   images: new Three.TextureLoader(),
   hdri: new RGBELoader(),
   audio: new Three.AudioLoader()
@@ -105,7 +109,6 @@ class AssetsServiceClass {
   getHDRI(path, encoding = Three.RGBEEncoding) {
     return this.registerAsyncAsset(resolve => {
       loaders.hdri
-        .setDataType(Three.UnsignedByteType)
         .load(path, (texture) => {
           const renderer = RenderService.getRenderer();
           const generator = new Three.PMREMGenerator(renderer);
@@ -156,16 +159,31 @@ class AssetsServiceClass {
         }
       }
 
-      loaders.models.load(path, model => {
+      let modelType = 'gltf';
+
+      if (path.endsWith('.fbx')) {
+        modelType = 'fbx';
+      }
+
+      loaders.models[modelType].load(path, model => {
         const renderer = RenderService.getRenderer();
         const camera = RenderService.getNativeCamera();
 
-        model.parser.cache.removeAll();
-        delete model.parser;
-        delete model.asset;
-        delete model.scenes;
+        let target;
 
-        model.scene.traverse(child => {
+        if (model.scene) {
+          target = model.scene;
+          target.animations = model.animations;
+
+          model.parser.cache.removeAll();
+          delete model.parser;
+          delete model.asset;
+          delete model.scenes;
+        } else {
+          target = model;
+        }
+
+        target.traverse(child => {
           this.registerDisposable(child);
 
           if (child.material) {
@@ -174,6 +192,10 @@ class AssetsServiceClass {
             } else if (forceUniqueMaterials) {
               child.material = this.cloneMaterial(child.material);
             }
+
+            if (GameInfoService.config.system.shadows) {
+              child.material.side = Three.FrontSide;
+            }
           }
 
           if (GameInfoService.config.system.correctBlenderLights) {
@@ -181,32 +203,49 @@ class AssetsServiceClass {
 
             if (child instanceof Three.Light) {
               child.intensity /= 68.3;
-
-              if (typeof child.distance === 'number') {
-                child.distance *= 10.0;
-              }
   
               if (typeof child.decay === 'number') {
                 child.decay /= 2.0;
               }
             }
           }
+
+          if (GameInfoService.config.system.shadows && child.visible) {
+            if (child instanceof Three.Mesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            } else if (child instanceof Three.Light) {
+              child.castShadow = true;
+              child.shadow.mapSize.width = 1024;
+              child.shadow.mapSize.height = 1024;
+              child.shadow.radius = 4;
+            }
+          }
         });
 
-        model.scene.frustumCulled = false;
+        target.frustumCulled = false;
 
-        model.scene.onAfterRender = function () {
-          model.scene.frustumCulled = true;
+        target.onAfterRender = function () {
+          target.frustumCulled = true;
           
-          model.scene.onAfterRender = function () {};
+          target.onAfterRender = function () {};
         };
 
-        renderer.compile(model.scene, camera);
+        renderer.compile(target, camera);
 
-        model.scene.userData.skinnedAnimations = model.animations;
-        delete model.animations;
+        target.userData.skinnedAnimations = target.animations;
+        delete target.animations;
 
-        resolve(model.scene);
+        resolve(target);
+      });
+    });
+  }
+
+  // NOTE Use this method to load FBX animations exported from Mixamo (without model)
+  getMixamoAnimation(path) {
+    return this.registerAsyncAsset(resolve => {
+      loaders.models.fbx.load(path, model => {
+        resolve(model.animations[Object.keys(model.animations)[0]]);
       });
     });
   }
