@@ -25,6 +25,7 @@ import { parseLeft } from '../scene-parsers/left';
 import { parseRight } from '../scene-parsers/right';
 import { parseTop } from '../scene-parsers/top';
 import { parseBottom } from '../scene-parsers/bottom';
+import { parseLandscape } from '../scene-parsers/landscape';
 
 class ParserServiceClass {
   parseModel({
@@ -83,6 +84,7 @@ class ParserServiceClass {
     // NOTE Parsers potentially consuming scene objects
     children.forEach(child => {
       parseShader(child, parserPayload);
+      parseLandscape(child, parserPayload);
       parseAnimation(child, parserPayload);
       parseGameObject(child, parserPayload);
       parseLabel(child, parserPayload);

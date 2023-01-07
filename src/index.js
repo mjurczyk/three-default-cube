@@ -16,6 +16,7 @@ export * from './scene-parsers/if';
 export * from './scene-parsers/if-not';
 export * from './scene-parsers/label';
 export * from './scene-parsers/material';
+export * from './scene-parsers/landscape';
 
 export * from './services/ai-service';
 export * from './services/animation-service';
