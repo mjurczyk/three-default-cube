@@ -1,5 +1,6 @@
 // NOTE Core functionality
 import * as _Three from 'three';
+import * as _Cannon from 'cannon-es';
 
 export * from './classes/game-object-class';
 export * from './classes/view-class';
@@ -61,3 +62,4 @@ export * from './extras/game-objects/built-in/text';
 // NOTE Export internal Three.js instance
 
 export const Three = _Three;
+export const Cannon = _Cannon;

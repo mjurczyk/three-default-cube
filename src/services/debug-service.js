@@ -23,8 +23,7 @@ export const DebugFlags = {
   DEBUG_STORAGE: 'DEBUG_STORAGE',
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
-  DEBUG_PHYSICS: 'DEBUG_PHYSICS',
-  DEBUG_PHYSICS_DYNAMIC: 'DEBUG_PHYSICS_DYNAMIC',
+  DEBUG_PHYSICS: 'DEBUG_PHYSICS'
 };
 
 class DebugServiceClass {
@@ -189,6 +188,7 @@ class DebugServiceClass {
           { text: StorageService.writes, color: LogsHighlightColor },
         ));
       }
+
       outputElement.appendChild(this.createLogLine(
         { text: 'DQ Ver:' },
         { text: packageInfo.version, color: LogsHighlightColor },
@@ -196,6 +196,13 @@ class DebugServiceClass {
         { text: 'Three.js Ver:' },
         { text: packageInfo.dependencies.three, color: LogsHighlightColor },
       ));
+
+      if (this.get(DebugFlags.DEBUG_PHYSICS)) {
+        outputElement.appendChild(this.createLogLine(
+          { text: 'CannonES Ver:' },
+          { text: packageInfo.dependencies['cannon-es'], color: LogsHighlightColor },
+        ));
+      }
     });
   }
 

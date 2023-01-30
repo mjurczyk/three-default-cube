@@ -26,6 +26,7 @@ import { parseRight } from '../scene-parsers/right';
 import { parseTop } from '../scene-parsers/top';
 import { parseBottom } from '../scene-parsers/bottom';
 import { parseLandscape } from '../scene-parsers/landscape';
+import { parsePhysics } from '../scene-parsers/physics';
 
 class ParserServiceClass {
   parseModel({
@@ -79,6 +80,7 @@ class ParserServiceClass {
       parseAiSpawn(child, parserPayload);
       parseNavmap(child, parserPayload);
       parseSurface(child, parserPayload);
+      parsePhysics(child, parserPayload);
     });
 
     // NOTE Parsers potentially consuming scene objects

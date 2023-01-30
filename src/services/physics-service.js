@@ -1,3 +1,5 @@
+import * as Three from 'three';
+import * as Cannon from 'cannon-es';
 import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createArrowHelper, createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
@@ -7,11 +9,12 @@ import { RenderService } from './render-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { Pathfinding } from 'three-pathfinding';
-import { MathUtils } from '../utils/shared';
+import { defaultTo, isDefined, MathUtils } from '../utils/shared';
 
 class PhysicsServiceClass {
+  physicsWorld = null;
+  physicsLoop = null;
   bodies = [];
-  dynamicBodies = [];
 
   navmaps = [];
   pathfinder = null;
@@ -21,281 +24,196 @@ class PhysicsServiceClass {
   surfaceHandlers = {};
   surfaces = [];
 
-  slopeTolerance = 1.0;
-  gravityConstant = -0.986;
-
-  maxDynamicBodySize = 1.0;
-  maxSurfaceInteractionDistance = 0.01;
-
-  emptyVector3 = MathService.getVec3(0.0, 0.0, 0.0, 'physics-7');
-
   init() {
-    TimeService.registerPersistentFrameListener(() => {
-      this.updateDynamicBodies();
-      this.updateStaticBodies();
-    });
+    if (!this.physicsWorld) {
+      const physicsWorld = new Cannon.World({
+        gravity: new Cannon.Vec3(0.0, -9.86, 0.0)
+      });
+
+      this.physicsWorld = physicsWorld;
+
+      this.physicsLoop = TimeService.registerFrameListener(({ dt }) => {
+        this.physicsWorld.bodies.forEach(body => {
+          const { targetRef } = body;
+
+          if (body.mass === 0.0) {
+            body.allowSleep = true;
+
+            return;
+          }
+
+          targetRef.position.copy(body.position);
+          targetRef.quaternion.copy(body.quaternion);
+        });
+
+        if (this.physicsWorld && dt !== 0) {
+          this.physicsWorld.fixedStep();
+        }
+      });
+    }
   }
 
-  updateStaticBodies() {
-    if (!this.bodies.length) {
-      return;
+  registerBody(object, physicsConfig) {
+    const {
+      physicsShape,
+      physicsStatic,
+      physicsPreventMerge,
+      physicsFriction,
+      physicsRestitution,
+      physicsWeight,
+      physicsCollisionGroup,
+      physicsPreventRotation,
+      physicsControlled,
+    } = physicsConfig;
+    const scene = RenderService.getScene();
+
+    if (object.parent !== scene) {
+      console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', { object });
+
+      scene.add(object);
     }
 
-    const direction = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
-    const position = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
-    const raycaster = UtilsService.getRaycaster();
+    const quaternion = MathService.getQuaternion();
+    quaternion.copy(object.quaternion);
+    object.quaternion.identity();
+    const position = MathService.getVec3();
+    position.copy(object.position);
+    object.position.set(0.0, 0.0, 0.0);
+    const box3 = UtilsService.getBox3();
 
-    this.bodies = this.bodies.filter(body => {
-      raycaster.near = -0.00001;
-      raycaster.far = 500.0; // NOTE If navmap is not found within this limit, it's assumed body left the navmap
+    object.traverse(child => {
+      if (child.isMesh) {
+        const worldBbox = UtilsService.getBox3();
+        worldBbox.expandByObject(child);
 
-      if (!body || !body.target) {
-        AssetsService.disposeAsset(body);
-        AssetsService.disposeAsset(body.target);
+        child.updateMatrix();
+        child.updateMatrixWorld();
+        const worldTransform = child.matrixWorld.clone();
+        const [ e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44 ] = worldTransform.elements;
 
-        return false;
-      }
-
-      if (body.simpleGravity) {
-        if (body.grounded) {
-          body.simpleGravity.y = 0.0;
-        } else {
-          body.simpleGravity.y = MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
-        }
-      }
-
-      const simpleVelocity = body.getSimpleVelocity();
-      const simpleGravity = body.simpleGravity || this.emptyVector3;
-
-      body.target.getWorldPosition(position);
-
-      if (simpleVelocity) {
-        position.add(simpleVelocity);
-      }
-
-      const slopeVector = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1')
-        .copy(simpleGravity)
-        .normalize()
-        .multiplyScalar(-this.slopeTolerance);
-
-      position.add(slopeVector);
-
-      const gravityDirection = MathService.getVec3(0.0, -1.0, 0.0, 'physics-2');
-
-      position.sub(gravityDirection);
-      raycaster.set(position, gravityDirection);
-
-      MathService.releaseVec3(gravityDirection);
-
-      // Surfaces
-      raycaster.far = this.maxSurfaceInteractionDistance;
-
-      let collisions = raycaster.intersectObjects(this.surfaces, true);
-      let cachedCollisions = Object.keys(body.surfaceCollisions || {});
-
-      collisions.forEach(collision => {
-        const { surface: surfaceType, surfaceRef } = collision.object.userData;
-        const { onInteraction, onEnter, onLeave } = this.surfaceHandlers[surfaceType];
-
-        if (surfaceRef[onEnter] && !body.surfaceCollisions[collision.object.uuid]) {
-          surfaceRef[onEnter]({
-            body,
-            hit: collision
-          });
-        }
-
-        if (surfaceRef[onInteraction]) {
-          surfaceRef[onInteraction]({
-            body,
-            hit: collision
-          });
-        }
-
-        body.surfaceCollisions[collision.object.uuid] = { onLeave: surfaceRef[onLeave] };
-        cachedCollisions = cachedCollisions.filter(uuid => uuid !== collision.object.uuid);
-      });
-
-      cachedCollisions.forEach(collisionUuid => {
-        if (body.surfaceCollisions[collisionUuid].onLeave) {
-          body.surfaceCollisions[collisionUuid].onLeave({ body, hit: null });
-        }
-
-        delete body.surfaceCollisions[collisionUuid];
-      });
-
-      MathService.releaseVec3(slopeVector);
-
-      raycaster.far = 500.0;
-      
-      if (simpleVelocity) {
-        // Collisions
-        collisions = raycaster.intersectObjects(
-          this.navmaps,
-          true
+        worldTransform.set(
+          e11, e12, e13, 0.0,
+          e21, e22, e23, 0.0,
+          e31, e32, e33, 0.0,
+          e41, e42, e43, e44
         );
+        worldBbox.applyMatrix4(worldTransform);
 
-        if (collisions[0]) {
-          const { point } = collisions[0];
+        box3.union(worldBbox);
 
-          body.target.getWorldPosition(position);
-
-          const pointOffset = MathService.getVec3(0.0, 0.0, 0.0, 'physics-3')
-            .copy(point)
-            .sub(position);
-
-          if (pointOffset.length() - this.slopeTolerance <= simpleVelocity.length()) {
-            body.target.position.add(pointOffset);
-            body.grounded = true;
-          } else {
-            body.target.position.add(simpleVelocity);
-            body.target.position.add(simpleGravity);
-            body.grounded = false;
-          }
-
-          MathService.releaseVec3(pointOffset);
-        } else {
-          if (!body.noClip) {
-            if (body.collisionListener) {
-              body.collisionListener();
-            }
-
-            body.grounded = false;
-          } else {
-            body.target.position.add(simpleVelocity);
-            body.grounded = true;
-          }
-        }
+        UtilsService.releaseBox3(worldBbox);
       }
-
-      if (body.dynamicCollision) {
-        body.dynamicCollision = false;
-      }
-
-      return true;
     });
 
-    MathService.releaseVec3(direction);
+    object.quaternion.copy(quaternion);
+    object.position.copy(position);
     MathService.releaseVec3(position);
-    UtilsService.releaseRaycaster(raycaster);
-  }
+    MathService.releaseQuaternion(quaternion);
 
-  updateDynamicBodies() {
-    if (!this.dynamicBodies.length) {
-      return;
+    const objectSize = MathService.getVec3();
+    box3.getSize(objectSize);
+    
+    const shape = ({
+      'box': new Cannon.Box(new Cannon.Vec3(objectSize.x, objectSize.y, objectSize.z)),
+      'plane': new Cannon.Plane(),
+      'sphere': new Cannon.Sphere(objectSize.x / 2.0),
+    })[physicsShape] || new Cannon.Sphere(objectSize.x / 2.0);
+
+    const material = new Cannon.Material({
+      friction: defaultTo(physicsFriction, 0.3),
+      restitution: defaultTo(physicsRestitution, 0.3)
+    });
+
+    let body;
+    let bodyDebugColor;
+
+    if (physicsStatic && !physicsPreventMerge) {
+      if (!this.staticBodies) {
+        const staticBodies = new Cannon.Body({
+          mass: 0.0,
+          material: material,
+          allowSleep: true,
+          type: Cannon.Body.STATIC
+        });
+
+        this.physicsWorld.addBody(staticBodies);
+        this.staticBodies = staticBodies;
+      }
+
+      object.rotateX(-Math.PI / 2.0);
+      
+      this.staticBodies.addShape(
+        shape,
+        new Cannon.Vec3().copy(object.position),
+        new Cannon.Quaternion().copy(object.quaternion)
+      );
+
+      object.rotateX(Math.PI / 2.0);
+
+      body = this.staticBodies;
+      bodyDebugColor = new Three.Color(0xff00ff);
+    } else {
+      body = new Cannon.Body({
+        mass: physicsStatic ? 0.0 :(physicsWeight || 1.0),
+        material: material,
+        collisionFilterGroup: physicsCollisionGroup || -1,
+        collisionFilterMask: physicsCollisionGroup || -1,
+        fixedRotation: isDefined(physicsPreventRotation),
+        // linearDamping: physicsControlled ? 1.0 : 0.01,
+        // angularDamping: physicsControlled ? 1.0 : 0.01,
+        // type: physicsControlled ? Cannon.Body.KINEMATIC : Cannon.Body.DYNAMIC
+      });
+      bodyDebugColor = new Three.Color(Math.random() * 0x888888 + 0x888888);
+
+      body.addShape(shape);
+      body.position.copy(object.position);
+      body.quaternion.copy(object.quaternion);
+
+      this.physicsWorld.addBody(body);
+
+      AssetsService.registerDisposeCallback(object, () => {
+        this.physicsWorld.removeBody(body);
+      });
     }
 
-    const tests = {};
+    object.userData.cannonRef = body;
+    body.targetRef = object;
 
-    const positionA = MathService.getVec3(0.0, 0.0, 0.0, 'physics-4');
-    const positionB = MathService.getVec3(0.0, 0.0, 0.0, 'physics-5');
-
-    this.dynamicBodies = this.dynamicBodies.filter(bodyA => {
-      if (!bodyA || !bodyA.target) {
-        return false;
-      }
-
-      bodyA.target.getWorldPosition(positionA);
-
-      this.dynamicBodies.forEach((bodyB) => {
-        if (bodyA === bodyB || !bodyB || !bodyB.target) {
-          return;
-        }
-
-        bodyB.target.getWorldPosition(positionB);
-
-        const distance = positionB.distanceTo(positionA);
-        const isNearby = distance <= this.maxDynamicBodySize && distance > 0.0;
-
-        const collisionKey = [bodyA.target.uuid, bodyB.target.uuid].sort().join(':');
-        const isTested = typeof tests[collisionKey] !== 'undefined';
-
-        if (!isNearby || isTested) {
-          return;
-        }
-
-        tests[collisionKey] = { bodyA, bodyB };
-      });
-
-      return true;
-    });
-
-    const distance = MathService.getVec3(0.0, 0.0, 0.0, 'physics-6');
-
-    Object.keys(tests).forEach((testId, index) => {
-      const { bodyA, bodyB } = tests[testId];
-
-      if (bodyA === bodyB) {
+    if (DebugService.get(DebugFlags.DEBUG_PHYSICS)) {
+      if ((physicsStatic && !physicsPreventMerge) || object.userData.collisionBox) {
         return;
       }
 
-      bodyA.target.getWorldPosition(positionA);
-      bodyB.target.getWorldPosition(positionB);
-      distance.copy(positionB).sub(positionA);
+      const helper = createBoxHelper(object, object.uuid, box3.clone());
+      helper.material.color.set(bodyDebugColor);
+      helper.material.transparent = true;
+      helper.material.opacity = 0.25;
 
-      bodyA.boundingBox.setFromObject(bodyA.target);
-      bodyB.boundingBox.setFromObject(bodyB.target);
+      const debugSize = new Three.Vector3();
+      box3.getSize(debugSize);
+      debugSize.subScalar(0.01);
 
-      if (DebugService.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
-        createArrowHelper(
-          RenderService.getScene(),
-          `physicsService-updateDynamicBodies-${index}-distance`,
-          distance,
-          positionA
-        );
+      const debugBox = new Three.Mesh(
+        ({
+          'box': new Three.BoxBufferGeometry(debugSize.x, debugSize.y, debugSize.z),
+          'plane': new Three.PlaneBufferGeometry(debugSize.x, debugSize.z),
+          'sphere': new Three.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
+        })[physicsShape] || new Three.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
+        new Three.MeshBasicMaterial({
+          color: bodyDebugColor,
+          wireframe: true
+        })
+      );
+      object.add(debugBox);
+      box3.getCenter(debugBox.position);
 
-        createBoxHelper(
-          RenderService.getScene(),
-          `physicsService-updateDynamicBodies-${index}-boxA`,
-          bodyA.boundingBox
-        );
-
-        createBoxHelper(
-          RenderService.getScene(),
-          `physicsService-updateDynamicBodies-${index}-boxB`,
-          bodyB.boundingBox
-        );
-      }
-
-      if (bodyA.boundingBox.intersectsBox(bodyB.boundingBox)) {
-        if (bodyA.target.userData.collisionCallbackRef) {
-          bodyA.target.userData.collisionCallbackRef(bodyB.target);
-        }
-
-        if (bodyB.target.userData.collisionCallbackRef) {
-          bodyB.target.userData.collisionCallbackRef(bodyA.target);
-        }
-      }
-    });
-
-    MathService.releaseVec3(positionA);
-    MathService.releaseVec3(positionB);
-    MathService.releaseVec3(distance);
-  }
-
-  registerBody(object) {
-    this.bodies.push(object);
-  }
-
-  registerDynamicCollisionBody(object, collisionCallback) {
-    if (collisionCallback) {
-      object.target.userData.collisionCallbackRef = collisionCallback;
+      object.userData.collisionBox = debugBox;
     }
 
-    this.dynamicBodies.push(object);
+    MathService.releaseVec3(objectSize);
+    UtilsService.releaseBox3(box3);
 
-    object.boundingBox.setFromObject(object.target);
-
-    const bodySize = MathService.getVec3();
-    object.boundingBox.getSize(bodySize);
-
-    this.maxDynamicBodySize = Math.max(
-      this.maxDynamicBodySize,
-      bodySize.x,
-      bodySize.y,
-      bodySize.z
-    );
-
-    MathService.releaseVec3(bodySize);
+    return body;
   }
 
   registerNavmap(object) {
@@ -387,8 +305,8 @@ class PhysicsServiceClass {
   }
 
   disposeBody(object) {
-    this.bodies = this.bodies.filter(match => match !== object);
-    this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
+    // this.bodies = this.bodies.filter(match => match !== object);
+    // this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
   }
 
   disposeNavmap(object) {
@@ -400,8 +318,8 @@ class PhysicsServiceClass {
   }
 
   disposeAll() {
-    this.bodies = [];
-    this.dynamicBodies = [];
+    // this.bodies = [];
+    // this.dynamicBodies = [];
     this.navmaps = [];
     this.surfaces = [];
 
