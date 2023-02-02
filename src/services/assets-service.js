@@ -12,6 +12,7 @@ import { Howl } from 'howler';
 import { AudioService } from './audio-service';
 import { convertMaterialType } from '../utils/materials';
 import { GameInfoService } from './game-info-service';
+import { defaultTo } from '../utils/shared';
 
 const loaders = {
   models: {
@@ -216,9 +217,9 @@ class AssetsServiceClass {
               child.receiveShadow = true;
             } else if (child instanceof Three.Light) {
               child.castShadow = true;
-              child.shadow.mapSize.width = 1024;
-              child.shadow.mapSize.height = 1024;
-              child.shadow.radius = 4;
+              child.shadow.mapSize.width = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.mapSize.height = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.radius = defaultTo(GameInfoService.config.system.shadowsRadius, 4);
             }
           }
         });

@@ -235,7 +235,7 @@ class GameInfoServiceClass {
     };
     return this;
   }
-  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true, shadows = true) {
+  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
@@ -244,8 +244,7 @@ class GameInfoServiceClass {
         antialiasing,
         postprocessing,
         sceneBackgroundDefault,
-        correctBlenderLights,
-        shadows
+        correctBlenderLights
       }
     });
   }
@@ -267,6 +266,16 @@ class GameInfoServiceClass {
           near,
           far
         }
+      }
+    });
+  }
+  shadows(enabled = true, resolution = 1024, radius = 4) {
+    return this.addConfig({
+      system: {
+        ...(this.config.system || {}),
+        shadows: enabled,
+        shadowsResolution: resolution,
+        shadowsRadius: radius
       }
     });
   }
@@ -1964,6 +1973,7 @@ class PhysicsServiceClass {
   registerBody(object, physicsConfig) {
     const {
       physicsShape,
+      physicsSize,
       physicsStatic,
       physicsPreventMerge,
       physicsFriction,
@@ -1971,14 +1981,31 @@ class PhysicsServiceClass {
       physicsWeight,
       physicsCollisionGroup,
       physicsPreventRotation,
-      physicsControlled
+      physicsHidden,
+      physicsDamping
     } = physicsConfig;
     const scene = RenderService.getScene();
+    if (object.userData.cannonRef) {
+      return;
+    }
+    if (object === scene) {
+      console.warn('PhysicsService', 'registerBody', 'attempting to register root scene as physically active object', {
+        object
+      });
+      return;
+    }
     if (object.parent !== scene) {
       console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', {
         object
       });
+      const worldPosition = MathService.getVec3();
+      object.getWorldPosition(worldPosition);
       scene.add(object);
+      object.position.copy(worldPosition);
+      MathService.releaseVec3(worldPosition);
+    }
+    if (physicsHidden) {
+      object.visible = false;
     }
     const quaternion = MathService.getQuaternion();
     quaternion.copy(object.quaternion);
@@ -1987,20 +2014,24 @@ class PhysicsServiceClass {
     position.copy(object.position);
     object.position.set(0.0, 0.0, 0.0);
     const box3 = UtilsService.getBox3();
-    object.traverse(child => {
-      if (child.isMesh) {
-        const worldBbox = UtilsService.getBox3();
-        worldBbox.expandByObject(child);
-        child.updateMatrix();
-        child.updateMatrixWorld();
-        const worldTransform = child.matrixWorld.clone();
-        const [e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44] = worldTransform.elements;
-        worldTransform.set(e11, e12, e13, 0.0, e21, e22, e23, 0.0, e31, e32, e33, 0.0, e41, e42, e43, e44);
-        worldBbox.applyMatrix4(worldTransform);
-        box3.union(worldBbox);
-        UtilsService.releaseBox3(worldBbox);
-      }
-    });
+    if (!physicsSize) {
+      object.traverse(child => {
+        if (child.isMesh) {
+          const worldBbox = UtilsService.getBox3();
+          worldBbox.expandByObject(child);
+          child.updateMatrix();
+          child.updateMatrixWorld();
+          const worldTransform = child.matrixWorld.clone();
+          const [e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44] = worldTransform.elements;
+          worldTransform.set(e11, e12, e13, 0.0, e21, e22, e23, 0.0, e31, e32, e33, 0.0, e41, e42, e43, e44);
+          worldBbox.applyMatrix4(worldTransform);
+          box3.union(worldBbox);
+          UtilsService.releaseBox3(worldBbox);
+        }
+      });
+    } else {
+      box3.setFromCenterAndSize(new Three__namespace.Vector3(0.0, 0.0, 0.0), new Three__namespace.Vector3(physicsSize / 2.0, physicsSize / 2.0, physicsSize / 2.0));
+    }
     object.quaternion.copy(quaternion);
     object.position.copy(position);
     MathService.releaseVec3(position);
@@ -2008,7 +2039,7 @@ class PhysicsServiceClass {
     const objectSize = MathService.getVec3();
     box3.getSize(objectSize);
     const shape = {
-      'box': new Cannon__namespace.Box(new Cannon__namespace.Vec3(objectSize.x, objectSize.y, objectSize.z)),
+      'box': new Cannon__namespace.Box(new Cannon__namespace.Vec3(objectSize.x / 2.0, objectSize.y / 2.0, objectSize.z / 2.0)),
       'plane': new Cannon__namespace.Plane(),
       'sphere': new Cannon__namespace.Sphere(objectSize.x / 2.0)
     }[physicsShape] || new Cannon__namespace.Sphere(objectSize.x / 2.0);
@@ -2040,12 +2071,10 @@ class PhysicsServiceClass {
         material: material,
         collisionFilterGroup: physicsCollisionGroup || -1,
         collisionFilterMask: physicsCollisionGroup || -1,
-        fixedRotation: isDefined(physicsPreventRotation)
-        // linearDamping: physicsControlled ? 1.0 : 0.01,
-        // angularDamping: physicsControlled ? 1.0 : 0.01,
-        // type: physicsControlled ? Cannon.Body.KINEMATIC : Cannon.Body.DYNAMIC
+        fixedRotation: isDefined(physicsPreventRotation),
+        linearDamping: physicsDamping,
+        angularDamping: physicsDamping
       });
-
       bodyDebugColor = new Three__namespace.Color(Math.random() * 0x888888 + 0x888888);
       body.addShape(shape);
       body.position.copy(object.position);
@@ -2067,7 +2096,7 @@ class PhysicsServiceClass {
       helper.material.opacity = 0.25;
       const debugSize = new Three__namespace.Vector3();
       box3.getSize(debugSize);
-      debugSize.subScalar(0.01);
+      debugSize.addScalar(0.01);
       const debugBox = new Three__namespace.Mesh({
         'box': new Three__namespace.BoxBufferGeometry(debugSize.x, debugSize.y, debugSize.z),
         'plane': new Three__namespace.PlaneBufferGeometry(debugSize.x, debugSize.z),
@@ -2083,6 +2112,47 @@ class PhysicsServiceClass {
     MathService.releaseVec3(objectSize);
     UtilsService.releaseBox3(box3);
     return body;
+  }
+  registerConstraint(objectA, objectB, distance) {
+    if (!this.physicsWorld) {
+      return;
+    }
+    const scene = RenderService.getScene();
+    if (objectA === scene || objectB === scene) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect object to root scene. Forgot to assign parent?', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectA.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectB.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    this.disposeConstraintOnBody(objectA.userData.cannonRef);
+    this.disposeConstraintOnBody(objectB.userData.cannonRef);
+    const constraint = new Cannon__namespace.PointToPointConstraint(objectA.userData.cannonRef, new Cannon__namespace.Vec3(0.0, 0.0, 0.0), objectB.userData.cannonRef, new Cannon__namespace.Vec3(0.0, -distance, 0.0));
+    this.physicsWorld.addConstraint(constraint);
+    objectA.physicsConstraintRef = constraint;
+    objectB.physicsConstraintRef = constraint;
+    return constraint;
+  }
+  disposeConstraintOnBody(object) {
+    if (!this.physicsWorld || !object.physicsConstraintRef) {
+      return;
+    }
+    this.physicsWorld.removeConstraint(object.physicsConstraintRef);
+    object.physicsConstraintRef = null;
   }
   registerNavmap(object) {
     this.enableNavmap(object);
@@ -3189,9 +3259,9 @@ class AssetsServiceClass {
               child.receiveShadow = true;
             } else if (child instanceof Three__namespace.Light) {
               child.castShadow = true;
-              child.shadow.mapSize.width = 1024;
-              child.shadow.mapSize.height = 1024;
-              child.shadow.radius = 4;
+              child.shadow.mapSize.width = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.mapSize.height = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.radius = defaultTo(GameInfoService.config.system.shadowsRadius, 4);
             }
           }
         });
@@ -4630,15 +4700,46 @@ class PhysicsWrapper {
   }
 }
 
-const parsePhysics = (object, {
-  scene,
-  scrollLists
-}) => {
+const parsePhysics = object => {
   const {
     userData
   } = object;
   if (isDefined(userData.physics)) {
     new PhysicsWrapper(object, userData || {});
+  }
+};
+
+const hidePlaceholder = target => {
+  if (target.geometry) {
+    AssetsService.disposeProps(target.geometry);
+    target.geometry = new Three__namespace.BufferGeometry();
+    AssetsService.registerDisposable(target.geometry);
+  }
+};
+
+const parsePhysicsRope = object => {
+  const {
+    userData
+  } = object;
+  if (isDefined(userData.physicsRope)) {
+    const ropeTarget = object.parent;
+    const {
+      physicsRopeDistance
+    } = object.userData;
+    hidePlaceholder(object);
+    if (!ropeTarget.cannonRef) {
+      new PhysicsWrapper(ropeTarget, {
+        physicsShape: 'sphere',
+        physicsSize: physicsRopeDistance / 2.0,
+        physicsDamping: 0.75
+      });
+    }
+    new PhysicsWrapper(object, {
+      physicsShape: 'sphere',
+      physicsSize: physicsRopeDistance / 2.0,
+      physicsDamping: 0.75
+    });
+    PhysicsService.registerConstraint(object, ropeTarget, physicsRopeDistance);
   }
 };
 
@@ -4689,11 +4790,12 @@ class ParserServiceClass {
       parseAiSpawn(child, parserPayload);
       parseNavmap(child);
       parseSurface(child);
-      parsePhysics(child, parserPayload);
+      parsePhysics(child);
     });
 
     // NOTE Parsers potentially consuming scene objects
     children.forEach(child => {
+      parsePhysicsRope(child);
       parseShader(child);
       parseLandscape(child);
       parseAnimation(child);
@@ -5401,6 +5503,7 @@ exports.get3dScreenHeight = get3dScreenHeight;
 exports.get3dScreenWidth = get3dScreenWidth;
 exports.getRandomColor = getRandomColor;
 exports.getRandomElement = getRandomElement;
+exports.hidePlaceholder = hidePlaceholder;
 exports.isDefined = isDefined;
 exports.math2Pi = math2Pi;
 exports.mathPi2 = mathPi2;

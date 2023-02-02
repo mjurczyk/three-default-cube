@@ -31,8 +31,7 @@ class GameInfoServiceClass {
     antialiasing = true,
     postprocessing = true,
     sceneBackgroundDefault = 0x000000,
-    correctBlenderLights = true,
-    shadows = true,
+    correctBlenderLights = true
   ) {
     return this.addConfig({
       system: {
@@ -42,8 +41,7 @@ class GameInfoServiceClass {
         antialiasing,
         postprocessing,
         sceneBackgroundDefault,
-        correctBlenderLights,
-        shadows
+        correctBlenderLights
       }
     });
   }
@@ -67,6 +65,21 @@ class GameInfoServiceClass {
       system: {
         ...(this.config.system || {}),
         camera: { fov, near, far }
+      }
+    });
+  }
+
+  shadows(
+    enabled = true,
+    resolution = 1024,
+    radius = 4,
+  ) {
+    return this.addConfig({
+      system: {
+        ...(this.config.system || {}),
+        shadows: enabled,
+        shadowsResolution: resolution,
+        shadowsRadius: radius
       }
     });
   }

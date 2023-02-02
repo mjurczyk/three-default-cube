@@ -56,6 +56,7 @@ class PhysicsServiceClass {
   registerBody(object, physicsConfig) {
     const {
       physicsShape,
+      physicsSize,
       physicsStatic,
       physicsPreventMerge,
       physicsFriction,
@@ -63,14 +64,35 @@ class PhysicsServiceClass {
       physicsWeight,
       physicsCollisionGroup,
       physicsPreventRotation,
-      physicsControlled,
+      physicsHidden,
+      physicsDamping
     } = physicsConfig;
     const scene = RenderService.getScene();
+
+    if (object.userData.cannonRef) {
+      return;
+    }
+
+    if (object === scene) {
+      console.warn('PhysicsService', 'registerBody', 'attempting to register root scene as physically active object', { object });
+
+      return;
+    }
 
     if (object.parent !== scene) {
       console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', { object });
 
+      const worldPosition = MathService.getVec3();
+      object.getWorldPosition(worldPosition);
+
       scene.add(object);
+      object.position.copy(worldPosition);
+
+      MathService.releaseVec3(worldPosition);
+    }
+
+    if (physicsHidden) {
+      object.visible = false;
     }
 
     const quaternion = MathService.getQuaternion();
@@ -81,29 +103,36 @@ class PhysicsServiceClass {
     object.position.set(0.0, 0.0, 0.0);
     const box3 = UtilsService.getBox3();
 
-    object.traverse(child => {
-      if (child.isMesh) {
-        const worldBbox = UtilsService.getBox3();
-        worldBbox.expandByObject(child);
+    if (!physicsSize) {
+      object.traverse(child => {
+        if (child.isMesh) {
+          const worldBbox = UtilsService.getBox3();
+          worldBbox.expandByObject(child);
 
-        child.updateMatrix();
-        child.updateMatrixWorld();
-        const worldTransform = child.matrixWorld.clone();
-        const [ e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44 ] = worldTransform.elements;
+          child.updateMatrix();
+          child.updateMatrixWorld();
+          const worldTransform = child.matrixWorld.clone();
+          const [ e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44 ] = worldTransform.elements;
 
-        worldTransform.set(
-          e11, e12, e13, 0.0,
-          e21, e22, e23, 0.0,
-          e31, e32, e33, 0.0,
-          e41, e42, e43, e44
-        );
-        worldBbox.applyMatrix4(worldTransform);
+          worldTransform.set(
+            e11, e12, e13, 0.0,
+            e21, e22, e23, 0.0,
+            e31, e32, e33, 0.0,
+            e41, e42, e43, e44
+          );
+          worldBbox.applyMatrix4(worldTransform);
 
-        box3.union(worldBbox);
+          box3.union(worldBbox);
 
-        UtilsService.releaseBox3(worldBbox);
-      }
-    });
+          UtilsService.releaseBox3(worldBbox);
+        }
+      });
+    } else {
+      box3.setFromCenterAndSize(
+        new Three.Vector3(0.0, 0.0, 0.0),
+        new Three.Vector3(physicsSize / 2.0, physicsSize / 2.0, physicsSize / 2.0)
+      );
+    }
 
     object.quaternion.copy(quaternion);
     object.position.copy(position);
@@ -114,7 +143,7 @@ class PhysicsServiceClass {
     box3.getSize(objectSize);
     
     const shape = ({
-      'box': new Cannon.Box(new Cannon.Vec3(objectSize.x, objectSize.y, objectSize.z)),
+      'box': new Cannon.Box(new Cannon.Vec3(objectSize.x / 2.0, objectSize.y / 2.0, objectSize.z / 2.0)),
       'plane': new Cannon.Plane(),
       'sphere': new Cannon.Sphere(objectSize.x / 2.0),
     })[physicsShape] || new Cannon.Sphere(objectSize.x / 2.0);
@@ -154,14 +183,13 @@ class PhysicsServiceClass {
       bodyDebugColor = new Three.Color(0xff00ff);
     } else {
       body = new Cannon.Body({
-        mass: physicsStatic ? 0.0 :(physicsWeight || 1.0),
+        mass: physicsStatic ? 0.0 : (physicsWeight || 1.0),
         material: material,
         collisionFilterGroup: physicsCollisionGroup || -1,
         collisionFilterMask: physicsCollisionGroup || -1,
         fixedRotation: isDefined(physicsPreventRotation),
-        // linearDamping: physicsControlled ? 1.0 : 0.01,
-        // angularDamping: physicsControlled ? 1.0 : 0.01,
-        // type: physicsControlled ? Cannon.Body.KINEMATIC : Cannon.Body.DYNAMIC
+        linearDamping: physicsDamping,
+        angularDamping: physicsDamping,
       });
       bodyDebugColor = new Three.Color(Math.random() * 0x888888 + 0x888888);
 
@@ -191,7 +219,7 @@ class PhysicsServiceClass {
 
       const debugSize = new Three.Vector3();
       box3.getSize(debugSize);
-      debugSize.subScalar(0.01);
+      debugSize.addScalar(0.01);
 
       const debugBox = new Three.Mesh(
         ({
@@ -214,6 +242,54 @@ class PhysicsServiceClass {
     UtilsService.releaseBox3(box3);
 
     return body;
+  }
+
+  registerConstraint(objectA, objectB, distance) {
+    if (!this.physicsWorld) {
+      return;
+    }
+
+    const scene = RenderService.getScene();
+
+    if (objectA === scene || objectB === scene) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect object to root scene. Forgot to assign parent?', { objectA, objectB });
+      return;
+    }
+
+    if (!objectA.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', { objectA, objectB });
+      return;
+    }
+
+    if (!objectB.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', { objectA, objectB });
+      return;
+    }
+
+    this.disposeConstraintOnBody(objectA.userData.cannonRef);
+    this.disposeConstraintOnBody(objectB.userData.cannonRef);
+
+    const constraint = new Cannon.PointToPointConstraint(
+      objectA.userData.cannonRef,
+      new Cannon.Vec3(0.0, 0.0, 0.0),
+      objectB.userData.cannonRef,
+      new Cannon.Vec3(0.0, -distance, 0.0)
+    );
+    this.physicsWorld.addConstraint(constraint);
+
+    objectA.physicsConstraintRef = constraint;
+    objectB.physicsConstraintRef = constraint;
+
+    return constraint;
+  }
+
+  disposeConstraintOnBody(object) {
+    if (!this.physicsWorld || !object.physicsConstraintRef) {
+      return;
+    }
+
+    this.physicsWorld.removeConstraint(object.physicsConstraintRef);
+    object.physicsConstraintRef = null;
   }
 
   registerNavmap(object) {

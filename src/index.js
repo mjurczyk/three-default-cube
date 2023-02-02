@@ -45,6 +45,7 @@ export * from './utils/constants';
 export * from './utils/helpers';
 export * from './utils/materials';
 export * from './utils/remove-placeholder';
+export * from './utils/hide-placeholder';
 export * from './utils/replace-placeholder';
 export * from './utils/screen-size';
 export * from './utils/shared';

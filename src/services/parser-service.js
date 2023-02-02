@@ -27,6 +27,7 @@ import { parseTop } from '../scene-parsers/top';
 import { parseBottom } from '../scene-parsers/bottom';
 import { parseLandscape } from '../scene-parsers/landscape';
 import { parsePhysics } from '../scene-parsers/physics';
+import { parsePhysicsRope } from '../scene-parsers/physics-rope';
 
 class ParserServiceClass {
   parseModel({
@@ -85,6 +86,7 @@ class ParserServiceClass {
 
     // NOTE Parsers potentially consuming scene objects
     children.forEach(child => {
+      parsePhysicsRope(child, parserPayload);
       parseShader(child, parserPayload);
       parseLandscape(child, parserPayload);
       parseAnimation(child, parserPayload);
