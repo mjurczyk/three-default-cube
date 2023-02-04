@@ -94,7 +94,7 @@ class VarServiceClass {
   }
 
   resolveVar(variableString, onResolve, onCreate) {
-    if (!variableString) {
+    if (typeof variableString === 'undefined') {
       return onResolve();
     }
 

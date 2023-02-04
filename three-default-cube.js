@@ -33,14 +33,12 @@ function _interopNamespace(e) {
         var d = Object.getOwnPropertyDescriptor(e, k);
         Object.defineProperty(n, k, d.get ? d : {
           enumerable: true,
-          get: function () {
-            return e[k];
-          }
+          get: function () { return e[k]; }
         });
       }
     });
   }
-  n['default'] = e;
+  n["default"] = e;
   return Object.freeze(n);
 }
 
@@ -545,7 +543,7 @@ class VarServiceClass {
     });
   }
   resolveVar(variableString, onResolve, onCreate) {
-    if (!variableString) {
+    if (typeof variableString === 'undefined') {
       return onResolve();
     }
     if (variableString[0] === ':' && variableString[variableString.length - 1] === ':') {
@@ -584,14 +582,15 @@ var dependencies = {
 	"@ionic-native/screen-orientation": "5.30.0",
 	"@rollup/plugin-babel": "5.3.0",
 	"@rollup/plugin-json": "6.0.0",
+	"@rollup/plugin-url": "8.0.1",
 	"camera-controls": "1.37.4",
+	"cannon-es": "0.20.0",
 	howler: "2.2.3",
 	postprocessing: "6.29.2",
-	rollup: "2.52.3",
+	rollup: "2.79.1",
 	three: "0.148.0",
 	"three-pathfinding": "1.1.0",
-	"troika-three-text": "0.47.1",
-	"cannon-es": "0.20.0"
+	"troika-three-text": "0.47.1"
 };
 
 const createArrowHelper = (container, id, vector, origin, color) => {
@@ -994,7 +993,7 @@ class DebugServiceClass {
     return this.flags['DEBUG_ENABLE'] && this.flags[debugFlag] || false;
   }
   showStats() {
-    const stats = new Stats__default['default']();
+    const stats = new Stats__default["default"]();
     stats.showPanel(0);
     document.body.appendChild(stats.dom);
     this.stats = stats;
@@ -1657,7 +1656,7 @@ class AnimationServiceClass {
 }
 const AnimationService = new AnimationServiceClass();
 
-CameraControls__default['default'].install({
+CameraControls__default["default"].install({
   THREE: Three__namespace
 });
 const CameraMovementTypeEnums = {
@@ -1691,7 +1690,7 @@ class CameraServiceClass {
     this.camera.position.copy(this.cameraPosition);
     this.camera.quaternion.copy(this.cameraQuaternion);
     if (!this.cameraControls) {
-      this.cameraControls = new CameraControls__default['default'](RenderService.getNativeCamera(), renderer.domElement);
+      this.cameraControls = new CameraControls__default["default"](RenderService.getNativeCamera(), renderer.domElement);
       this.cameraControls.enabled = false;
     }
     if (!this.pointerLockControls) {
@@ -4199,10 +4198,10 @@ const parseLeft = object => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
       if (isNaN(offset)) {
         console.info('parseLeft', 'NaN value');
@@ -4250,10 +4249,10 @@ const parseRight = object => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
       if (isNaN(offset)) {
         console.info('parseRight', 'NaN value');
@@ -4301,10 +4300,10 @@ const parseTop = object => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
       if (isNaN(offset)) {
         console.info('parseTop', 'NaN value');
@@ -4352,10 +4351,10 @@ const parseBottom = object => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
       if (isNaN(offset)) {
         console.info('parseBottom', 'NaN value');
@@ -4896,7 +4895,9 @@ class SceneServiceClass {
       gameObjects,
       onCreate: parserPayload => {
         this.gameObjectRefs = parserPayload.gameObjectRefs;
-        onCreate(parserPayload);
+        if (onCreate) {
+          onCreate(parserPayload);
+        }
       }
     });
   }
@@ -4952,6 +4953,8 @@ class SceneServiceClass {
       sun.shadow.camera.near = -sunShadowDistance;
       sun.shadow.camera.far = sunShadowDistance;
       sun.castShadow = true;
+      sun.distance = 0.0;
+      sun.decay = 0.0;
       sun.target.position.sub(sunOffset);
       scene.add(sun.target);
       scene.add(sun);

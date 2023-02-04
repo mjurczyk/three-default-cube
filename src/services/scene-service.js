@@ -26,7 +26,9 @@ export class SceneServiceClass {
       onCreate: (parserPayload) => {
         this.gameObjectRefs = parserPayload.gameObjectRefs;
 
-        onCreate(parserPayload);
+        if (onCreate) {
+          onCreate(parserPayload);
+        }
       },
     });
   }
@@ -96,6 +98,8 @@ export class SceneServiceClass {
       sun.shadow.camera.near = -sunShadowDistance;
       sun.shadow.camera.far = sunShadowDistance;
       sun.castShadow = true;
+      sun.distance = 0.0;
+      sun.decay = 0.0;
 
       sun.target.position.sub(sunOffset);
 

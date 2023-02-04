@@ -49,6 +49,7 @@ export * from './utils/hide-placeholder';
 export * from './utils/replace-placeholder';
 export * from './utils/screen-size';
 export * from './utils/shared';
+export * from './utils/experimental';
 
 // NOTE Extra helpers
 

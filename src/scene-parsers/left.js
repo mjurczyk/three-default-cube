@@ -26,11 +26,11 @@ export const parseLeft = (object) => {
           TimeService.disposeFrameListener(frameListener);
         }
 
-        if (!value) {
+        if (typeof value === 'undefined') {
           return;
         }
 
-        const percentageOffset = value.substr(-1) === '%';
+        const percentageOffset = `${value}`.substr(-1) === '%';
         const offset = parseFloat(value);
 
         if (isNaN(offset)) {
