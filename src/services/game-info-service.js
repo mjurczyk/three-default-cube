@@ -1,3 +1,5 @@
+import { DQ } from "../utils/constants";
+
 class GameInfoServiceClass {
   config = {
     system: {},
@@ -70,16 +72,18 @@ class GameInfoServiceClass {
   }
 
   shadows(
-    enabled = true,
+    enabled = DQ.ShadowsAllObjects,
     resolution = 1024,
     radius = 4,
+    type = Three.PCFShadowMap
   ) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
         shadows: enabled,
         shadowsResolution: resolution,
-        shadowsRadius: radius
+        shadowsRadius: radius,
+        shadowMapType: type
       }
     });
   }

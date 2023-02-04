@@ -16,14 +16,16 @@ export const parsePhysicsRope = (object) => {
       new PhysicsWrapper(ropeTarget, {
         physicsShape: 'sphere',
         physicsSize: physicsRopeDistance / 2.0,
-        physicsDamping: 0.75,
+        physicsDamping: 0.5,
+        ...(ropeTarget.userData || {})
       });
     }
 
     new PhysicsWrapper(object, {
       physicsShape: 'sphere',
       physicsSize: physicsRopeDistance / 2.0,
-      physicsDamping: 0.75,
+      physicsDamping: 0.5,
+      ...(ropeTarget.userData || {})
     });
 
     PhysicsService.registerConstraint(

@@ -1,7 +1,7 @@
 import * as Three from 'three';
 import * as Cannon from 'cannon-es';
 import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
-import { createArrowHelper, createBoxHelper } from '../utils/helpers';
+import { createBoxHelper } from '../utils/helpers';
 import { AssetsService } from './assets-service';
 import { DebugFlags, DebugService } from './debug-service';
 import { MathService } from './math-service';
@@ -9,12 +9,12 @@ import { RenderService } from './render-service';
 import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { Pathfinding } from 'three-pathfinding';
-import { defaultTo, isDefined, MathUtils } from '../utils/shared';
+import { defaultTo, isDefined } from '../utils/shared';
 
 class PhysicsServiceClass {
   physicsWorld = null;
   physicsLoop = null;
-  bodies = [];
+  physicsStaticBodies = null;
 
   navmaps = [];
   pathfinder = null;
@@ -36,13 +36,13 @@ class PhysicsServiceClass {
         this.physicsWorld.bodies.forEach(body => {
           const { targetRef } = body;
 
-          if (body.mass === 0.0) {
+          if (body.mass === 0.0 || body.type === Cannon.Body.STATIC) {
             body.allowSleep = true;
 
             return;
           }
 
-          targetRef.position.copy(body.position);
+          targetRef.position.lerp(body.position, 0.75);
           targetRef.quaternion.copy(body.quaternion);
         });
 
@@ -57,8 +57,8 @@ class PhysicsServiceClass {
     const {
       physicsShape,
       physicsSize,
+      physicsCapsuleHeight,
       physicsStatic,
-      physicsPreventMerge,
       physicsFriction,
       physicsRestitution,
       physicsWeight,
@@ -156,31 +156,33 @@ class PhysicsServiceClass {
     let body;
     let bodyDebugColor;
 
-    if (physicsStatic && !physicsPreventMerge) {
-      if (!this.staticBodies) {
-        const staticBodies = new Cannon.Body({
+    if (physicsShape === 'plane') {
+      object.rotateX(-Math.PI / 2.0); // NOTE Fix z-up planes
+    }
+
+    if (physicsStatic) {
+      if (!this.physicsStaticBodies) {
+        const physicsStaticBodies = new Cannon.Body({
           mass: 0.0,
           material: material,
           allowSleep: true,
           type: Cannon.Body.STATIC
         });
 
-        this.physicsWorld.addBody(staticBodies);
-        this.staticBodies = staticBodies;
+        this.physicsWorld.addBody(physicsStaticBodies);
+        this.physicsStaticBodies = physicsStaticBodies;
       }
 
-      object.rotateX(-Math.PI / 2.0);
-      
-      this.staticBodies.addShape(
+      this.physicsStaticBodies.addShape(
         shape,
         new Cannon.Vec3().copy(object.position),
         new Cannon.Quaternion().copy(object.quaternion)
       );
 
-      object.rotateX(Math.PI / 2.0);
-
-      body = this.staticBodies;
+      body = this.physicsStaticBodies;
       bodyDebugColor = new Three.Color(0xff00ff);
+
+      // NOTE Cannot remove or dispose a merged static body
     } else {
       body = new Cannon.Body({
         mass: physicsStatic ? 0.0 : (physicsWeight || 1.0),
@@ -193,7 +195,22 @@ class PhysicsServiceClass {
       });
       bodyDebugColor = new Three.Color(Math.random() * 0x888888 + 0x888888);
 
-      body.addShape(shape);
+      if (physicsShape === 'capsule') {
+        const horizontalSpan = objectSize.x / 2.0;
+
+        body.addShape(new Cannon.Sphere(horizontalSpan), new Cannon.Vec3(0.0, horizontalSpan / 2.0, 0.0));
+
+        if (physicsCapsuleHeight > 0.0) {
+          body.addShape(
+            new Cannon.Box(new Cannon.Vec3(horizontalSpan / 2.0, physicsCapsuleHeight / 2.0, horizontalSpan / 2.0)),
+            new Cannon.Vec3(0.0, physicsCapsuleHeight / 2.0 + horizontalSpan / 2.0, 0.0)
+          );
+          body.addShape(new Cannon.Sphere(horizontalSpan), new Cannon.Vec3(0.0, physicsCapsuleHeight + horizontalSpan / 2.0, 0.0));
+        }
+      } else {
+        body.addShape(shape);
+      }
+
       body.position.copy(object.position);
       body.quaternion.copy(object.quaternion);
 
@@ -203,12 +220,16 @@ class PhysicsServiceClass {
         this.physicsWorld.removeBody(body);
       });
     }
+    
+    if (physicsShape === 'plane') {
+      object.rotateX(Math.PI / 2.0);
+    }
 
     object.userData.cannonRef = body;
     body.targetRef = object;
 
     if (DebugService.get(DebugFlags.DEBUG_PHYSICS)) {
-      if ((physicsStatic && !physicsPreventMerge) || object.userData.collisionBox) {
+      if (object.userData.collisionBox) {
         return;
       }
 
@@ -223,17 +244,25 @@ class PhysicsServiceClass {
 
       const debugBox = new Three.Mesh(
         ({
-          'box': new Three.BoxBufferGeometry(debugSize.x, debugSize.y, debugSize.z),
+          'box': new Three.BoxBufferGeometry(debugSize.x / 2.0, debugSize.y / 2.0, debugSize.z / 2.0),
           'plane': new Three.PlaneBufferGeometry(debugSize.x, debugSize.z),
           'sphere': new Three.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
+          'capsule': new Three.CapsuleGeometry(debugSize.x / 2.0, physicsCapsuleHeight, 8, 8)
         })[physicsShape] || new Three.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
         new Three.MeshBasicMaterial({
           color: bodyDebugColor,
           wireframe: true
         })
       );
-      object.add(debugBox);
       box3.getCenter(debugBox.position);
+
+      if (physicsShape === 'plane') {
+        debugBox.rotateX(Math.PI / 2.0);
+      } else if (physicsShape === 'capsule') {
+        debugBox.translateY(physicsCapsuleHeight / 2.0 + debugSize.x / 4.0);
+      }
+
+      object.add(debugBox);
 
       object.userData.collisionBox = debugBox;
     }
@@ -380,11 +409,6 @@ class PhysicsServiceClass {
     return this.navmaps;
   }
 
-  disposeBody(object) {
-    // this.bodies = this.bodies.filter(match => match !== object);
-    // this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
-  }
-
   disposeNavmap(object) {
     this.navmaps = this.navmaps.filter(match => match !== object);
   }
@@ -394,8 +418,9 @@ class PhysicsServiceClass {
   }
 
   disposeAll() {
-    // this.bodies = [];
-    // this.dynamicBodies = [];
+    this.physicsWorld.removeBody(this.physicsStaticBodies);
+    this.physicsStaticBodies = null;
+
     this.navmaps = [];
     this.surfaces = [];
 

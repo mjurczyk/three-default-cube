@@ -92,7 +92,7 @@ class RenderServiceClass {
 
     if (GameInfoService.config.system.shadows) {
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = Three.PCFShadowMap;
+      renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three.PCFShadowMap;
     }
 
     renderer.domElement.style.display = 'block';
@@ -311,10 +311,11 @@ class RenderServiceClass {
 
   runLogicLoop() {
     if (this.logicLoop) {
-      cancelAnimationFrame(this.logicLoop);
+      clearTimeout(this.logicLoop);
     }
 
-    this.logicLoop = requestAnimationFrame(() => this.runLogicLoop());
+    // NOTE setTimeout lets the logic progress, even if the user switched the tab and paused rendering
+    this.logicLoop = setTimeout(() => this.runLogicLoop(), this.logicFixedStep);
 
     const now = performance.now();
     const dt = now - this.lastFrameTimestamp;

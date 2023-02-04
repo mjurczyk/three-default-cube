@@ -1,4 +1,4 @@
-import * as Three$1 from 'three';
+import * as Three$2 from 'three';
 import { MathUtils as MathUtils$1 } from 'three';
 import * as Cannon$1 from 'cannon-es';
 import * as uuid from 'uuid';
@@ -11,10 +11,10 @@ import { Plugins } from '@capacitor/core';
 import { NativeStorage } from '@ionic-native/native-storage';
 import { NavigationBar } from '@ionic-native/navigation-bar';
 import { ScreenOrientation } from '@ionic-native/screen-orientation';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
-import CameraControls from 'camera-controls';
 import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { Pathfinding } from 'three-pathfinding';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import CameraControls from 'camera-controls';
 import { Howler, Howl } from 'howler';
 import { preloadFont, Text as Text$1 } from 'troika-three-text';
 import { isDefined as isDefined$1, AssetsService as AssetsService$1 } from 'three-default-cube';
@@ -180,6 +180,20 @@ class StorageServiceClass {
 }
 const StorageService = new StorageServiceClass();
 
+const DQ = {
+  ShadowsAllObjects: 0x111111,
+  ShadowsNoneObjects: 0x000000,
+  ShadowsStaticObjects: 0x100000,
+  ShadowsDynamicObjects: 0x010000
+};
+const math2Pi = Math.PI * 2.0;
+const mathPi2 = Math.PI / 2.0;
+const mathPi4 = Math.PI / 4.0;
+const mathPi8 = Math.PI / 8.0;
+const axisX = new Three$2.Vector3(1.0, 0.0, 0.0);
+const axisY = new Three$2.Vector3(0.0, 1.0, 0.0);
+const axisZ = new Three$2.Vector3(0.0, 0.0, 1.0);
+
 class GameInfoServiceClass {
   constructor() {
     _defineProperty(this, "config", {
@@ -237,13 +251,14 @@ class GameInfoServiceClass {
       }
     });
   }
-  shadows(enabled = true, resolution = 1024, radius = 4) {
+  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, radius = 4, type = Three.PCFShadowMap) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
         shadows: enabled,
         shadowsResolution: resolution,
-        shadowsRadius: radius
+        shadowsRadius: radius,
+        shadowMapType: type
       }
     });
   }
@@ -344,7 +359,7 @@ class UtilsServiceClass {
       return pooled;
     }
     this.poolRaycasterTotal++;
-    return new Three$1.Raycaster();
+    return new Three$2.Raycaster();
   }
   releaseRaycaster(raycaster) {
     raycaster.near = 0.0;
@@ -357,7 +372,7 @@ class UtilsServiceClass {
       return pooled;
     }
     this.poolBox3Total++;
-    return new Three$1.Box3();
+    return new Three$2.Box3();
   }
   releaseBox3(box3) {
     box3.makeEmpty();
@@ -369,7 +384,7 @@ class UtilsServiceClass {
       return pooled;
     }
     this.poolCameraTotal++;
-    return new Three$1.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
+    return new Three$2.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
   }
   releaseCamera(camera) {
     camera.position.set(0.0, 0.0, 0.0);
@@ -383,7 +398,7 @@ class UtilsServiceClass {
       return pooled;
     }
     this.poolEmptyTotal++;
-    const empty = new Three$1.Object3D();
+    const empty = new Three$2.Object3D();
     AssetsService.registerDisposable(empty);
     return empty;
   }
@@ -406,7 +421,7 @@ class UtilsServiceClass {
       return pooled;
     }
     this.poolBlankMaterialTotal++;
-    const material = new Three$1.MeshBasicMaterial();
+    const material = new Three$2.MeshBasicMaterial();
     AssetsService.registerDisposable(material);
     return material;
   }
@@ -546,6 +561,370 @@ var dependencies = {
 	"troika-three-text": "0.47.1",
 	"cannon-es": "0.20.0"
 };
+
+const createArrowHelper = (container, id, vector, origin, color) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.ArrowHelper(vector, undefined, vector.length(), color || getRandomColor());
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  helper.setLength(vector.length());
+  helper.setDirection(vector.normalize());
+  if (origin) {
+    helper.position.copy(origin);
+  }
+  return helper;
+};
+const createBoxHelper = (container, id, box) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.Box3Helper(box, getRandomColor());
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  helper.box.copy(box);
+  return helper;
+};
+const createDefaultCube = (container, id, {
+  position,
+  size,
+  color
+} = {}) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.Mesh(new Three$2.BoxBufferGeometry(size || 1.0, size || 1.0, size || 1.0), new Three$2.MeshStandardMaterial({
+      color: color || getRandomColor()
+    }));
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  if (position) {
+    helper.position.copy(position);
+  }
+  return helper;
+};
+
+class PhysicsServiceClass {
+  constructor() {
+    _defineProperty(this, "physicsWorld", null);
+    _defineProperty(this, "physicsLoop", null);
+    _defineProperty(this, "physicsStaticBodies", null);
+    _defineProperty(this, "navmaps", []);
+    _defineProperty(this, "pathfinder", null);
+    _defineProperty(this, "pathfinedEnabled", false);
+    _defineProperty(this, "pathfinderZoneId", 'zone');
+    _defineProperty(this, "surfaceHandlers", {});
+    _defineProperty(this, "surfaces", []);
+  }
+  init() {
+    if (!this.physicsWorld) {
+      const physicsWorld = new Cannon$1.World({
+        gravity: new Cannon$1.Vec3(0.0, -9.86, 0.0)
+      });
+      this.physicsWorld = physicsWorld;
+      this.physicsLoop = TimeService.registerFrameListener(({
+        dt
+      }) => {
+        this.physicsWorld.bodies.forEach(body => {
+          const {
+            targetRef
+          } = body;
+          if (body.mass === 0.0 || body.type === Cannon$1.Body.STATIC) {
+            body.allowSleep = true;
+            return;
+          }
+          targetRef.position.lerp(body.position, 0.75);
+          targetRef.quaternion.copy(body.quaternion);
+        });
+        if (this.physicsWorld && dt !== 0) {
+          this.physicsWorld.fixedStep();
+        }
+      });
+    }
+  }
+  registerBody(object, physicsConfig) {
+    const {
+      physicsShape,
+      physicsSize,
+      physicsCapsuleHeight,
+      physicsStatic,
+      physicsFriction,
+      physicsRestitution,
+      physicsWeight,
+      physicsCollisionGroup,
+      physicsPreventRotation,
+      physicsHidden,
+      physicsDamping
+    } = physicsConfig;
+    const scene = RenderService.getScene();
+    if (object.userData.cannonRef) {
+      return;
+    }
+    if (object === scene) {
+      console.warn('PhysicsService', 'registerBody', 'attempting to register root scene as physically active object', {
+        object
+      });
+      return;
+    }
+    if (object.parent !== scene) {
+      console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', {
+        object
+      });
+      const worldPosition = MathService.getVec3();
+      object.getWorldPosition(worldPosition);
+      scene.add(object);
+      object.position.copy(worldPosition);
+      MathService.releaseVec3(worldPosition);
+    }
+    if (physicsHidden) {
+      object.visible = false;
+    }
+    const quaternion = MathService.getQuaternion();
+    quaternion.copy(object.quaternion);
+    object.quaternion.identity();
+    const position = MathService.getVec3();
+    position.copy(object.position);
+    object.position.set(0.0, 0.0, 0.0);
+    const box3 = UtilsService.getBox3();
+    if (!physicsSize) {
+      object.traverse(child => {
+        if (child.isMesh) {
+          const worldBbox = UtilsService.getBox3();
+          worldBbox.expandByObject(child);
+          child.updateMatrix();
+          child.updateMatrixWorld();
+          const worldTransform = child.matrixWorld.clone();
+          const [e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44] = worldTransform.elements;
+          worldTransform.set(e11, e12, e13, 0.0, e21, e22, e23, 0.0, e31, e32, e33, 0.0, e41, e42, e43, e44);
+          worldBbox.applyMatrix4(worldTransform);
+          box3.union(worldBbox);
+          UtilsService.releaseBox3(worldBbox);
+        }
+      });
+    } else {
+      box3.setFromCenterAndSize(new Three$2.Vector3(0.0, 0.0, 0.0), new Three$2.Vector3(physicsSize / 2.0, physicsSize / 2.0, physicsSize / 2.0));
+    }
+    object.quaternion.copy(quaternion);
+    object.position.copy(position);
+    MathService.releaseVec3(position);
+    MathService.releaseQuaternion(quaternion);
+    const objectSize = MathService.getVec3();
+    box3.getSize(objectSize);
+    const shape = {
+      'box': new Cannon$1.Box(new Cannon$1.Vec3(objectSize.x / 2.0, objectSize.y / 2.0, objectSize.z / 2.0)),
+      'plane': new Cannon$1.Plane(),
+      'sphere': new Cannon$1.Sphere(objectSize.x / 2.0)
+    }[physicsShape] || new Cannon$1.Sphere(objectSize.x / 2.0);
+    const material = new Cannon$1.Material({
+      friction: defaultTo(physicsFriction, 0.3),
+      restitution: defaultTo(physicsRestitution, 0.3)
+    });
+    let body;
+    let bodyDebugColor;
+    if (physicsShape === 'plane') {
+      object.rotateX(-Math.PI / 2.0); // NOTE Fix z-up planes
+    }
+
+    if (physicsStatic) {
+      if (!this.physicsStaticBodies) {
+        const physicsStaticBodies = new Cannon$1.Body({
+          mass: 0.0,
+          material: material,
+          allowSleep: true,
+          type: Cannon$1.Body.STATIC
+        });
+        this.physicsWorld.addBody(physicsStaticBodies);
+        this.physicsStaticBodies = physicsStaticBodies;
+      }
+      this.physicsStaticBodies.addShape(shape, new Cannon$1.Vec3().copy(object.position), new Cannon$1.Quaternion().copy(object.quaternion));
+      body = this.physicsStaticBodies;
+      bodyDebugColor = new Three$2.Color(0xff00ff);
+
+      // NOTE Cannot remove or dispose a merged static body
+    } else {
+      body = new Cannon$1.Body({
+        mass: physicsStatic ? 0.0 : physicsWeight || 1.0,
+        material: material,
+        collisionFilterGroup: physicsCollisionGroup || -1,
+        collisionFilterMask: physicsCollisionGroup || -1,
+        fixedRotation: isDefined(physicsPreventRotation),
+        linearDamping: physicsDamping,
+        angularDamping: physicsDamping
+      });
+      bodyDebugColor = new Three$2.Color(Math.random() * 0x888888 + 0x888888);
+      if (physicsShape === 'capsule') {
+        const horizontalSpan = objectSize.x / 2.0;
+        body.addShape(new Cannon$1.Sphere(horizontalSpan), new Cannon$1.Vec3(0.0, horizontalSpan / 2.0, 0.0));
+        if (physicsCapsuleHeight > 0.0) {
+          body.addShape(new Cannon$1.Box(new Cannon$1.Vec3(horizontalSpan / 2.0, physicsCapsuleHeight / 2.0, horizontalSpan / 2.0)), new Cannon$1.Vec3(0.0, physicsCapsuleHeight / 2.0 + horizontalSpan / 2.0, 0.0));
+          body.addShape(new Cannon$1.Sphere(horizontalSpan), new Cannon$1.Vec3(0.0, physicsCapsuleHeight + horizontalSpan / 2.0, 0.0));
+        }
+      } else {
+        body.addShape(shape);
+      }
+      body.position.copy(object.position);
+      body.quaternion.copy(object.quaternion);
+      this.physicsWorld.addBody(body);
+      AssetsService.registerDisposeCallback(object, () => {
+        this.physicsWorld.removeBody(body);
+      });
+    }
+    if (physicsShape === 'plane') {
+      object.rotateX(Math.PI / 2.0);
+    }
+    object.userData.cannonRef = body;
+    body.targetRef = object;
+    if (DebugService.get(DebugFlags.DEBUG_PHYSICS)) {
+      if (object.userData.collisionBox) {
+        return;
+      }
+      const helper = createBoxHelper(object, object.uuid, box3.clone());
+      helper.material.color.set(bodyDebugColor);
+      helper.material.transparent = true;
+      helper.material.opacity = 0.25;
+      const debugSize = new Three$2.Vector3();
+      box3.getSize(debugSize);
+      debugSize.addScalar(0.01);
+      const debugBox = new Three$2.Mesh({
+        'box': new Three$2.BoxBufferGeometry(debugSize.x / 2.0, debugSize.y / 2.0, debugSize.z / 2.0),
+        'plane': new Three$2.PlaneBufferGeometry(debugSize.x, debugSize.z),
+        'sphere': new Three$2.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
+        'capsule': new Three$2.CapsuleGeometry(debugSize.x / 2.0, physicsCapsuleHeight, 8, 8)
+      }[physicsShape] || new Three$2.SphereBufferGeometry(debugSize.x / 2.0, 8, 8), new Three$2.MeshBasicMaterial({
+        color: bodyDebugColor,
+        wireframe: true
+      }));
+      box3.getCenter(debugBox.position);
+      if (physicsShape === 'plane') {
+        debugBox.rotateX(Math.PI / 2.0);
+      } else if (physicsShape === 'capsule') {
+        debugBox.translateY(physicsCapsuleHeight / 2.0 + debugSize.x / 4.0);
+      }
+      object.add(debugBox);
+      object.userData.collisionBox = debugBox;
+    }
+    MathService.releaseVec3(objectSize);
+    UtilsService.releaseBox3(box3);
+    return body;
+  }
+  registerConstraint(objectA, objectB, distance) {
+    if (!this.physicsWorld) {
+      return;
+    }
+    const scene = RenderService.getScene();
+    if (objectA === scene || objectB === scene) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect object to root scene. Forgot to assign parent?', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectA.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectB.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    this.disposeConstraintOnBody(objectA.userData.cannonRef);
+    this.disposeConstraintOnBody(objectB.userData.cannonRef);
+    const constraint = new Cannon$1.PointToPointConstraint(objectA.userData.cannonRef, new Cannon$1.Vec3(0.0, 0.0, 0.0), objectB.userData.cannonRef, new Cannon$1.Vec3(0.0, -distance, 0.0));
+    this.physicsWorld.addConstraint(constraint);
+    objectA.physicsConstraintRef = constraint;
+    objectB.physicsConstraintRef = constraint;
+    return constraint;
+  }
+  disposeConstraintOnBody(object) {
+    if (!this.physicsWorld || !object.physicsConstraintRef) {
+      return;
+    }
+    this.physicsWorld.removeConstraint(object.physicsConstraintRef);
+    object.physicsConstraintRef = null;
+  }
+  registerNavmap(object) {
+    this.enableNavmap(object);
+  }
+  enableNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+    this.navmaps.push(object);
+    this.updatePathfinder();
+  }
+  disableNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+    this.updatePathfinder();
+  }
+  updatePathfinder() {
+    if (!this.pathfinder) {
+      this.pathfinder = new Pathfinding();
+    }
+    const navmapGeometries = this.navmaps.filter(navmap => navmap.geometry).map(navmap => navmap.geometry);
+    if (!navmapGeometries.length) {
+      this.pathfinedEnabled = false;
+      return;
+    }
+    const navmeshGeometry = (BufferGeometryScope.mergeBufferGeometries ? BufferGeometryScope : BufferGeometryScope.BufferGeometryUtils).mergeBufferGeometries(navmapGeometries, false);
+    const zone = Pathfinding.createZone(navmeshGeometry);
+    this.pathfinder.setZoneData(this.pathfinderZoneId, zone);
+    this.pathfinedEnabled = this.pathfinder.zones.length > 0;
+  }
+  registerSurfaceHandler(surfaceType, handlerClass, onInteraction = 'onInteraction', onEnter = 'onEnter', onLeave = 'onLeave') {
+    this.surfaceHandlers[surfaceType] = {
+      cls: handlerClass,
+      onInteraction,
+      onEnter,
+      onLeave
+    };
+  }
+  registerSurface(object) {
+    const surfaceType = object.userData.surface;
+    const surfaceHandler = this.surfaceHandlers[surfaceType];
+    if (!surfaceType) {
+      return;
+    }
+    if (!surfaceHandler) {
+      console.warn('registerSurface', `surfaceHandler for "${surfaceType}" does not exist`);
+      return;
+    }
+    const surfaceConstructor = surfaceHandler.cls;
+    const surface = new surfaceConstructor(object);
+    if (surface.onInteraction) surface.onInteraction = surface.onInteraction.bind(surface);
+    if (surface.onEnter) surface.onEnter = surface.onEnter.bind(surface);
+    if (surface.onLeave) surface.onLeave = surface.onLeave.bind(surface);
+    object.userData.surfaceRef = surface;
+    this.surfaces.push(object);
+  }
+  getNavmaps() {
+    return this.navmaps;
+  }
+  disposeNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+  }
+  disposeSurface(object) {
+    this.surfaces = this.surfaces.filter(match => match !== object);
+  }
+  disposeAll() {
+    this.physicsWorld.removeBody(this.physicsStaticBodies);
+    this.physicsStaticBodies = null;
+    this.navmaps = [];
+    this.surfaces = [];
+    MathService.releaseVec3(this.emptyVector3);
+    if (this.pathfinder) {
+      this.pathfinder = null;
+    }
+  }
+}
+const PhysicsService = new PhysicsServiceClass();
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -812,6 +1191,11 @@ class DebugServiceClass {
         }, {
           text: dependencies['cannon-es'],
           color: LogsHighlightColor
+        }, {
+          text: 'Bodies:'
+        }, {
+          text: PhysicsService.physicsWorld.bodies.length,
+          color: LogsHighlightColor
         }));
       }
     });
@@ -851,7 +1235,7 @@ class MathServiceClass {
       return pooled.set(x, y);
     }
     this.poolVec2Total++;
-    const vector = new Three$1.Vector2(x, y);
+    const vector = new Three$2.Vector2(x, y);
     this.registerId(vector, id);
     return vector;
   }
@@ -866,7 +1250,7 @@ class MathServiceClass {
       return pooled.identity();
     }
     this.poolQuaternionsTotal++;
-    const quaternion = new Three$1.Quaternion();
+    const quaternion = new Three$2.Quaternion();
     this.registerId(quaternion, id);
     return quaternion;
   }
@@ -881,7 +1265,7 @@ class MathServiceClass {
       return pooled.identity();
     }
     this.poolMatrix4Total++;
-    const matrix = new Three$1.Matrix4();
+    const matrix = new Three$2.Matrix4();
     this.registerId(matrix, id);
     return matrix;
   }
@@ -896,7 +1280,7 @@ class MathServiceClass {
       return pooled.set(x, y, z);
     }
     this.poolVec3Total++;
-    const vector = new Three$1.Vector3(x, y, z);
+    const vector = new Three$2.Vector3(x, y, z);
     this.registerId(vector, id);
     return vector;
   }
@@ -906,7 +1290,7 @@ class MathServiceClass {
       return pooled.copy(sourceVector);
     }
     this.poolVec3Total++;
-    return new Three$1.Vector3().copy(sourceVector);
+    return new Three$2.Vector3().copy(sourceVector);
   }
   releaseVec3(vector) {
     if (!vector) {
@@ -970,10 +1354,10 @@ class MathServiceClass {
 }
 const MathService = new MathServiceClass();
 
-const MathUtils = Three$1.MathUtils;
+const MathUtils = Three$2.MathUtils;
 const isDefined = value => typeof value !== 'undefined';
 const cloneValue = value => JSON.parse(JSON.stringify(value));
-const getRandomColor = () => new Three$1.Color(Math.random() * 0xffffff);
+const getRandomColor = () => new Three$2.Color(Math.random() * 0xffffff);
 const getRandomElement = set => set[Math.floor(Math.random() * set.length)];
 const spliceRandomElement = set => set.splice(Math.floor(Math.random() * set.length), 1)[0];
 const moduloAngle = x => Math.atan2(Math.sin(x), Math.cos(x));
@@ -1242,7 +1626,7 @@ class AnimationServiceClass {
 const AnimationService = new AnimationServiceClass();
 
 CameraControls.install({
-  THREE: Three$1
+  THREE: Three$2
 });
 const CameraMovementTypeEnums = {
   rotateOnButtonDown: 'rotateOnButtonDown',
@@ -1261,7 +1645,7 @@ class CameraServiceClass {
     _defineProperty(this, "followedObject", null);
     _defineProperty(this, "followListener", null);
     _defineProperty(this, "followListenerThreshold", 0.001);
-    _defineProperty(this, "followOffset", new Three$1.Vector3(0.0, 0.0, 0.0));
+    _defineProperty(this, "followOffset", new Three$2.Vector3(0.0, 0.0, 0.0));
     _defineProperty(this, "rotationLocked", false);
     _defineProperty(this, "cameraControls", null);
     _defineProperty(this, "pointerLockControls", null);
@@ -1420,7 +1804,7 @@ class CameraServiceClass {
       if (scene) {
         this.cameraControls.colliderMeshes = [];
         scene.traverseVisible(child => {
-          if (child === this.followedObject || !(child instanceof Three$1.Mesh) || child.children.length) {
+          if (child === this.followedObject || !(child instanceof Three$2.Mesh) || child.children.length) {
             return;
           }
           let ignoreCollision = false;
@@ -1466,10 +1850,10 @@ class CameraServiceClass {
     if (this.renderTargets[id]) {
       return this.renderTargets[id].texture;
     }
-    const renderTarget = new Three$1.WebGLRenderTarget(width || window.innerWidth, height || window.innerHeight, {
-      minFilter: minFilter || Three$1.LinearFilter,
-      magFilter: magFilter || Three$1.NearestFilter,
-      format: Three$1.RGBFormat
+    const renderTarget = new Three$2.WebGLRenderTarget(width || window.innerWidth, height || window.innerHeight, {
+      minFilter: minFilter || Three$2.LinearFilter,
+      magFilter: magFilter || Three$2.NearestFilter,
+      format: Three$2.RGBFormat
     });
     this.renderTargets[id] = renderTarget;
     return renderTarget.texture;
@@ -1854,352 +2238,6 @@ class InteractionsServiceClass {
 }
 const InteractionsService = new InteractionsServiceClass();
 
-const createArrowHelper = (container, id, vector, origin, color) => {
-  let helper = container.getObjectByName(id);
-  if (!helper) {
-    helper = new Three$1.ArrowHelper(vector, undefined, vector.length(), color || getRandomColor());
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-  helper.setLength(vector.length());
-  helper.setDirection(vector.normalize());
-  if (origin) {
-    helper.position.copy(origin);
-  }
-  return helper;
-};
-const createBoxHelper = (container, id, box) => {
-  let helper = container.getObjectByName(id);
-  if (!helper) {
-    helper = new Three$1.Box3Helper(box, getRandomColor());
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-  helper.box.copy(box);
-  return helper;
-};
-const createDefaultCube = (container, id, {
-  position,
-  size,
-  color
-} = {}) => {
-  let helper = container.getObjectByName(id);
-  if (!helper) {
-    helper = new Three$1.Mesh(new Three$1.BoxBufferGeometry(size || 1.0, size || 1.0, size || 1.0), new Three$1.MeshStandardMaterial({
-      color: color || getRandomColor()
-    }));
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-  if (position) {
-    helper.position.copy(position);
-  }
-  return helper;
-};
-
-class PhysicsServiceClass {
-  constructor() {
-    _defineProperty(this, "physicsWorld", null);
-    _defineProperty(this, "physicsLoop", null);
-    _defineProperty(this, "bodies", []);
-    _defineProperty(this, "navmaps", []);
-    _defineProperty(this, "pathfinder", null);
-    _defineProperty(this, "pathfinedEnabled", false);
-    _defineProperty(this, "pathfinderZoneId", 'zone');
-    _defineProperty(this, "surfaceHandlers", {});
-    _defineProperty(this, "surfaces", []);
-  }
-  init() {
-    if (!this.physicsWorld) {
-      const physicsWorld = new Cannon$1.World({
-        gravity: new Cannon$1.Vec3(0.0, -9.86, 0.0)
-      });
-      this.physicsWorld = physicsWorld;
-      this.physicsLoop = TimeService.registerFrameListener(({
-        dt
-      }) => {
-        this.physicsWorld.bodies.forEach(body => {
-          const {
-            targetRef
-          } = body;
-          if (body.mass === 0.0) {
-            body.allowSleep = true;
-            return;
-          }
-          targetRef.position.copy(body.position);
-          targetRef.quaternion.copy(body.quaternion);
-        });
-        if (this.physicsWorld && dt !== 0) {
-          this.physicsWorld.fixedStep();
-        }
-      });
-    }
-  }
-  registerBody(object, physicsConfig) {
-    const {
-      physicsShape,
-      physicsSize,
-      physicsStatic,
-      physicsPreventMerge,
-      physicsFriction,
-      physicsRestitution,
-      physicsWeight,
-      physicsCollisionGroup,
-      physicsPreventRotation,
-      physicsHidden,
-      physicsDamping
-    } = physicsConfig;
-    const scene = RenderService.getScene();
-    if (object.userData.cannonRef) {
-      return;
-    }
-    if (object === scene) {
-      console.warn('PhysicsService', 'registerBody', 'attempting to register root scene as physically active object', {
-        object
-      });
-      return;
-    }
-    if (object.parent !== scene) {
-      console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', {
-        object
-      });
-      const worldPosition = MathService.getVec3();
-      object.getWorldPosition(worldPosition);
-      scene.add(object);
-      object.position.copy(worldPosition);
-      MathService.releaseVec3(worldPosition);
-    }
-    if (physicsHidden) {
-      object.visible = false;
-    }
-    const quaternion = MathService.getQuaternion();
-    quaternion.copy(object.quaternion);
-    object.quaternion.identity();
-    const position = MathService.getVec3();
-    position.copy(object.position);
-    object.position.set(0.0, 0.0, 0.0);
-    const box3 = UtilsService.getBox3();
-    if (!physicsSize) {
-      object.traverse(child => {
-        if (child.isMesh) {
-          const worldBbox = UtilsService.getBox3();
-          worldBbox.expandByObject(child);
-          child.updateMatrix();
-          child.updateMatrixWorld();
-          const worldTransform = child.matrixWorld.clone();
-          const [e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44] = worldTransform.elements;
-          worldTransform.set(e11, e12, e13, 0.0, e21, e22, e23, 0.0, e31, e32, e33, 0.0, e41, e42, e43, e44);
-          worldBbox.applyMatrix4(worldTransform);
-          box3.union(worldBbox);
-          UtilsService.releaseBox3(worldBbox);
-        }
-      });
-    } else {
-      box3.setFromCenterAndSize(new Three$1.Vector3(0.0, 0.0, 0.0), new Three$1.Vector3(physicsSize / 2.0, physicsSize / 2.0, physicsSize / 2.0));
-    }
-    object.quaternion.copy(quaternion);
-    object.position.copy(position);
-    MathService.releaseVec3(position);
-    MathService.releaseQuaternion(quaternion);
-    const objectSize = MathService.getVec3();
-    box3.getSize(objectSize);
-    const shape = {
-      'box': new Cannon$1.Box(new Cannon$1.Vec3(objectSize.x / 2.0, objectSize.y / 2.0, objectSize.z / 2.0)),
-      'plane': new Cannon$1.Plane(),
-      'sphere': new Cannon$1.Sphere(objectSize.x / 2.0)
-    }[physicsShape] || new Cannon$1.Sphere(objectSize.x / 2.0);
-    const material = new Cannon$1.Material({
-      friction: defaultTo(physicsFriction, 0.3),
-      restitution: defaultTo(physicsRestitution, 0.3)
-    });
-    let body;
-    let bodyDebugColor;
-    if (physicsStatic && !physicsPreventMerge) {
-      if (!this.staticBodies) {
-        const staticBodies = new Cannon$1.Body({
-          mass: 0.0,
-          material: material,
-          allowSleep: true,
-          type: Cannon$1.Body.STATIC
-        });
-        this.physicsWorld.addBody(staticBodies);
-        this.staticBodies = staticBodies;
-      }
-      object.rotateX(-Math.PI / 2.0);
-      this.staticBodies.addShape(shape, new Cannon$1.Vec3().copy(object.position), new Cannon$1.Quaternion().copy(object.quaternion));
-      object.rotateX(Math.PI / 2.0);
-      body = this.staticBodies;
-      bodyDebugColor = new Three$1.Color(0xff00ff);
-    } else {
-      body = new Cannon$1.Body({
-        mass: physicsStatic ? 0.0 : physicsWeight || 1.0,
-        material: material,
-        collisionFilterGroup: physicsCollisionGroup || -1,
-        collisionFilterMask: physicsCollisionGroup || -1,
-        fixedRotation: isDefined(physicsPreventRotation),
-        linearDamping: physicsDamping,
-        angularDamping: physicsDamping
-      });
-      bodyDebugColor = new Three$1.Color(Math.random() * 0x888888 + 0x888888);
-      body.addShape(shape);
-      body.position.copy(object.position);
-      body.quaternion.copy(object.quaternion);
-      this.physicsWorld.addBody(body);
-      AssetsService.registerDisposeCallback(object, () => {
-        this.physicsWorld.removeBody(body);
-      });
-    }
-    object.userData.cannonRef = body;
-    body.targetRef = object;
-    if (DebugService.get(DebugFlags.DEBUG_PHYSICS)) {
-      if (physicsStatic && !physicsPreventMerge || object.userData.collisionBox) {
-        return;
-      }
-      const helper = createBoxHelper(object, object.uuid, box3.clone());
-      helper.material.color.set(bodyDebugColor);
-      helper.material.transparent = true;
-      helper.material.opacity = 0.25;
-      const debugSize = new Three$1.Vector3();
-      box3.getSize(debugSize);
-      debugSize.addScalar(0.01);
-      const debugBox = new Three$1.Mesh({
-        'box': new Three$1.BoxBufferGeometry(debugSize.x, debugSize.y, debugSize.z),
-        'plane': new Three$1.PlaneBufferGeometry(debugSize.x, debugSize.z),
-        'sphere': new Three$1.SphereBufferGeometry(debugSize.x / 2.0, 8, 8)
-      }[physicsShape] || new Three$1.SphereBufferGeometry(debugSize.x / 2.0, 8, 8), new Three$1.MeshBasicMaterial({
-        color: bodyDebugColor,
-        wireframe: true
-      }));
-      object.add(debugBox);
-      box3.getCenter(debugBox.position);
-      object.userData.collisionBox = debugBox;
-    }
-    MathService.releaseVec3(objectSize);
-    UtilsService.releaseBox3(box3);
-    return body;
-  }
-  registerConstraint(objectA, objectB, distance) {
-    if (!this.physicsWorld) {
-      return;
-    }
-    const scene = RenderService.getScene();
-    if (objectA === scene || objectB === scene) {
-      console.info('PhysicsService', 'registerConstraint', 'attempting to connect object to root scene. Forgot to assign parent?', {
-        objectA,
-        objectB
-      });
-      return;
-    }
-    if (!objectA.userData.cannonRef) {
-      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
-        objectA,
-        objectB
-      });
-      return;
-    }
-    if (!objectB.userData.cannonRef) {
-      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
-        objectA,
-        objectB
-      });
-      return;
-    }
-    this.disposeConstraintOnBody(objectA.userData.cannonRef);
-    this.disposeConstraintOnBody(objectB.userData.cannonRef);
-    const constraint = new Cannon$1.PointToPointConstraint(objectA.userData.cannonRef, new Cannon$1.Vec3(0.0, 0.0, 0.0), objectB.userData.cannonRef, new Cannon$1.Vec3(0.0, -distance, 0.0));
-    this.physicsWorld.addConstraint(constraint);
-    objectA.physicsConstraintRef = constraint;
-    objectB.physicsConstraintRef = constraint;
-    return constraint;
-  }
-  disposeConstraintOnBody(object) {
-    if (!this.physicsWorld || !object.physicsConstraintRef) {
-      return;
-    }
-    this.physicsWorld.removeConstraint(object.physicsConstraintRef);
-    object.physicsConstraintRef = null;
-  }
-  registerNavmap(object) {
-    this.enableNavmap(object);
-  }
-  enableNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-    this.navmaps.push(object);
-    this.updatePathfinder();
-  }
-  disableNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-    this.updatePathfinder();
-  }
-  updatePathfinder() {
-    if (!this.pathfinder) {
-      this.pathfinder = new Pathfinding();
-    }
-    const navmapGeometries = this.navmaps.filter(navmap => navmap.geometry).map(navmap => navmap.geometry);
-    if (!navmapGeometries.length) {
-      this.pathfinedEnabled = false;
-      return;
-    }
-    const navmeshGeometry = (BufferGeometryScope.mergeBufferGeometries ? BufferGeometryScope : BufferGeometryScope.BufferGeometryUtils).mergeBufferGeometries(navmapGeometries, false);
-    const zone = Pathfinding.createZone(navmeshGeometry);
-    this.pathfinder.setZoneData(this.pathfinderZoneId, zone);
-    this.pathfinedEnabled = this.pathfinder.zones.length > 0;
-  }
-  registerSurfaceHandler(surfaceType, handlerClass, onInteraction = 'onInteraction', onEnter = 'onEnter', onLeave = 'onLeave') {
-    this.surfaceHandlers[surfaceType] = {
-      cls: handlerClass,
-      onInteraction,
-      onEnter,
-      onLeave
-    };
-  }
-  registerSurface(object) {
-    const surfaceType = object.userData.surface;
-    const surfaceHandler = this.surfaceHandlers[surfaceType];
-    if (!surfaceType) {
-      return;
-    }
-    if (!surfaceHandler) {
-      console.warn('registerSurface', `surfaceHandler for "${surfaceType}" does not exist`);
-      return;
-    }
-    const surfaceConstructor = surfaceHandler.cls;
-    const surface = new surfaceConstructor(object);
-    if (surface.onInteraction) surface.onInteraction = surface.onInteraction.bind(surface);
-    if (surface.onEnter) surface.onEnter = surface.onEnter.bind(surface);
-    if (surface.onLeave) surface.onLeave = surface.onLeave.bind(surface);
-    object.userData.surfaceRef = surface;
-    this.surfaces.push(object);
-  }
-  getNavmaps() {
-    return this.navmaps;
-  }
-  disposeBody(object) {
-    // this.bodies = this.bodies.filter(match => match !== object);
-    // this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
-  }
-  disposeNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-  }
-  disposeSurface(object) {
-    this.surfaces = this.surfaces.filter(match => match !== object);
-  }
-  disposeAll() {
-    // this.bodies = [];
-    // this.dynamicBodies = [];
-    this.navmaps = [];
-    this.surfaces = [];
-    MathService.releaseVec3(this.emptyVector3);
-    if (this.pathfinder) {
-      this.pathfinder = null;
-    }
-  }
-}
-const PhysicsService = new PhysicsServiceClass();
-
 class InputServiceClass {
   constructor() {
     _defineProperty(this, "keys", {});
@@ -2240,8 +2278,8 @@ class UiServiceClass {
     _defineProperty(this, "tween", 0.8);
   }
   createUiScene() {
-    const scene = new Three$1.Scene();
-    const ambientLight = new Three$1.AmbientLight(0xffffff, 1.0);
+    const scene = new Three$2.Scene();
+    const ambientLight = new Three$2.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     return scene;
   }
@@ -2384,13 +2422,13 @@ const removePlaceholder = target => {
   target.isMesh = false;
 };
 
-class InstancedScene extends Three$1.Group {
+class InstancedScene extends Three$2.Group {
   constructor(sourceMesh, count) {
     super();
     _defineProperty(this, "objects", []);
     _defineProperty(this, "dirty", []);
     _defineProperty(this, "root", null);
-    this.root = new Three$1.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
+    this.root = new Three$2.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
     this.add(this.root);
     this.onCreate();
   }
@@ -2550,7 +2588,7 @@ class ParticleServiceClass {
     }
     AssetsService.registerDisposable(particleObject);
     for (let i = 0; i < emitterProps.particleDensity; i++) {
-      const particle = new Three$1.Group();
+      const particle = new Three$2.Group();
       particle.add(particleObject.clone());
       this.createRandomParticle(particle, emitterProps);
       if (onCreate) {
@@ -2625,7 +2663,7 @@ class ParticleServiceClass {
   getUniformBase(value) {
     if (value instanceof Array) {
       return [value[0], value[1], value[2]];
-    } else if (value instanceof Three$1.Vector3) {
+    } else if (value instanceof Three$2.Vector3) {
       return [value.x, value.y, value.z];
     } else if (typeof value === 'number') {
       return [value, value, value];
@@ -2635,7 +2673,7 @@ class ParticleServiceClass {
   getUniformRandomness(value) {
     if (value instanceof Array) {
       return [MathUtils.randFloatSpread(value[0]), MathUtils.randFloatSpread(value[1]), MathUtils.randFloatSpread(value[2])];
-    } else if (value instanceof Three$1.Vector3) {
+    } else if (value instanceof Three$2.Vector3) {
       return [MathUtils.randFloatSpread(value.x), MathUtils.randFloatSpread(value.y), MathUtils.randFloatSpread(value.z)];
     } else if (typeof value === 'number') {
       const uniformRandom = MathUtils.randFloatSpread(value);
@@ -2652,8 +2690,8 @@ const ParticleService = new ParticleServiceClass();
 
 class RenderServiceClass {
   constructor() {
-    _defineProperty(this, "systemClock", new Three$1.Clock());
-    _defineProperty(this, "animationClock", new Three$1.Clock());
+    _defineProperty(this, "systemClock", new Three$2.Clock());
+    _defineProperty(this, "animationClock", new Three$2.Clock());
     _defineProperty(this, "animationDelta", 0.0);
     _defineProperty(this, "camera", null);
     _defineProperty(this, "renderer", null);
@@ -2692,20 +2730,20 @@ class RenderServiceClass {
     pixelRatio
   } = {}) {
     const windowInfo = this.getWindowSize();
-    const camera = new Three$1.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
+    const camera = new Three$2.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
     this.camera = camera;
-    const scene = new Three$1.Scene();
-    scene.background = new Three$1.Color(GameInfoService.config.system.sceneBackgroundDefault);
+    const scene = new Three$2.Scene();
+    scene.background = new Three$2.Color(GameInfoService.config.system.sceneBackgroundDefault);
     this.scene = scene;
     if (GameInfoService.config.system.vr) {
       GameInfoService.config.system.postprocessing = false;
     }
-    const renderer = new Three$1.WebGLRenderer({
+    const renderer = new Three$2.WebGLRenderer({
       antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
       powerPreference: 'high-performance'
     });
-    renderer.toneMapping = Three$1.ACESFilmicToneMapping;
-    renderer.outputEncoding = Three$1.sRGBEncoding;
+    renderer.toneMapping = Three$2.ACESFilmicToneMapping;
+    renderer.outputEncoding = Three$2.sRGBEncoding;
     renderer.autoClear = false;
     renderer.physicallyCorrectLights = true;
     renderer.xr.enabled = GameInfoService.config.system.vr || false;
@@ -2713,7 +2751,7 @@ class RenderServiceClass {
     renderer.setSize(windowInfo.width, windowInfo.height);
     if (GameInfoService.config.system.shadows) {
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = Three$1.PCFShadowMap;
+      renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three$2.PCFShadowMap;
     }
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.position = 'absolute';
@@ -2726,7 +2764,7 @@ class RenderServiceClass {
     this.scene.add(this.camera);
     if (GameInfoService.config.system.postprocessing) {
       const composer = new EffectComposer(this.renderer, {
-        frameBufferType: Three$1.HalfFloatType
+        frameBufferType: Three$2.HalfFloatType
       });
       composer.multisampling = 0;
       this.composer = composer;
@@ -2739,20 +2777,20 @@ class RenderServiceClass {
     if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
       CameraService.detachCamera();
     }
-    const depthMaterial = new Three$1.MeshDepthMaterial();
-    depthMaterial.depthPacking = Three$1.RGBADepthPacking;
-    depthMaterial.blending = Three$1.NoBlending;
+    const depthMaterial = new Three$2.MeshDepthMaterial();
+    depthMaterial.depthPacking = Three$2.RGBADepthPacking;
+    depthMaterial.blending = Three$2.NoBlending;
     const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
-    const depthRenderTarget = new Three$1.WebGLRenderTarget(window.innerWidth, window.innerHeight);
-    depthRenderTarget.texture.minFilter = Three$1.NearestFilter;
-    depthRenderTarget.texture.magFilter = Three$1.NearestFilter;
+    const depthRenderTarget = new Three$2.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+    depthRenderTarget.texture.minFilter = Three$2.NearestFilter;
+    depthRenderTarget.texture.magFilter = Three$2.NearestFilter;
     depthRenderTarget.texture.generateMipmaps = false;
     depthRenderTarget.stencilBuffer = false;
     if (depthTexturesSupport) {
-      depthRenderTarget.depthTexture = new Three$1.DepthTexture();
-      depthRenderTarget.depthTexture.type = Three$1.UnsignedShortType;
-      depthRenderTarget.depthTexture.minFilter = Three$1.NearestFilter;
-      depthRenderTarget.depthTexture.maxFilter = Three$1.NearestFilter;
+      depthRenderTarget.depthTexture = new Three$2.DepthTexture();
+      depthRenderTarget.depthTexture.type = Three$2.UnsignedShortType;
+      depthRenderTarget.depthTexture.minFilter = Three$2.NearestFilter;
+      depthRenderTarget.depthTexture.maxFilter = Three$2.NearestFilter;
     }
     this.depthMaterial = depthMaterial;
     this.depthRenderTarget = depthRenderTarget;
@@ -2885,9 +2923,11 @@ class RenderServiceClass {
   }
   runLogicLoop() {
     if (this.logicLoop) {
-      cancelAnimationFrame(this.logicLoop);
+      clearTimeout(this.logicLoop);
     }
-    this.logicLoop = requestAnimationFrame(() => this.runLogicLoop());
+
+    // NOTE setTimeout lets the logic progress, even if the user switched the tab and paused rendering
+    this.logicLoop = setTimeout(() => this.runLogicLoop(), this.logicFixedStep);
     const now = performance.now();
     const dt = now - this.lastFrameTimestamp;
     if (dt >= this.logicFixedStep) {
@@ -3066,7 +3106,7 @@ const convertMaterialType = (material, targetType = 'basic') => {
   [...inheritProps, 'side', 'name', 'skinning', 'transparent', 'vertexColors', 'visible', 'toneMapped', 'dithering', 'premultipliedAlpha', 'precision', 'opacity'].forEach(prop => {
     replacementProps[prop] = material[prop] || null;
   });
-  return new Three$1[materialConstructor](replacementProps);
+  return new Three$2[materialConstructor](replacementProps);
 };
 
 const loaders = {
@@ -3074,9 +3114,9 @@ const loaders = {
     gltf: new GLTFLoader(),
     fbx: new FBXLoader()
   },
-  images: new Three$1.TextureLoader(),
+  images: new Three$2.TextureLoader(),
   hdri: new RGBELoader(),
-  audio: new Three$1.AudioLoader()
+  audio: new Three$2.AudioLoader()
 };
 class AssetsServiceClass {
   constructor() {
@@ -3087,12 +3127,12 @@ class AssetsServiceClass {
     _defineProperty(this, "audioBuffers", {});
   }
   getDefaultCube() {
-    const cube = new Three$1.Mesh(new Three$1.BoxBufferGeometry(1, 1, 1), new Three$1.MeshNormalMaterial());
+    const cube = new Three$2.Mesh(new Three$2.BoxBufferGeometry(1, 1, 1), new Three$2.MeshNormalMaterial());
     this.registerDisposable(cube);
     return cube;
   }
   getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0) {
-    const light = new Three$1.HemisphereLight(groundColor, skyColor, intensity);
+    const light = new Three$2.HemisphereLight(groundColor, skyColor, intensity);
     this.registerDisposable(light);
     return light;
   }
@@ -3121,7 +3161,7 @@ class AssetsServiceClass {
   getTextureSync(path, then) {
     return loaders.images.load(path, image => {
       this.registerDisposable(image);
-      image.encoding = Three$1.sRGBEncoding;
+      image.encoding = Three$2.sRGBEncoding;
       if (then) {
         then(image);
       }
@@ -3135,14 +3175,14 @@ class AssetsServiceClass {
     console.warn('AssetsService', 'getImageSync', 'AssetsService.getImageSync is deprecated, please use AssetsService.getTextureSync instead');
     return this.getTextureSync(path, then);
   }
-  getHDRI(path, encoding = Three$1.RGBEEncoding) {
+  getHDRI(path, encoding = Three$2.RGBEEncoding) {
     return this.registerAsyncAsset(resolve => {
       loaders.hdri.load(path, texture => {
         const renderer = RenderService.getRenderer();
-        const generator = new Three$1.PMREMGenerator(renderer);
+        const generator = new Three$2.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
         const hdri = renderTarget.texture;
-        hdri.encoding = encoding || Three$1.RGBEEncoding;
+        hdri.encoding = encoding || Three$2.RGBEEncoding;
         AssetsService.registerDisposable(hdri);
         AssetsService.registerDisposable(renderTarget);
         texture.dispose();
@@ -3155,10 +3195,10 @@ class AssetsServiceClass {
     return this.registerAsyncAsset(resolve => {
       this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
-        const generator = new Three$1.PMREMGenerator(renderer);
+        const generator = new Three$2.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
         const reflections = renderTarget.texture;
-        reflections.encoding = Three$1.sRGBEncoding;
+        reflections.encoding = Three$2.sRGBEncoding;
         AssetsService.registerDisposable(reflections);
         AssetsService.registerDisposable(renderTarget);
         texture.dispose();
@@ -3208,13 +3248,13 @@ class AssetsServiceClass {
               child.material = this.cloneMaterial(child.material);
             }
             if (GameInfoService.config.system.shadows) {
-              child.material.side = Three$1.FrontSide;
+              child.material.side = Three$2.FrontSide;
             }
           }
           if (GameInfoService.config.system.correctBlenderLights) {
             // NOTE More arbitrary that you dare to imagine 👀
 
-            if (child instanceof Three$1.Light) {
+            if (child instanceof Three$2.Light) {
               child.intensity /= 68.3;
               if (typeof child.decay === 'number') {
                 child.decay /= 2.0;
@@ -3222,10 +3262,10 @@ class AssetsServiceClass {
             }
           }
           if (GameInfoService.config.system.shadows && child.visible) {
-            if (child instanceof Three$1.Mesh) {
-              child.castShadow = true;
+            if (child instanceof Three$2.Mesh) {
+              child.castShadow = GameInfoService.config.system.shadows === DQ.ShadowsAllObjects;
               child.receiveShadow = true;
-            } else if (child instanceof Three$1.Light) {
+            } else if (child instanceof Three$2.Light) {
               child.castShadow = true;
               child.shadow.mapSize.width = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
               child.shadow.mapSize.height = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
@@ -3386,7 +3426,7 @@ class AssetsServiceClass {
     if (!object || typeof object !== 'object') {
       return;
     }
-    if (object instanceof Three$1.Scene || object instanceof Three$1.Camera) {
+    if (object instanceof Three$2.Scene || object instanceof Three$2.Camera) {
       this.markUndisposed(object, 'Object is a Scene or Camera');
       return;
     }
@@ -3458,7 +3498,7 @@ class AssetsServiceClass {
 }
 const AssetsService = new AssetsServiceClass();
 
-class GameObjectClass extends Three$1.Group {
+class GameObjectClass extends Three$2.Group {
   constructor() {
     super();
     AssetsService.registerDisposable(this);
@@ -3544,14 +3584,14 @@ class Text extends GameObjectClass {
     troikaText.textAlign = textAlign || 'center';
     troikaText.fontSize = fontSize || 1.0;
     troikaText.material.transparent = true;
-    troikaText.color = new Three$1.Color(color || '#ffffff');
+    troikaText.color = new Three$2.Color(color || '#ffffff');
     if (alwaysOnTop) {
       troikaText.renderOrder = Number.MAX_SAFE_INTEGER;
       troikaText.material.depthTest = false;
     }
     if (outlineWidth) {
       troikaText.outlineWidth = `${outlineWidth}%`;
-      troikaText.outlineColor = new Three$1.Color(outlineColor || '#000000');
+      troikaText.outlineColor = new Three$2.Color(outlineColor || '#000000');
     }
     troikaText.sync();
     this.troikaText = troikaText;
@@ -3636,7 +3676,7 @@ class ScrollList extends GameObjectClass {
   onCreate() {
     const debugScrollVisible = DebugService.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
     GameObjectClass.prototype.onCreate.call(this);
-    this.scrollHitbox = new Three$1.Mesh(new Three$1.BoxBufferGeometry(1.0, 1.0, 1.0), new Three$1.MeshBasicMaterial({
+    this.scrollHitbox = new Three$2.Mesh(new Three$2.BoxBufferGeometry(1.0, 1.0, 1.0), new Three$2.MeshBasicMaterial({
       color: getRandomColor(),
       opacity: debugScrollVisible ? 0.5 : 1.0,
       transparent: debugScrollVisible
@@ -3676,7 +3716,7 @@ class ScrollList extends GameObjectClass {
         this.scrollPositionY += deltaY * this.scrollSpeed;
       }
     });
-    Three$1.Group.prototype.add.call(this, object);
+    Three$2.Group.prototype.add.call(this, object);
     if (object.id === this.scrollHitbox.id) {
       return;
     }
@@ -3884,14 +3924,6 @@ const fitToCamera = (mesh, camera, preserveRatio = false) => {
   }
 };
 
-const math2Pi = Math.PI * 2.0;
-const mathPi2 = Math.PI / 2.0;
-const mathPi4 = Math.PI / 4.0;
-const mathPi8 = Math.PI / 8.0;
-const axisX = new Three$1.Vector3(1.0, 0.0, 0.0);
-const axisY = new Three$1.Vector3(0.0, 1.0, 0.0);
-const axisZ = new Three$1.Vector3(0.0, 0.0, 1.0);
-
 const parseFullscreen = object => {
   const {
     userData
@@ -3955,7 +3987,7 @@ const parseAiNode = object => {
       object.visible = false;
     } else {
       AssetsService.disposeAsset(object.material);
-      object.material = new Three$1.MeshNormalMaterial();
+      object.material = new Three$2.MeshNormalMaterial();
       AssetsService.registerDisposable(object.material);
       AnimationService.registerAnimation({
         target: object,
@@ -4010,7 +4042,7 @@ const parseShader = object => {
       });
       return;
     }
-    const shaderMaterial = new Three$1.ShaderMaterial(shaderFunction({
+    const shaderMaterial = new Three$2.ShaderMaterial(shaderFunction({
       target: object
     }));
     AssetsService.disposeProps(object.material);
@@ -4329,7 +4361,7 @@ const {
   MeshStandardMaterial,
   RepeatWrapping,
   RGBEEncoding
-} = Three$1;
+} = Three$2;
 const utilityFunctions = `
 float sum( vec3 v ) { return v.x+v.y+v.z; }
 vec4 textureNoTile( sampler2D samp, sampler2D noise, vec2 uv )
@@ -4428,7 +4460,7 @@ class LandscapeMaterial extends MeshStandardMaterial {
     this.saturation = parameters.saturation || [];
     this.brightness = parameters.brightness || [];
     this.noise = parameters.noise;
-    this.color = new Three$1.Color(0xff0000);
+    this.color = new Three$2.Color(0xff0000);
     this.parameters = parameters;
     this._normalWeights.value = this._normalWeights.value.length > 0 ? this._normalWeights.value : new Array(12).fill("0.75");
     // todo estimate scale
@@ -4626,7 +4658,7 @@ const parseLandscape = object => {
     brightness: landscapeHelpers.map(object => typeof object.userData.brightness === 'number' ? object.userData.brightness : 0.1),
     scale: landscapeHelpers.map(object => typeof object.userData.scale === 'number' ? object.userData.scale : 1.0),
     noise: noiseMap,
-    side: Three$1.FrontSide
+    side: Three$2.FrontSide
   });
   AssetsService.registerDisposable(object.material);
   object.material.roughness = 0.5;
@@ -4644,6 +4676,7 @@ class PhysicsWrapper {
     _defineProperty(this, "surfaceCollisions", {});
     this.target = target;
     this.body = PhysicsService.registerBody(target, physicsConfig);
+    this.enableDynamicShadows();
   }
   getBody() {
     return this.body;
@@ -4653,6 +4686,23 @@ class PhysicsWrapper {
   }
   disableNoClip() {
     this.noClip = false;
+  }
+  enableDynamicShadows() {
+    if (!this.body) {
+      return;
+    }
+    const isStatic = this.body.type === Cannon$1.Body.STATIC;
+    this.target.traverse(child => {
+      if (GameInfoService.config.system.shadows && child.visible) {
+        if (child instanceof Three$2.Mesh) {
+          if (isStatic) {
+            child.castShadow = GameInfoService.config.system.shadows & DQ.ShadowsStaticObjects;
+          } else {
+            child.castShadow = GameInfoService.config.system.shadows & DQ.ShadowsDynamicObjects;
+          }
+        }
+      }
+    });
   }
   onCollision(listener) {
     this.collisionListener = listener;
@@ -4680,7 +4730,7 @@ const parsePhysics = object => {
 const hidePlaceholder = target => {
   if (target.geometry) {
     AssetsService.disposeProps(target.geometry);
-    target.geometry = new Three$1.BufferGeometry();
+    target.geometry = new Three$2.BufferGeometry();
     AssetsService.registerDisposable(target.geometry);
   }
 };
@@ -4699,13 +4749,15 @@ const parsePhysicsRope = object => {
       new PhysicsWrapper(ropeTarget, {
         physicsShape: 'sphere',
         physicsSize: physicsRopeDistance / 2.0,
-        physicsDamping: 0.75
+        physicsDamping: 0.5,
+        ...(ropeTarget.userData || {})
       });
     }
     new PhysicsWrapper(object, {
       physicsShape: 'sphere',
       physicsSize: physicsRopeDistance / 2.0,
-      physicsDamping: 0.75
+      physicsDamping: 0.5,
+      ...(ropeTarget.userData || {})
     });
     PhysicsService.registerConstraint(object, ropeTarget, physicsRopeDistance);
   }
@@ -4796,6 +4848,7 @@ const ParserService = new ParserServiceClass();
 class SceneServiceClass {
   constructor() {
     _defineProperty(this, "gameObjectRefs", {});
+    _defineProperty(this, "sunInstances", []);
   }
   parseScene({
     target,
@@ -4824,7 +4877,7 @@ class SceneServiceClass {
       scene.background = texture;
     } else {
       const renderer = RenderService.getRenderer();
-      const generator = new Three$1.PMREMGenerator(renderer);
+      const generator = new Three$2.PMREMGenerator(renderer);
       const renderTarget = generator.fromEquirectangular(texture);
       const sphericalTexture = renderTarget.texture;
       AssetsService.registerDisposable(sphericalTexture);
@@ -4845,6 +4898,50 @@ class SceneServiceClass {
     const scene = RenderService.getScene();
     return scene.environment;
   }
+  setSun(color = 0xffffff, intensity = 1.0) {
+    const scene = RenderService.getScene();
+    if (this.sunInstances) {
+      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
+    }
+    this.sunInstances = [];
+    const sunOffset = new Three$2.Vector3(1.0, 1.0, 1.0);
+    const sunShadowLodLevels = 3; // NOTE Hardcoded to fit shadow settings below
+
+    Array(sunShadowLodLevels).fill(0).forEach((_, lodLevel) => {
+      const sunShadowSpan = [15.0, 25.0, 30.0][lodLevel];
+      const sunShadowDistance = RenderService.getNativeCamera().far;
+      const sun = new Three$2.DirectionalLight(color, intensity / sunShadowLodLevels);
+      sun.shadow.mapSize.width = [2048, 1024, 256][lodLevel];
+      sun.shadow.mapSize.height = [2048, 1024, 256][lodLevel];
+      sun.shadow.camera.left = -sunShadowSpan;
+      sun.shadow.camera.right = sunShadowSpan;
+      sun.shadow.camera.top = sunShadowSpan;
+      sun.shadow.camera.bottom = -sunShadowSpan;
+      sun.shadow.camera.near = -sunShadowDistance;
+      sun.shadow.camera.far = sunShadowDistance;
+      sun.castShadow = true;
+      sun.target.position.sub(sunOffset);
+      scene.add(sun.target);
+      scene.add(sun);
+      this.sunInstances.push(sun);
+    });
+    const sunPositionUpdateListener = TimeService.registerFrameListener(() => {
+      const cameraTarget = CameraService.followedObject || CameraService.camera;
+      const targetPosition = MathService.getVec3();
+      cameraTarget.getWorldPosition(targetPosition);
+      this.sunInstances.forEach(sunInstance => {
+        if (!sunInstance) {
+          return;
+        }
+        sunInstance.target.position.copy(targetPosition);
+        sunInstance.position.copy(sunInstance.target.position).add(sunOffset);
+      });
+      MathService.releaseVec3(targetPosition);
+    });
+    AssetsService.registerDisposeCallback(this.sunInstances[0], () => {
+      TimeService.disposeFrameListener(sunPositionUpdateListener);
+    });
+  }
   disposeAll() {
     const scene = RenderService.getScene();
     if (scene.environment) {
@@ -4853,7 +4950,11 @@ class SceneServiceClass {
     }
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
-      scene.background = new Three$1.Color(GameInfoService.config.system.sceneBackgroundDefault);
+      scene.background = new Three$2.Color(GameInfoService.config.system.sceneBackgroundDefault);
+    }
+    if (this.sunInstances) {
+      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
+      this.sunInstances = [];
     }
     if (this.gameObjectRefs) {
       Object.keys(this.gameObjectRefs).forEach(key => {
@@ -5103,11 +5204,11 @@ class AnimationWrapper {
     }
     if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
-      const skeletorHelper = new Three$1.SkeletonHelper(this.target);
+      const skeletorHelper = new Three$2.SkeletonHelper(this.target);
       scene.add(skeletorHelper);
       AssetsService.registerDisposable(skeletorHelper);
     }
-    this.mixer = new Three$1.AnimationMixer(this.target);
+    this.mixer = new Three$2.AnimationMixer(this.target);
     userData.skinnedAnimations.forEach(clip => {
       if (clip.name === 'mixamo.com') {
         // NOTE Clean-up Mixamo exported default name
@@ -5168,9 +5269,9 @@ class AnimationWrapper {
         this.mixer.removeEventListener('finished', listener);
       };
       this.mixer.addEventListener('finished', listener);
-      action.loop = Three$1.LoopOnce;
+      action.loop = Three$2.LoopOnce;
     } else {
-      action.loop = Three$1.LoopRepeat;
+      action.loop = Three$2.LoopRepeat;
     }
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
@@ -5252,12 +5353,12 @@ class Preloader extends GameObjectClass {
   async onCreate() {
     GameObjectClass.prototype.onCreate.call(this);
     const camera = RenderService.getNativeCamera();
-    const background = new Three$1.Mesh(new Three$1.PlaneBufferGeometry(1.0, 1.0), new Three$1.MeshBasicMaterial({
+    const background = new Three$2.Mesh(new Three$2.PlaneBufferGeometry(1.0, 1.0), new Three$2.MeshBasicMaterial({
       color: 0x000000,
       transparent: true
     }));
     background.name = 'background';
-    const spinner = new Three$1.Mesh(new Three$1.PlaneBufferGeometry(1.0, 1.0), new Three$1.MeshBasicMaterial({
+    const spinner = new Three$2.Mesh(new Three$2.PlaneBufferGeometry(1.0, 1.0), new Three$2.MeshBasicMaterial({
       map: await AssetsService.getTexture(this.spinnerTexture),
       transparent: true
     }));
@@ -5265,7 +5366,7 @@ class Preloader extends GameObjectClass {
     this.add(spinner);
     this.add(background);
     this.position.z -= 5.0;
-    this.lookAt(new Three$1.Vector3(0, 0, 0));
+    this.lookAt(new Three$2.Vector3(0, 0, 0));
     TimeService.registerFrameListener(() => {
       const spinner = this.getObjectByName('spinner');
       const background = this.getObjectByName('background');
@@ -5329,11 +5430,11 @@ class SkinnedGameObject extends GameObjectClass {
     }
     if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
-      const skeletorHelper = new Three$1.SkeletonHelper(model);
+      const skeletorHelper = new Three$2.SkeletonHelper(model);
       scene.add(skeletorHelper);
       AssetsService.registerDisposable(skeletorHelper);
     }
-    this.mixer = new Three$1.AnimationMixer(model);
+    this.mixer = new Three$2.AnimationMixer(model);
     userData.skinnedAnimations.forEach(clip => {
       const action = this.mixer.clipAction(clip);
       action.reset();
@@ -5410,7 +5511,7 @@ class SkinnedGameObject extends GameObjectClass {
 
 // NOTE Export internal Three.js instance
 
-const Three = Three$1;
+const Three$1 = Three$2;
 const Cannon = Cannon$1;
 
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraMovementTypeEnums, CameraService, Cannon, DebugFlags, DebugService, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, MathService, MathUtils, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, Three, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, axisX, axisY, axisZ, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, hidePlaceholder, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseLandscape, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraMovementTypeEnums, CameraService, Cannon, DQ, DebugFlags, DebugService, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, MathService, MathUtils, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, Three$1 as Three, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, axisX, axisY, axisZ, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, hidePlaceholder, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseLandscape, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };

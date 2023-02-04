@@ -13,6 +13,7 @@ import { AudioService } from './audio-service';
 import { convertMaterialType } from '../utils/materials';
 import { GameInfoService } from './game-info-service';
 import { defaultTo } from '../utils/shared';
+import { DQ } from '../utils/constants';
 
 const loaders = {
   models: {
@@ -213,7 +214,7 @@ class AssetsServiceClass {
 
           if (GameInfoService.config.system.shadows && child.visible) {
             if (child instanceof Three.Mesh) {
-              child.castShadow = true;
+              child.castShadow = GameInfoService.config.system.shadows === DQ.ShadowsAllObjects;
               child.receiveShadow = true;
             } else if (child instanceof Three.Light) {
               child.castShadow = true;

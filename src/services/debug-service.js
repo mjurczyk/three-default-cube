@@ -7,6 +7,7 @@ import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { VarService } from './var-service';
 import * as packageInfo from '../../package.json';
+import { PhysicsService } from './physics-service';
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
@@ -201,6 +202,8 @@ class DebugServiceClass {
         outputElement.appendChild(this.createLogLine(
           { text: 'CannonES Ver:' },
           { text: packageInfo.dependencies['cannon-es'], color: LogsHighlightColor },
+          { text: 'Bodies:' },
+          { text: PhysicsService.physicsWorld.bodies.length, color: LogsHighlightColor },
         ));
       }
     });
