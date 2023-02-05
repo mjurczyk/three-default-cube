@@ -6,10 +6,10 @@ import { GameInfoService } from './game-info-service';
 import { TimeService } from './time-service';
 import { CameraService } from './camera-service';
 import { MathService } from './math-service';
+import CSM from 'three-csm';
 
 export class SceneServiceClass {
   gameObjectRefs = {};
-  sunInstances = [];
 
   parseScene({
     target,
@@ -74,61 +74,52 @@ export class SceneServiceClass {
     return scene.environment;
   }
 
-  setSun(color = 0xffffff, intensity = 1.0) {
+  setFog(color = 0x000000, density) {
     const scene = RenderService.getScene();
 
-    if (this.sunInstances) {
-      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
-    }
-    this.sunInstances = [];
+    scene.fog = new Three.FogExp2(color, density);
+  }
+  
+  getFog() {
+    const scene = RenderService.getScene();
 
-    const sunOffset = new Three.Vector3(1.0, 1.0, 1.0);
-    const sunShadowLodLevels = 3; // NOTE Hardcoded to fit shadow settings below
-    
-    Array(sunShadowLodLevels).fill(0).forEach((_, lodLevel) => {
-      const sunShadowSpan = [15.0, 25.0, 30.0][lodLevel];
-      const sunShadowDistance = RenderService.getNativeCamera().far;
-      const sun = new Three.DirectionalLight(color, intensity / sunShadowLodLevels);
-      sun.shadow.mapSize.width = [2048, 1024, 256][lodLevel];
-      sun.shadow.mapSize.height = [2048, 1024, 256][lodLevel];
-      sun.shadow.camera.left = -sunShadowSpan;
-      sun.shadow.camera.right = sunShadowSpan;
-      sun.shadow.camera.top = sunShadowSpan;
-      sun.shadow.camera.bottom = -sunShadowSpan;
-      sun.shadow.camera.near = -sunShadowDistance;
-      sun.shadow.camera.far = sunShadowDistance;
-      sun.castShadow = true;
-      sun.distance = 0.0;
-      sun.decay = 0.0;
+    return scene.fog;
+  }
 
-      sun.target.position.sub(sunOffset);
+  setSun(color = 0xffffff, intensity = 1.0, position = new Three.Vector3(1.0, 1.0, 1.0), near = 0.0, far = 400.0, shadowDrawDistance = 100.0) {
+    const scene = RenderService.getScene();
+    const camera = RenderService.getNativeCamera();
 
-      scene.add(sun.target);
-      scene.add(sun);
+    const sunShadowMap = new CSM({
+      maxFar: shadowDrawDistance,
+      lightNear: near,
+      lightFar: far,
+      shadowMapSize: GameInfoService.config.system.shadowsResolution,
+      lightDirection: position.negate(),
+      lightIntensity: intensity,
+      camera: camera,
+      parent: scene,
+    });
+    sunShadowMap.lights.forEach(light => {
+      light.color = new Three.Color(color);
+    });
+    sunShadowMap.fade = true;
 
-      this.sunInstances.push(sun);
+    scene.traverse(child => {
+      if (!child.material || !child.visible) {
+        return;
+      }
+
+      sunShadowMap.setupMaterial(child.material);
     });
 
-    const sunPositionUpdateListener = TimeService.registerFrameListener(() => {
-      const cameraTarget = CameraService.followedObject || CameraService.camera;
+    const originalSceneAddHandler = scene.add.bind(scene);
+    scene.add = (...args) => {
+      originalSceneAddHandler(...args);
+    };
 
-      const targetPosition = MathService.getVec3();
-      cameraTarget.getWorldPosition(targetPosition);
-
-      this.sunInstances.forEach(sunInstance => {
-        if (!sunInstance) {
-          return;
-        }
-
-        sunInstance.target.position.copy(targetPosition);
-        sunInstance.position.copy(sunInstance.target.position).add(sunOffset);
-      });
-
-      MathService.releaseVec3(targetPosition);
-    });
-
-    AssetsService.registerDisposeCallback(this.sunInstances[0], () => {
-      TimeService.disposeFrameListener(sunPositionUpdateListener);
+    TimeService.registerFrameListener(() => {
+      sunShadowMap.update(camera.matrix);
     });
   }
 
@@ -145,11 +136,6 @@ export class SceneServiceClass {
       AssetsService.disposeAsset(scene.background);
 
       scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
-    }
-
-    if (this.sunInstances) {
-      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
-      this.sunInstances = [];
     }
 
     if (this.gameObjectRefs) {

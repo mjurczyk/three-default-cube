@@ -20,6 +20,7 @@ var PointerLockControls = require('three/examples/jsm/controls/PointerLockContro
 var CameraControls = require('camera-controls');
 var howler = require('howler');
 var troikaThreeText = require('troika-three-text');
+var CSM = require('three-csm');
 var threeDefaultCube = require('three-default-cube');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
@@ -48,6 +49,7 @@ var uuid__namespace = /*#__PURE__*/_interopNamespace(uuid);
 var Stats__default = /*#__PURE__*/_interopDefaultLegacy(Stats);
 var BufferGeometryScope__namespace = /*#__PURE__*/_interopNamespace(BufferGeometryScope);
 var CameraControls__default = /*#__PURE__*/_interopDefaultLegacy(CameraControls);
+var CSM__default = /*#__PURE__*/_interopDefaultLegacy(CSM);
 
 function _defineProperty(obj, key, value) {
   key = _toPropertyKey(key);
@@ -582,7 +584,6 @@ var dependencies = {
 	"@ionic-native/screen-orientation": "5.30.0",
 	"@rollup/plugin-babel": "5.3.0",
 	"@rollup/plugin-json": "6.0.0",
-	"@rollup/plugin-url": "8.0.1",
 	"camera-controls": "1.37.4",
 	"cannon-es": "0.20.0",
 	howler: "2.2.3",
@@ -590,7 +591,8 @@ var dependencies = {
 	rollup: "2.79.1",
 	three: "0.148.0",
 	"three-pathfinding": "1.1.0",
-	"troika-three-text": "0.47.1"
+	"troika-three-text": "0.47.1",
+	"three-csm": "3.1.1"
 };
 
 const createArrowHelper = (container, id, vector, origin, color) => {
@@ -4931,52 +4933,105 @@ class SceneServiceClass {
     const scene = RenderService.getScene();
     return scene.environment;
   }
-  setSun(color = 0xffffff, intensity = 1.0) {
+  setFog(color = 0x000000, density) {
     const scene = RenderService.getScene();
-    if (this.sunInstances) {
-      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
-    }
-    this.sunInstances = [];
-    const sunOffset = new Three__namespace.Vector3(1.0, 1.0, 1.0);
-    const sunShadowLodLevels = 3; // NOTE Hardcoded to fit shadow settings below
-
-    Array(sunShadowLodLevels).fill(0).forEach((_, lodLevel) => {
-      const sunShadowSpan = [15.0, 25.0, 30.0][lodLevel];
-      const sunShadowDistance = RenderService.getNativeCamera().far;
-      const sun = new Three__namespace.DirectionalLight(color, intensity / sunShadowLodLevels);
-      sun.shadow.mapSize.width = [2048, 1024, 256][lodLevel];
-      sun.shadow.mapSize.height = [2048, 1024, 256][lodLevel];
-      sun.shadow.camera.left = -sunShadowSpan;
-      sun.shadow.camera.right = sunShadowSpan;
-      sun.shadow.camera.top = sunShadowSpan;
-      sun.shadow.camera.bottom = -sunShadowSpan;
-      sun.shadow.camera.near = -sunShadowDistance;
-      sun.shadow.camera.far = sunShadowDistance;
-      sun.castShadow = true;
-      sun.distance = 0.0;
-      sun.decay = 0.0;
-      sun.target.position.sub(sunOffset);
-      scene.add(sun.target);
-      scene.add(sun);
-      this.sunInstances.push(sun);
-    });
-    const sunPositionUpdateListener = TimeService.registerFrameListener(() => {
-      const cameraTarget = CameraService.followedObject || CameraService.camera;
-      const targetPosition = MathService.getVec3();
-      cameraTarget.getWorldPosition(targetPosition);
-      this.sunInstances.forEach(sunInstance => {
-        if (!sunInstance) {
-          return;
-        }
-        sunInstance.target.position.copy(targetPosition);
-        sunInstance.position.copy(sunInstance.target.position).add(sunOffset);
-      });
-      MathService.releaseVec3(targetPosition);
-    });
-    AssetsService.registerDisposeCallback(this.sunInstances[0], () => {
-      TimeService.disposeFrameListener(sunPositionUpdateListener);
-    });
+    scene.fog = new Three__namespace.FogExp2(color, density);
   }
+  getFog() {
+    const scene = RenderService.getScene();
+    return scene.fog;
+  }
+  setSun(color = 0xffffff, intensity = 1.0, position = new Three__namespace.Vector3(1.0, 1.0, 1.0), near = 0.0, far = 400.0, shadowDrawDistance = 100.0) {
+    const scene = RenderService.getScene();
+    const camera = RenderService.getNativeCamera();
+    const sunShadowMap = new CSM__default["default"]({
+      maxFar: shadowDrawDistance,
+      lightNear: near,
+      lightFar: far,
+      shadowMapSize: GameInfoService.config.system.shadowsResolution,
+      lightDirection: position.negate(),
+      lightIntensity: intensity,
+      camera: camera,
+      parent: scene
+    });
+    sunShadowMap.lights.forEach(light => {
+      light.color = new Three__namespace.Color(color);
+    });
+    sunShadowMap.fade = true;
+    scene.traverse(child => {
+      if (!child.material || !child.visible) {
+        return;
+      }
+      sunShadowMap.setupMaterial(child.material);
+    });
+    const originalSceneAddHandler = scene.add.bind(scene);
+    scene.add = (...args) => {
+      console.info({
+        args
+      });
+      originalSceneAddHandler(...args);
+    };
+    TimeService.registerFrameListener(() => {
+      sunShadowMap.update(camera.matrix);
+    });
+
+    // const scene = RenderService.getScene();
+
+    // if (this.sunInstances) {
+    //   this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
+    // }
+    // this.sunInstances = [];
+
+    // const sunOffset = new Three.Vector3(1.0, 1.0, 1.0);
+    // const sunShadowLodLevels = 3; // NOTE Hardcoded to fit shadow settings below
+
+    // Array(sunShadowLodLevels).fill(0).forEach((_, lodLevel) => {
+    //   const sunShadowSpan = [15.0, 25.0, 30.0][lodLevel];
+    //   const sunShadowDistance = RenderService.getNativeCamera().far;
+    //   const sun = new Three.DirectionalLight(color, intensity / sunShadowLodLevels);
+    //   sun.shadow.mapSize.width = [2048, 1024, 256][lodLevel];
+    //   sun.shadow.mapSize.height = [2048, 1024, 256][lodLevel];
+    //   sun.shadow.camera.left = -sunShadowSpan;
+    //   sun.shadow.camera.right = sunShadowSpan;
+    //   sun.shadow.camera.top = sunShadowSpan;
+    //   sun.shadow.camera.bottom = -sunShadowSpan;
+    //   sun.shadow.camera.near = -sunShadowDistance;
+    //   sun.shadow.camera.far = sunShadowDistance;
+    //   sun.castShadow = true;
+    //   sun.distance = 0.0;
+    //   sun.decay = 0.0;
+
+    //   sun.target.position.sub(sunOffset);
+
+    //   scene.add(sun.target);
+    //   scene.add(sun);
+
+    //   this.sunInstances.push(sun);
+    // });
+
+    // const sunPositionUpdateListener = TimeService.registerFrameListener(() => {
+    //   const cameraTarget = CameraService.followedObject || CameraService.camera;
+
+    //   const targetPosition = MathService.getVec3();
+    //   cameraTarget.getWorldPosition(targetPosition);
+
+    //   this.sunInstances.forEach(sunInstance => {
+    //     if (!sunInstance) {
+    //       return;
+    //     }
+
+    //     sunInstance.target.position.copy(targetPosition);
+    //     sunInstance.position.copy(sunInstance.target.position).add(sunOffset);
+    //   });
+
+    //   MathService.releaseVec3(targetPosition);
+    // });
+
+    // AssetsService.registerDisposeCallback(this.sunInstances[0], () => {
+    //   TimeService.disposeFrameListener(sunPositionUpdateListener);
+    // });
+  }
+
   disposeAll() {
     const scene = RenderService.getScene();
     if (scene.environment) {
