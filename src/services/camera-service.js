@@ -37,12 +37,12 @@ class CameraServiceClass {
     this.camera.quaternion.copy(this.cameraQuaternion);
 
     if (!this.cameraControls) {
-      this.cameraControls = new CameraControls(RenderService.getNativeCamera(), renderer.domElement);
+      this.cameraControls = new CameraControls(RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') : renderer.domElement);
       this.cameraControls.enabled = false;
     }
 
     if (!this.pointerLockControls) {
-      this.pointerLockControls = new PointerLockControls(RenderService.getNativeCamera(), renderer.domElement);
+      this.pointerLockControls = new PointerLockControls(RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') :renderer.domElement);
       this.pointerLockControls.unlock();
     }
   }
@@ -167,12 +167,12 @@ class CameraServiceClass {
     }
   }
 
-  useStaticCamera(position, target) {
+  useStaticCamera(position, target, allowOrbit = false) {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
     this.followedObject = null;
     this.followOffset.set(0.1, 0.1, 0.1);
-    this.cameraControls.enabled = false;
+    this.cameraControls.enabled = allowOrbit;
     this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
     this.cameraPosition.copy(position);
 
@@ -314,6 +314,10 @@ class CameraServiceClass {
   }
 
   updateRenderTargets() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const scene = RenderService.getScene();
     const renderer = RenderService.getRenderer();
 

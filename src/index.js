@@ -29,6 +29,7 @@ export * from './services/game-info-service';
 export * from './services/input-service';
 export * from './services/interactions-service';
 export * from './services/math-service';
+export * from './services/network-service';
 export * from './services/parser-service';
 export * from './services/particle-service';
 export * from './services/physics-service';
@@ -40,6 +41,7 @@ export * from './services/time-service';
 export * from './services/ui-service';
 export * from './services/utils-service';
 export * from './services/var-service';
+export * from './services/spawn-service';
 
 export * from './utils/constants';
 export * from './utils/helpers';

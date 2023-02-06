@@ -4,11 +4,17 @@ import { VarService } from './var-service';
 import { RenderService } from './render-service';
 import { GameInfoService } from './game-info-service';
 import { MobileAdapter, MobileAdapterConstants } from '../adapters/mobile-adapter';
+import { NetworkEnums, NetworkServerSideInstanceUserAgent, NetworkService } from './network-service';
 
 class SystemServiceClass {
   promised = [];
 
   init({ statusBar } = {}) {
+    if (navigator.userAgent.includes(NetworkServerSideInstanceUserAgent)) {
+      NetworkService.connectAsServer();
+      return;
+    }
+
     StorageService.init();
 
     if (statusBar !== true) {
@@ -19,14 +25,14 @@ class SystemServiceClass {
       DebugService.showStats();
     }
 
-    if (DebugService.get(DebugFlags.DEBUG_LIVE)) {
-      DebugService.showLogs();
-    }
-
     this.promised.push(VarService.retrievePersistentVars());
 
     if (GameInfoService.config.system.postprocessing) {
       this.promised.push(RenderService.createSMAATextures());
+    }
+
+    if (GameInfoService.config.network.serverAddress) {
+      this.promised.push(NetworkService.connectAsClient());
     }
 
     if (MobileAdapter.isMobile()) {

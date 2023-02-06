@@ -16,6 +16,7 @@ var navigationBar = require('@ionic-native/navigation-bar');
 var screenOrientation = require('@ionic-native/screen-orientation');
 var BufferGeometryScope = require('three/examples/jsm/utils/BufferGeometryUtils');
 var threePathfinding = require('three-pathfinding');
+var Colyseus = require('colyseus.js');
 var PointerLockControls = require('three/examples/jsm/controls/PointerLockControls');
 var CameraControls = require('camera-controls');
 var howler = require('howler');
@@ -48,6 +49,7 @@ var Cannon__namespace = /*#__PURE__*/_interopNamespace(Cannon$1);
 var uuid__namespace = /*#__PURE__*/_interopNamespace(uuid);
 var Stats__default = /*#__PURE__*/_interopDefaultLegacy(Stats);
 var BufferGeometryScope__namespace = /*#__PURE__*/_interopNamespace(BufferGeometryScope);
+var Colyseus__namespace = /*#__PURE__*/_interopNamespace(Colyseus);
 var CameraControls__default = /*#__PURE__*/_interopDefaultLegacy(CameraControls);
 var CSM__default = /*#__PURE__*/_interopDefaultLegacy(CSM);
 
@@ -230,6 +232,7 @@ class GameInfoServiceClass {
   constructor() {
     _defineProperty(this, "config", {
       system: {},
+      network: {},
       vars: {},
       labels: {},
       textures: {},
@@ -283,14 +286,23 @@ class GameInfoServiceClass {
       }
     });
   }
-  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, radius = 4, type = Three.PCFShadowMap) {
+  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, radius = 4, type = Three.PCFShadowMap, drawDistance) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
         shadows: enabled,
         shadowsResolution: resolution,
         shadowsRadius: radius,
-        shadowMapType: type
+        shadowMapType: type,
+        shadowDrawDistance: drawDistance
+      }
+    });
+  }
+  network(serverAddress) {
+    return this.addConfig({
+      network: {
+        ...(this.config.network || {}),
+        serverAddress
       }
     });
   }
@@ -590,9 +602,10 @@ var dependencies = {
 	postprocessing: "6.29.2",
 	rollup: "2.79.1",
 	three: "0.148.0",
+	"three-csm": "3.1.1",
 	"three-pathfinding": "1.1.0",
 	"troika-three-text": "0.47.1",
-	"three-csm": "3.1.1"
+	"colyseus.js": "0.14.13"
 };
 
 const createArrowHelper = (container, id, vector, origin, color) => {
@@ -628,7 +641,7 @@ const createDefaultCube = (container, id, {
 } = {}) => {
   let helper = container.getObjectByName(id);
   if (!helper) {
-    helper = new Three__namespace.Mesh(new Three__namespace.BoxBufferGeometry(size || 1.0, size || 1.0, size || 1.0), new Three__namespace.MeshStandardMaterial({
+    helper = new Three__namespace.Mesh(new Three__namespace.BoxGeometry(size || 1.0, size || 1.0, size || 1.0), new Three__namespace.MeshStandardMaterial({
       color: color || getRandomColor()
     }));
     helper.name = id;
@@ -640,6 +653,208 @@ const createDefaultCube = (container, id, {
   }
   return helper;
 };
+
+class SpawnServiceClass {
+  constructor() {
+    _defineProperty(this, "spawnableGameObjects", {});
+  }
+  registerSpawnableGameObject(type, spawnFunction) {
+    this.spawnableGameObjects[type] = spawnFunction;
+  }
+  createSpawnableGameObject(type) {
+    const spawnFunction = this.spawnableGameObjects[type];
+    if (!spawnFunction) {
+      console.info('SpawnService', 'createSpawnableGameObject', 'spawn function for object type does not exist', {
+        type
+      });
+      return;
+    }
+    const object = spawnFunction();
+    object.gameObject = type;
+    AssetsService.registerDisposable(object);
+    return object;
+  }
+  disposeAll() {
+    this.spawnableGameObjects = {};
+  }
+}
+const SpawnService = new SpawnServiceClass();
+
+const NetworkEnums = {
+  statusSingleplayer: 'offline',
+  statusConnecting: 'connecting',
+  statusNotConnected: 'not-connected',
+  statusConnected: 'connected',
+  statusServing: 'server',
+  modeClient: 'client',
+  modeServer: 'server'
+};
+const NetworkServerSideInstanceUserAgent = 'dqServerInstanceUserAgent';
+class NetworkServiceClass {
+  constructor() {
+    _defineProperty(this, "mode", NetworkEnums.modeClient);
+    _defineProperty(this, "client", null);
+    _defineProperty(this, "isMultiplayer", false);
+    _defineProperty(this, "status", NetworkEnums.statusSingleplayer);
+    _defineProperty(this, "syncObjects", {});
+    _defineProperty(this, "ping", Infinity);
+    _defineProperty(this, "lastTimestamp", performance.now());
+    _defineProperty(this, "networkActionsListeners", {});
+    _defineProperty(this, "syncPropNames", ['position', 'quaternion', 'gameObject']);
+  }
+  connectAsClient() {
+    const client = new Colyseus__namespace.Client(GameInfoService.config.network.serverAddress);
+    this.status = NetworkEnums.statusConnecting;
+    this.isMultiplayer = true;
+    client.joinOrCreate('dqGame').then(this.handleGameConnection.bind(this)).catch(error => {
+      console.warn('NetworkServiceClass', 'connect', {
+        error
+      });
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+    this.client = client;
+  }
+  handleGameConnection(game) {
+    this.status = NetworkEnums.statusConnected;
+    game.onMessage('ping', timestamp => {
+      this.ping = ~~(timestamp - this.lastTimestamp);
+      this.lastTimestamp = timestamp;
+    });
+    game.onStateChange(state => {
+      const serverPosition = MathService.getVec3();
+      const serverQuaternion = MathService.getQuaternion();
+      const localPosition = MathService.getVec3();
+      const localQuaternion = MathService.getQuaternion();
+      state.syncObjects.forEach((syncObject, key) => {
+        const {
+          gameObject,
+          positionX,
+          positionY,
+          positionZ,
+          quaternionX,
+          quaternionY,
+          quaternionZ,
+          quaternionW
+        } = syncObject;
+        if (!gameObject && !this.syncObjects[key]) {
+          return;
+        }
+        if (!this.syncObjects[key]) {
+          const object = SpawnService.createSpawnableGameObject(gameObject);
+          const scene = RenderService.getScene();
+          console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', {
+            key,
+            gameObject,
+            createdObject: object
+          });
+          if (object) {
+            this.syncObjects[key] = object;
+            scene.add(object);
+          } else {
+            return;
+          }
+        }
+        serverPosition.set(positionX, positionY, positionZ);
+        serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
+        const {
+          x: px,
+          y: py,
+          z: pz
+        } = this.syncObjects[key].position;
+        localPosition.set(px, py, pz);
+        const {
+          x: qx,
+          y: qy,
+          z: qz,
+          w: qw
+        } = this.syncObjects[key].quaternion;
+        localQuaternion.set(qx, qy, qz, qw);
+        localPosition.lerp(serverPosition, 0.5);
+        localQuaternion.slerp(serverQuaternion, 0.5);
+        this.syncObjects[key].position.set(localPosition.x, localPosition.y, localPosition.z);
+        this.syncObjects[key].quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+      });
+      MathService.releaseVec3(serverPosition);
+      MathService.releaseQuaternion(serverQuaternion);
+      MathService.releaseVec3(localPosition);
+      MathService.releaseQuaternion(localQuaternion);
+    });
+    game.onError(() => {
+      console.warn('NetworkServiceClass', 'handleGameConnection', {
+        game,
+        error
+      });
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+    game.onLeave(() => {
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+  }
+  connectAsServer() {
+    this.mode = NetworkEnums.modeServer;
+    this.status = NetworkEnums.statusServing;
+    this.ping = 0;
+    this.isMultiplayer = !!GameInfoService.config.network.serverAddress;
+    TimeService.registerPersistentFrameListener(() => {
+      if (typeof window.dqSendToServer === 'undefined') {
+        return;
+      }
+      window.dqSendToServer('sync', {
+        syncObjects: this.syncObjects
+      });
+    });
+    const dqReceiveFromServer = (action, payload) => {
+      if (this.networkActionsListeners[action]) {
+        this.networkActionsListeners[action].forEach(listener => {
+          listener(payload);
+        });
+      }
+    };
+    window.dqSendToGame = (action, payload) => dqReceiveFromServer(action, payload);
+  }
+  registerServerActionListener(action, listener) {
+    if (!this.isMultiplayer) {
+      return;
+    }
+    if (!this.networkActionsListeners[action]) {
+      this.networkActionsListeners[action] = [];
+    }
+    this.networkActionsListeners[action].push(listener);
+  }
+  registerSyncObject(target) {
+    if (!target.name) {
+      console.warn('NetworkServiceClass', 'registerSyncObject', 'sync object missing a name, assign name before registering as SyncObject', target);
+      return;
+    }
+    if (this.syncObjects[target.name]) {
+      console.warn('NetworkServiceClass', 'registerSyncObject', 'attempting to register two objects with the same name', {
+        original: this.syncObjects[target.name],
+        new: target
+      });
+      return;
+    }
+    console.info('NetworkServiceClass', 'registerSyncObject', 'sync new object', {
+      target
+    });
+    this.syncObjects[target.name] = {};
+    this.syncPropNames.forEach(name => {
+      this.syncObjects[target.name][name] = target[name];
+    });
+  }
+  disposeSyncObject(target) {
+    if (this.syncObjects[target.name]) {
+      delete this.syncObjects[target.name];
+    }
+  }
+  disposeAll() {
+    this.syncObjects = {};
+    this.networkActionsListeners = {};
+  }
+}
+const NetworkService = new NetworkServiceClass();
 
 class PhysicsServiceClass {
   constructor() {
@@ -805,6 +1020,9 @@ class PhysicsServiceClass {
       AssetsService.registerDisposeCallback(object, () => {
         this.physicsWorld.removeBody(body);
       });
+      body.name = object.name;
+      body.gameObject = object.gameObject;
+      NetworkService.registerSyncObject(body);
     }
     if (physicsShape === 'plane') {
       object.rotateX(Math.PI / 2.0);
@@ -961,6 +1179,8 @@ const PhysicsService = new PhysicsServiceClass();
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
+const LogsSuccessColor = '#33ff33';
+const LogsErrorColor = '#ff3333';
 const DebugFlags = {
   DEBUG_ENABLE: 'DEBUG_ENABLE',
   DEBUG_LIVE: 'DEBUG_LIVE',
@@ -973,7 +1193,8 @@ const DebugFlags = {
   DEBUG_STORAGE: 'DEBUG_STORAGE',
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
-  DEBUG_PHYSICS: 'DEBUG_PHYSICS'
+  DEBUG_PHYSICS: 'DEBUG_PHYSICS',
+  DEBUG_NETWORK: 'DEBUG_NETWORK'
 };
 class DebugServiceClass {
   constructor() {
@@ -1005,7 +1226,10 @@ class DebugServiceClass {
       document.body.removeChild(this.stats.dom);
     }
   }
-  showLogs() {
+  init() {
+    if (RenderService.isHeadless || !this.get(DebugFlags.DEBUG_LIVE)) {
+      return;
+    }
     const outputElement = document.createElement('div');
     outputElement.style.position = 'absolute';
     outputElement.style.top = '5px';
@@ -1228,6 +1452,24 @@ class DebugServiceClass {
           text: 'Bodies:'
         }, {
           text: PhysicsService.physicsWorld.bodies.length,
+          color: LogsHighlightColor
+        }));
+      }
+      if (this.get(DebugFlags.DEBUG_NETWORK)) {
+        outputElement.appendChild(this.createLogLine({
+          text: 'Network Status:'
+        }, {
+          text: NetworkService.mode === NetworkEnums.modeSinglePlayer ? NetworkEnums.modeSinglePlayer : NetworkService.status,
+          color: [NetworkService.status === NetworkEnums.statusConnected ? LogsSuccessColor : null, NetworkService.status === NetworkEnums.statusNotConnected ? LogsErrorColor : null, LogsHighlightColor].filter(Boolean)[0]
+        }, {
+          text: 'SyncBodies:'
+        }, {
+          text: Object.keys(NetworkService.syncObjects).length,
+          color: LogsHighlightColor
+        }, {
+          text: 'Ping:'
+        }, {
+          text: NetworkService.ping > 999 ? '999ms' : `${`000${NetworkService.ping}`.substr(-3)}ms`,
           color: LogsHighlightColor
         }));
       }
@@ -1692,11 +1934,11 @@ class CameraServiceClass {
     this.camera.position.copy(this.cameraPosition);
     this.camera.quaternion.copy(this.cameraQuaternion);
     if (!this.cameraControls) {
-      this.cameraControls = new CameraControls__default["default"](RenderService.getNativeCamera(), renderer.domElement);
+      this.cameraControls = new CameraControls__default["default"](RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') : renderer.domElement);
       this.cameraControls.enabled = false;
     }
     if (!this.pointerLockControls) {
-      this.pointerLockControls = new PointerLockControls.PointerLockControls(RenderService.getNativeCamera(), renderer.domElement);
+      this.pointerLockControls = new PointerLockControls.PointerLockControls(RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') : renderer.domElement);
       this.pointerLockControls.unlock();
     }
   }
@@ -1785,11 +2027,11 @@ class CameraServiceClass {
       this.camera.quaternion.copy(camera.quaternion);
     }
   }
-  useStaticCamera(position, target) {
+  useStaticCamera(position, target, allowOrbit = false) {
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
     this.followedObject = null;
     this.followOffset.set(0.1, 0.1, 0.1);
-    this.cameraControls.enabled = false;
+    this.cameraControls.enabled = allowOrbit;
     this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
     this.cameraPosition.copy(position);
     if (target) {
@@ -1892,6 +2134,9 @@ class CameraServiceClass {
     return renderTarget.texture;
   }
   updateRenderTargets() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const scene = RenderService.getScene();
     const renderer = RenderService.getRenderer();
     if (!scene || !renderer) {
@@ -1995,6 +2240,9 @@ class InteractionsServiceClass {
     this.addListeners();
   }
   addListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.addEventListener('touchstart', this.onTouchStart);
     renderer.domElement.addEventListener('touchmove', this.onTouchMove);
@@ -2239,12 +2487,18 @@ class InteractionsServiceClass {
     this.listeners = [];
   }
   disposePointerListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.removeEventListener('pointermove', this.onPointerMove);
     renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     renderer.domElement.removeEventListener('pointerup', this.onPointerUp);
   }
   dispose() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.removeEventListener('touchmove', this.onTouchMove);
     renderer.domElement.removeEventListener('touchstart', this.onTouchStart);
@@ -2723,6 +2977,7 @@ const ParticleService = new ParticleServiceClass();
 
 class RenderServiceClass {
   constructor() {
+    _defineProperty(this, "isHeadless", navigator.userAgent === NetworkServerSideInstanceUserAgent);
     _defineProperty(this, "systemClock", new Three__namespace.Clock());
     _defineProperty(this, "animationClock", new Three__namespace.Clock());
     _defineProperty(this, "animationDelta", 0.0);
@@ -2747,7 +3002,9 @@ class RenderServiceClass {
     _defineProperty(this, "logicLoop", null);
     _defineProperty(this, "lastFrameTimestamp", 0);
     _defineProperty(this, "logicFixedStep", 1000.0 / 60.0);
-    window.addEventListener('resize', () => this.onResize());
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => this.onResize());
+    }
   }
   getScene() {
     return this.scene;
@@ -2762,58 +3019,61 @@ class RenderServiceClass {
     domElement,
     pixelRatio
   } = {}) {
+    const isHeadless = typeof domElement === 'undefined' || this.isHeadless;
     const windowInfo = this.getWindowSize();
-    const camera = new Three__namespace.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
-    this.camera = camera;
+    this.isHeadless = isHeadless;
     const scene = new Three__namespace.Scene();
     scene.background = new Three__namespace.Color(GameInfoService.config.system.sceneBackgroundDefault);
     this.scene = scene;
+    if (!isHeadless) {
+      this.camera = new Three__namespace.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
+    } else {
+      this.camera = new Three__namespace.PerspectiveCamera(1.0, 1.0, 0.0, 1.0);
+    }
+    this.scene.add(this.camera);
     if (GameInfoService.config.system.vr) {
       GameInfoService.config.system.postprocessing = false;
     }
-    const renderer = new Three__namespace.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
-      powerPreference: 'high-performance'
-    });
-    renderer.toneMapping = Three__namespace.ACESFilmicToneMapping;
-    renderer.outputEncoding = Three__namespace.sRGBEncoding;
-    renderer.autoClear = false;
-    renderer.physicallyCorrectLights = true;
-    renderer.xr.enabled = GameInfoService.config.system.vr || false;
-    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
-    renderer.setSize(windowInfo.width, windowInfo.height);
-    if (GameInfoService.config.system.shadows) {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three__namespace.PCFShadowMap;
-    }
-    renderer.domElement.style.display = 'block';
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = 0;
-    renderer.domElement.style.left = 0;
-    renderer.domElement.style.width = '100vw';
-    renderer.domElement.style.height = '100vh';
-    renderer.domElement.style.overflow = 'hidden';
-    this.renderer = renderer;
-    this.scene.add(this.camera);
-    if (GameInfoService.config.system.postprocessing) {
-      const composer = new postprocessing.EffectComposer(this.renderer, {
-        frameBufferType: Three__namespace.HalfFloatType
+    let renderer;
+    if (!isHeadless) {
+      renderer = new Three__namespace.WebGLRenderer({
+        antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
+        powerPreference: 'high-performance'
       });
-      composer.multisampling = 0;
-      this.composer = composer;
-      this.initPostProcessing();
-    }
-    if (domElement) {
+      renderer.toneMapping = Three__namespace.ACESFilmicToneMapping;
+      renderer.outputEncoding = Three__namespace.sRGBEncoding;
+      renderer.autoClear = false;
+      renderer.physicallyCorrectLights = true;
+      renderer.xr.enabled = GameInfoService.config.system.vr || false;
+      renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
+      renderer.setSize(windowInfo.width, windowInfo.height);
+      if (GameInfoService.config.system.shadows) {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three__namespace.PCFShadowMap;
+      }
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.position = 'absolute';
+      renderer.domElement.style.top = 0;
+      renderer.domElement.style.left = 0;
+      renderer.domElement.style.width = '100vw';
+      renderer.domElement.style.height = '100vh';
+      renderer.domElement.style.overflow = 'hidden';
+      this.renderer = renderer;
+      if (GameInfoService.config.system.postprocessing) {
+        const composer = new postprocessing.EffectComposer(this.renderer, {
+          frameBufferType: Three__namespace.HalfFloatType
+        });
+        composer.multisampling = 0;
+        this.composer = composer;
+        this.initPostProcessing();
+      }
       domElement.appendChild(renderer.domElement);
     }
     this.initEssentialServices();
-    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
-      CameraService.detachCamera();
-    }
     const depthMaterial = new Three__namespace.MeshDepthMaterial();
     depthMaterial.depthPacking = Three__namespace.RGBADepthPacking;
     depthMaterial.blending = Three__namespace.NoBlending;
-    const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
+    const depthTexturesSupport = isHeadless ? false : !!renderer.extensions.get('WEBGL_depth_texture');
     const depthRenderTarget = new Three__namespace.WebGLRenderTarget(window.innerWidth, window.innerHeight);
     depthRenderTarget.texture.minFilter = Three__namespace.NearestFilter;
     depthRenderTarget.texture.magFilter = Three__namespace.NearestFilter;
@@ -2827,8 +3087,12 @@ class RenderServiceClass {
     }
     this.depthMaterial = depthMaterial;
     this.depthRenderTarget = depthRenderTarget;
+    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
+      CameraService.detachCamera();
+    }
   }
   initEssentialServices() {
+    DebugService.init();
     VarService.init({
       language: 'en'
     });
@@ -2847,6 +3111,9 @@ class RenderServiceClass {
     });
   }
   initPostProcessing() {
+    if (this.isHeadless) {
+      return;
+    }
     const worldRenderPass = new postprocessing.RenderPass(this.scene, this.camera);
     this.composer.addPass(worldRenderPass);
     this.composer.addPass(new postprocessing.ClearPass(false, true, false));
@@ -2871,14 +3138,12 @@ class RenderServiceClass {
     const toneMappingEffect = new postprocessing.ToneMappingEffect({
       mode: postprocessing.ToneMappingMode.REINHARD2_ADAPTIVE,
       resolution: 256,
-      whitePoint: 16.0,
-      middleGrey: 0.6,
+      whitePoint: 10.0,
+      middleGrey: 1.0,
       minLuminance: 0.01,
       averageLuminance: 0.01,
-      adaptationRate: 0.5
+      adaptationRate: 0.75
     });
-    new postprocessing.EffectPass(this.camera, toneMappingEffect);
-    this.composer.addPass(toneMappingEffect);
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -2890,6 +3155,8 @@ class RenderServiceClass {
     const bloomEffect = new postprocessing.BloomEffect(bloomDefaults);
     const bloomPass = new postprocessing.EffectPass(this.camera, bloomEffect);
     this.composer.addPass(bloomPass);
+    const toneMappingPass = new postprocessing.EffectPass(this.camera, toneMappingEffect);
+    this.composer.addPass(toneMappingPass);
     this.postProcessingEffects.bloom = {
       effect: postprocessing.BloomEffect,
       pass: bloomPass,
@@ -2923,8 +3190,10 @@ class RenderServiceClass {
       delete this.currentView;
     }
     this.currentView = viewInstance;
-    DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
-    DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
+    if (!this.isHeadless) {
+      DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
+      DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
+    }
     viewInstance.onCreate();
   }
   resetPostProcessing() {
@@ -2933,6 +3202,9 @@ class RenderServiceClass {
     });
   }
   createSMAATextures() {
+    if (this.isHeadless) {
+      return;
+    }
     return new Promise(resolve => {
       const smaaImageLoader = new postprocessing.SMAAImageLoader();
       smaaImageLoader.disableCache = true;
@@ -2948,6 +3220,9 @@ class RenderServiceClass {
     this.runLogicLoop();
   }
   runAnimationLoop() {
+    if (this.isHeadless) {
+      return;
+    }
     if (!this.renderer.xr.enabled) {
       this.onAnimationFrame();
     } else {
@@ -2974,8 +3249,10 @@ class RenderServiceClass {
   onLogicFrame() {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
-    CameraService.onFrame(dt);
-    UiService.onFrame();
+    if (!this.isHeadless) {
+      CameraService.onFrame(dt);
+      UiService.onFrame();
+    }
     TimeService.onFrame({
       dt,
       elapsedTime
@@ -3037,6 +3314,9 @@ class RenderServiceClass {
     }
   }
   onResize() {
+    if (this.isHeadless) {
+      return;
+    }
     const windowInfo = this.getWindowSize();
     if (this.camera) {
       this.camera.aspect = windowInfo.aspectRatio;
@@ -3053,6 +3333,13 @@ class RenderServiceClass {
     }
   }
   getWindowSize() {
+    if (this.isHeadless) {
+      return {
+        width: 0.0,
+        height: 0.0,
+        aspectRatio: 1.0
+      };
+    }
     return {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -3160,7 +3447,7 @@ class AssetsServiceClass {
     _defineProperty(this, "audioBuffers", {});
   }
   getDefaultCube() {
-    const cube = new Three__namespace.Mesh(new Three__namespace.BoxBufferGeometry(1, 1, 1), new Three__namespace.MeshNormalMaterial());
+    const cube = new Three__namespace.Mesh(new Three__namespace.BoxGeometry(1, 1, 1), new Three__namespace.MeshNormalMaterial());
     this.registerDisposable(cube);
     return cube;
   }
@@ -3209,6 +3496,9 @@ class AssetsServiceClass {
     return this.getTextureSync(path, then);
   }
   getHDRI(path, encoding = Three__namespace.RGBEEncoding) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three__namespace.Texture());
+    }
     return this.registerAsyncAsset(resolve => {
       loaders.hdri.load(path, texture => {
         const renderer = RenderService.getRenderer();
@@ -3225,6 +3515,9 @@ class AssetsServiceClass {
     });
   }
   getReflectionsTexture(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three__namespace.Texture());
+    }
     return this.registerAsyncAsset(resolve => {
       this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
@@ -3311,7 +3604,9 @@ class AssetsServiceClass {
           target.frustumCulled = true;
           target.onAfterRender = function () {};
         };
-        renderer.compile(target, camera);
+        if (renderer) {
+          renderer.compile(target, camera);
+        }
         target.userData.skinnedAnimations = target.animations;
         delete target.animations;
         resolve(target);
@@ -3475,6 +3770,11 @@ class AssetsServiceClass {
     if (object.__registeredDisposable__) {
       this.markDisposed(object);
       this.disposables = this.disposables.filter(match => match !== object);
+    }
+    if (object.traverse) {
+      object.traverse(child => {
+        NetworkService.disposeSyncObject(child);
+      });
     }
     if (object.parent) {
       object.parent.remove(object);
@@ -3709,7 +4009,7 @@ class ScrollList extends GameObjectClass {
   onCreate() {
     const debugScrollVisible = DebugService.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
     GameObjectClass.prototype.onCreate.call(this);
-    this.scrollHitbox = new Three__namespace.Mesh(new Three__namespace.BoxBufferGeometry(1.0, 1.0, 1.0), new Three__namespace.MeshBasicMaterial({
+    this.scrollHitbox = new Three__namespace.Mesh(new Three__namespace.BoxGeometry(1.0, 1.0, 1.0), new Three__namespace.MeshBasicMaterial({
       color: getRandomColor(),
       opacity: debugScrollVisible ? 0.5 : 1.0,
       transparent: debugScrollVisible
@@ -4873,7 +5173,10 @@ class ParserServiceClass {
     if (onCreate) {
       onCreate(parserPayload);
     }
-    RenderService.getRenderer().compile(RenderService.getScene(), RenderService.getNativeCamera());
+    const renderer = RenderService.getRenderer();
+    if (renderer) {
+      renderer.compile(RenderService.getScene(), RenderService.getNativeCamera());
+    }
   }
 }
 const ParserService = new ParserServiceClass();
@@ -4881,7 +5184,6 @@ const ParserService = new ParserServiceClass();
 class SceneServiceClass {
   constructor() {
     _defineProperty(this, "gameObjectRefs", {});
-    _defineProperty(this, "sunInstances", []);
   }
   parseScene({
     target,
@@ -4904,6 +5206,9 @@ class SceneServiceClass {
     });
   }
   setBackground(texture, spherical = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const scene = RenderService.getScene();
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
@@ -4945,7 +5250,7 @@ class SceneServiceClass {
     const scene = RenderService.getScene();
     const camera = RenderService.getNativeCamera();
     const sunShadowMap = new CSM__default["default"]({
-      maxFar: shadowDrawDistance,
+      maxFar: shadowDrawDistance || GameInfoService.config.system.shadowDrawDistance,
       lightNear: near,
       lightFar: far,
       shadowMapSize: GameInfoService.config.system.shadowsResolution,
@@ -4966,72 +5271,12 @@ class SceneServiceClass {
     });
     const originalSceneAddHandler = scene.add.bind(scene);
     scene.add = (...args) => {
-      console.info({
-        args
-      });
       originalSceneAddHandler(...args);
     };
     TimeService.registerFrameListener(() => {
       sunShadowMap.update(camera.matrix);
     });
-
-    // const scene = RenderService.getScene();
-
-    // if (this.sunInstances) {
-    //   this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
-    // }
-    // this.sunInstances = [];
-
-    // const sunOffset = new Three.Vector3(1.0, 1.0, 1.0);
-    // const sunShadowLodLevels = 3; // NOTE Hardcoded to fit shadow settings below
-
-    // Array(sunShadowLodLevels).fill(0).forEach((_, lodLevel) => {
-    //   const sunShadowSpan = [15.0, 25.0, 30.0][lodLevel];
-    //   const sunShadowDistance = RenderService.getNativeCamera().far;
-    //   const sun = new Three.DirectionalLight(color, intensity / sunShadowLodLevels);
-    //   sun.shadow.mapSize.width = [2048, 1024, 256][lodLevel];
-    //   sun.shadow.mapSize.height = [2048, 1024, 256][lodLevel];
-    //   sun.shadow.camera.left = -sunShadowSpan;
-    //   sun.shadow.camera.right = sunShadowSpan;
-    //   sun.shadow.camera.top = sunShadowSpan;
-    //   sun.shadow.camera.bottom = -sunShadowSpan;
-    //   sun.shadow.camera.near = -sunShadowDistance;
-    //   sun.shadow.camera.far = sunShadowDistance;
-    //   sun.castShadow = true;
-    //   sun.distance = 0.0;
-    //   sun.decay = 0.0;
-
-    //   sun.target.position.sub(sunOffset);
-
-    //   scene.add(sun.target);
-    //   scene.add(sun);
-
-    //   this.sunInstances.push(sun);
-    // });
-
-    // const sunPositionUpdateListener = TimeService.registerFrameListener(() => {
-    //   const cameraTarget = CameraService.followedObject || CameraService.camera;
-
-    //   const targetPosition = MathService.getVec3();
-    //   cameraTarget.getWorldPosition(targetPosition);
-
-    //   this.sunInstances.forEach(sunInstance => {
-    //     if (!sunInstance) {
-    //       return;
-    //     }
-
-    //     sunInstance.target.position.copy(targetPosition);
-    //     sunInstance.position.copy(sunInstance.target.position).add(sunOffset);
-    //   });
-
-    //   MathService.releaseVec3(targetPosition);
-    // });
-
-    // AssetsService.registerDisposeCallback(this.sunInstances[0], () => {
-    //   TimeService.disposeFrameListener(sunPositionUpdateListener);
-    // });
   }
-
   disposeAll() {
     const scene = RenderService.getScene();
     if (scene.environment) {
@@ -5041,10 +5286,6 @@ class SceneServiceClass {
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
       scene.background = new Three__namespace.Color(GameInfoService.config.system.sceneBackgroundDefault);
-    }
-    if (this.sunInstances) {
-      this.sunInstances.forEach(sun => AssetsService.disposeAsset(sun));
-      this.sunInstances = [];
     }
     if (this.gameObjectRefs) {
       Object.keys(this.gameObjectRefs).forEach(key => {
@@ -5080,6 +5321,8 @@ class ViewClass {
     AudioService.resetAudio();
     UtilsService.disposeAll();
     AssetsService.disposeAll();
+    NetworkService.disposeAll();
+    SpawnService.disposeAll();
     MathService.handleLeaks();
     MathService.disposeAll();
   }
@@ -5102,6 +5345,10 @@ class SystemServiceClass {
   init({
     statusBar
   } = {}) {
+    if (navigator.userAgent.includes(NetworkServerSideInstanceUserAgent)) {
+      NetworkService.connectAsServer();
+      return;
+    }
     StorageService.init();
     if (statusBar !== true) {
       SystemService.hideStatusBar();
@@ -5109,12 +5356,12 @@ class SystemServiceClass {
     if (DebugService.get(DebugFlags.DEBUG_ENABLE)) {
       DebugService.showStats();
     }
-    if (DebugService.get(DebugFlags.DEBUG_LIVE)) {
-      DebugService.showLogs();
-    }
     this.promised.push(VarService.retrievePersistentVars());
     if (GameInfoService.config.system.postprocessing) {
       this.promised.push(RenderService.createSMAATextures());
+    }
+    if (GameInfoService.config.network.serverAddress) {
+      this.promised.push(NetworkService.connectAsClient());
     }
     if (MobileAdapter.isMobile()) {
       this.promised.push(new Promise(resolve => {
@@ -5281,6 +5528,7 @@ class AnimationWrapper {
     _defineProperty(this, "mixerActions", {});
     _defineProperty(this, "mixerClips", []);
     this.target = target;
+    target.animationsRef = this;
     this.parseAnimations();
     AssetsService.registerDisposeCallback(this.target, () => this.dispose());
   }
@@ -5443,12 +5691,12 @@ class Preloader extends GameObjectClass {
   async onCreate() {
     GameObjectClass.prototype.onCreate.call(this);
     const camera = RenderService.getNativeCamera();
-    const background = new Three__namespace.Mesh(new Three__namespace.PlaneBufferGeometry(1.0, 1.0), new Three__namespace.MeshBasicMaterial({
+    const background = new Three__namespace.Mesh(new Three__namespace.PlaneGeometry(1.0, 1.0), new Three__namespace.MeshBasicMaterial({
       color: 0x000000,
       transparent: true
     }));
     background.name = 'background';
-    const spinner = new Three__namespace.Mesh(new Three__namespace.PlaneBufferGeometry(1.0, 1.0), new Three__namespace.MeshBasicMaterial({
+    const spinner = new Three__namespace.Mesh(new Three__namespace.PlaneGeometry(1.0, 1.0), new Three__namespace.MeshBasicMaterial({
       map: await AssetsService.getTexture(this.spinnerTexture),
       transparent: true
     }));
@@ -5625,6 +5873,9 @@ exports.InteractionEnums = InteractionEnums;
 exports.InteractionsService = InteractionsService;
 exports.MathService = MathService;
 exports.MathUtils = MathUtils;
+exports.NetworkEnums = NetworkEnums;
+exports.NetworkServerSideInstanceUserAgent = NetworkServerSideInstanceUserAgent;
+exports.NetworkService = NetworkService;
 exports.ParserService = ParserService;
 exports.ParticleService = ParticleService;
 exports.PhysicsService = PhysicsService;
@@ -5635,6 +5886,7 @@ exports.SceneService = SceneService;
 exports.SceneServiceClass = SceneServiceClass;
 exports.ScrollList = ScrollList;
 exports.SkinnedGameObject = SkinnedGameObject;
+exports.SpawnService = SpawnService;
 exports.StorageService = StorageService;
 exports.SystemService = SystemService;
 exports.Text = Text;

@@ -46,7 +46,7 @@ export const createDefaultCube = (container, id, { position, size, color } = {})
 
   if (!helper) {
     helper = new Three.Mesh(
-      new Three.BoxBufferGeometry(size || 1.0, size || 1.0, size || 1.0),
+      new Three.BoxGeometry(size || 1.0, size || 1.0, size || 1.0),
       new Three.MeshStandardMaterial({ color: color || getRandomColor() })
     );
     helper.name = id;

@@ -47,6 +47,10 @@ class InteractionsServiceClass {
   }
 
   addListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const renderer = RenderService.getRenderer();
 
     renderer.domElement.addEventListener('touchstart', this.onTouchStart);
@@ -291,6 +295,10 @@ class InteractionsServiceClass {
   }
 
   disposePointerListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const renderer = RenderService.getRenderer();
 
     renderer.domElement.removeEventListener('pointermove', this.onPointerMove);
@@ -299,6 +307,10 @@ class InteractionsServiceClass {
   }
 
   dispose() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const renderer = RenderService.getRenderer();
 
     renderer.domElement.removeEventListener('touchmove', this.onTouchMove);

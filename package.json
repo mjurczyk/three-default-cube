@@ -51,8 +51,9 @@
     "postprocessing": "6.29.2",
     "rollup": "2.79.1",
     "three": "0.148.0",
+    "three-csm": "3.1.1",
     "three-pathfinding": "1.1.0",
     "troika-three-text": "0.47.1",
-    "three-csm": "3.1.1"
+    "colyseus.js": "0.14.13"
   }
 }

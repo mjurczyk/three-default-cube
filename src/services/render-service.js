@@ -13,8 +13,10 @@ import { DebugFlags, DebugService } from './debug-service';
 import { AudioService } from './audio-service';
 import { ParticleService } from './particle-service';
 import { GameInfoService } from './game-info-service';
+import { NetworkServerSideInstanceUserAgent } from './network-service';
 
 class RenderServiceClass {
+  isHeadless = navigator.userAgent === NetworkServerSideInstanceUserAgent;
   systemClock = new Three.Clock();
   animationClock = new Three.Clock();
   animationDelta = 0.0;
@@ -40,7 +42,9 @@ class RenderServiceClass {
   logicLoop = null;
 
   constructor() {
-    window.addEventListener('resize', () => this.onResize());
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => this.onResize());
+    }
   }
 
   getScene() {
@@ -56,83 +60,87 @@ class RenderServiceClass {
   }
 
   init({ domElement, pixelRatio } = {}) {
+    const isHeadless = typeof domElement === 'undefined' || this.isHeadless;
     const windowInfo = this.getWindowSize();
 
-    const camera = new Three.PerspectiveCamera(
-      GameInfoService.config.system.camera.fov,
-      windowInfo.aspectRatio,
-      GameInfoService.config.system.camera.near,
-      GameInfoService.config.system.camera.far,
-    );
-    this.camera = camera;
+    this.isHeadless = isHeadless;
 
     const scene = new Three.Scene();
     scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
 
     this.scene = scene;
 
+    if (!isHeadless) {
+      this.camera = new Three.PerspectiveCamera(
+        GameInfoService.config.system.camera.fov,
+        windowInfo.aspectRatio,
+        GameInfoService.config.system.camera.near,
+        GameInfoService.config.system.camera.far,
+      );
+    } else {
+      this.camera = new Three.PerspectiveCamera(1.0, 1.0, 0.0, 1.0);
+    }
+
+    this.scene.add(this.camera);
+
     if (GameInfoService.config.system.vr) {
       GameInfoService.config.system.postprocessing = false;
     }
 
-    const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
-      powerPreference: 'high-performance'
-    });
+    let renderer;
 
-    renderer.toneMapping = Three.ACESFilmicToneMapping;
-    renderer.outputEncoding = Three.sRGBEncoding;
-    renderer.autoClear = false;
-    renderer.physicallyCorrectLights = true;
-
-    renderer.xr.enabled = GameInfoService.config.system.vr || false;
-
-    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
-    renderer.setSize(windowInfo.width, windowInfo.height);
-
-    if (GameInfoService.config.system.shadows) {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three.PCFShadowMap;
-    }
-
-    renderer.domElement.style.display = 'block';
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = 0;
-    renderer.domElement.style.left = 0;
-    renderer.domElement.style.width = '100vw';
-    renderer.domElement.style.height = '100vh';
-    renderer.domElement.style.overflow = 'hidden';
-
-    this.renderer = renderer;
-
-    this.scene.add(this.camera);
-
-    if (GameInfoService.config.system.postprocessing) {
-      const composer = new EffectComposer(this.renderer, {
-        frameBufferType: Three.HalfFloatType,
+    if (!isHeadless) {
+      renderer = new Three.WebGLRenderer({
+        antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
+        powerPreference: 'high-performance'
       });
-      composer.multisampling = 0;
 
-      this.composer = composer;
+      renderer.toneMapping = Three.ACESFilmicToneMapping;
+      renderer.outputEncoding = Three.sRGBEncoding;
+      renderer.autoClear = false;
+      renderer.physicallyCorrectLights = true;
 
-      this.initPostProcessing();
-    }
+      renderer.xr.enabled = GameInfoService.config.system.vr || false;
 
-    if (domElement) {
+      renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
+      renderer.setSize(windowInfo.width, windowInfo.height);
+
+      if (GameInfoService.config.system.shadows) {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three.PCFShadowMap;
+      }
+
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.position = 'absolute';
+      renderer.domElement.style.top = 0;
+      renderer.domElement.style.left = 0;
+      renderer.domElement.style.width = '100vw';
+      renderer.domElement.style.height = '100vh';
+      renderer.domElement.style.overflow = 'hidden';
+
+      this.renderer = renderer;
+
+      if (GameInfoService.config.system.postprocessing) {
+        const composer = new EffectComposer(this.renderer, {
+          frameBufferType: Three.HalfFloatType,
+        });
+        composer.multisampling = 0;
+
+        this.composer = composer;
+
+        this.initPostProcessing();
+      }
+
       domElement.appendChild(renderer.domElement);
     }
 
     this.initEssentialServices();
 
-    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
-      CameraService.detachCamera();
-    }
-
     const depthMaterial = new Three.MeshDepthMaterial();
     depthMaterial.depthPacking = Three.RGBADepthPacking;
     depthMaterial.blending = Three.NoBlending;
 
-    const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
+    const depthTexturesSupport = isHeadless ? false : !!renderer.extensions.get('WEBGL_depth_texture');
 
     const depthRenderTarget = new Three.WebGLRenderTarget(
       window.innerWidth,
@@ -152,9 +160,14 @@ class RenderServiceClass {
 
     this.depthMaterial = depthMaterial;
     this.depthRenderTarget = depthRenderTarget;
+
+    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
+      CameraService.detachCamera();
+    }
   }
 
   initEssentialServices() {
+    DebugService.init();
     VarService.init({ language: 'en' });
     InteractionsService.init({ camera: this.camera });
     PhysicsService.init();
@@ -165,6 +178,10 @@ class RenderServiceClass {
   }
 
   initPostProcessing() {
+    if (this.isHeadless) {
+      return;
+    }
+
     const worldRenderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(worldRenderPass);
     
@@ -201,15 +218,12 @@ class RenderServiceClass {
     const toneMappingEffect = new ToneMappingEffect({
       mode: ToneMappingMode.REINHARD2_ADAPTIVE,
       resolution: 256,
-      whitePoint: 16.0,
-      middleGrey: 0.6,
+      whitePoint: 10.0,
+      middleGrey: 1.0,
       minLuminance: 0.01,
       averageLuminance: 0.01,
-      adaptationRate: 0.5
+      adaptationRate: 0.75
     });
-
-    const smaaPass = new EffectPass(this.camera, toneMappingEffect);
-    this.composer.addPass(toneMappingEffect);
 
     const bloomDefaults = {
       luminanceThreshold: 0.0,
@@ -222,6 +236,9 @@ class RenderServiceClass {
     const bloomEffect = new BloomEffect(bloomDefaults);
     const bloomPass = new EffectPass(this.camera, bloomEffect);
     this.composer.addPass(bloomPass);
+
+    const toneMappingPass = new EffectPass(this.camera, toneMappingEffect);
+    this.composer.addPass(toneMappingPass);
 
     this.postProcessingEffects.bloom = {
       effect: BloomEffect,
@@ -267,8 +284,10 @@ class RenderServiceClass {
 
     this.currentView = viewInstance;
 
-    DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
-    DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
+    if (!this.isHeadless) {
+      DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
+      DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
+    }
 
     viewInstance.onCreate();
   }
@@ -280,6 +299,10 @@ class RenderServiceClass {
   }
 
   createSMAATextures() {
+    if (this.isHeadless) {
+      return;
+    }
+
     return new Promise(resolve => {
       const smaaImageLoader = new SMAAImageLoader();
       smaaImageLoader.disableCache = true;
@@ -299,6 +322,10 @@ class RenderServiceClass {
   }
 
   runAnimationLoop() {
+    if (this.isHeadless) {
+      return;
+    }
+
     if (!this.renderer.xr.enabled) {
       this.onAnimationFrame();
     } else {
@@ -335,8 +362,11 @@ class RenderServiceClass {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
 
-    CameraService.onFrame(dt);
-    UiService.onFrame();
+    if (!this.isHeadless) {
+      CameraService.onFrame(dt);
+      UiService.onFrame();
+    }
+
     TimeService.onFrame({ dt, elapsedTime });
   }
 
@@ -411,6 +441,10 @@ class RenderServiceClass {
   }
 
   onResize() {
+    if (this.isHeadless) {
+      return;
+    }
+
     const windowInfo = this.getWindowSize();
 
     if (this.camera) {
@@ -435,6 +469,14 @@ class RenderServiceClass {
   }
 
   getWindowSize() {
+    if (this.isHeadless) {
+      return {
+        width: 0.0,
+        height: 0.0,
+        aspectRatio: 1.0
+      };
+    }
+
     return {
       width: window.innerWidth,
       height: window.innerHeight,

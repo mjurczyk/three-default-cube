@@ -4,8 +4,6 @@ import { RenderService } from './render-service';
 import { ParserService } from './parser-service';
 import { GameInfoService } from './game-info-service';
 import { TimeService } from './time-service';
-import { CameraService } from './camera-service';
-import { MathService } from './math-service';
 import CSM from 'three-csm';
 
 export class SceneServiceClass {
@@ -34,6 +32,10 @@ export class SceneServiceClass {
   }
 
   setBackground(texture, spherical = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const scene = RenderService.getScene();
 
     if (scene.background) {
@@ -91,7 +93,7 @@ export class SceneServiceClass {
     const camera = RenderService.getNativeCamera();
 
     const sunShadowMap = new CSM({
-      maxFar: shadowDrawDistance,
+      maxFar: shadowDrawDistance || GameInfoService.config.system.shadowDrawDistance,
       lightNear: near,
       lightFar: far,
       shadowMapSize: GameInfoService.config.system.shadowsResolution,

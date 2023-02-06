@@ -39,7 +39,7 @@ export class Preloader extends GameObjectClass {
     const camera = RenderService.getNativeCamera();
 
     const background = new Three.Mesh(
-      new Three.PlaneBufferGeometry(1.0, 1.0),
+      new Three.PlaneGeometry(1.0, 1.0),
       new Three.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
@@ -48,7 +48,7 @@ export class Preloader extends GameObjectClass {
     background.name = 'background';
 
     const spinner = new Three.Mesh(
-      new Three.PlaneBufferGeometry(1.0, 1.0),
+      new Three.PlaneGeometry(1.0, 1.0),
       new Three.MeshBasicMaterial({
         map: await AssetsService.getTexture(this.spinnerTexture),
         transparent: true,

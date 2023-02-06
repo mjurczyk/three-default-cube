@@ -3,6 +3,7 @@ import { DQ } from "../utils/constants";
 class GameInfoServiceClass {
   config = {
     system: {},
+    network: {},
     vars: {},
     labels: {},
     textures: {},
@@ -10,7 +11,7 @@ class GameInfoServiceClass {
     audio: {},
     shaders: {},
     fonts: {},
-    animations: {},
+    animations: {}
   };
 
   constructor() {
@@ -75,7 +76,8 @@ class GameInfoServiceClass {
     enabled = DQ.ShadowsAllObjects,
     resolution = 1024,
     radius = 4,
-    type = Three.PCFShadowMap
+    type = Three.PCFShadowMap,
+    drawDistance
   ) {
     return this.addConfig({
       system: {
@@ -83,11 +85,23 @@ class GameInfoServiceClass {
         shadows: enabled,
         shadowsResolution: resolution,
         shadowsRadius: radius,
-        shadowMapType: type
+        shadowMapType: type,
+        shadowDrawDistance: drawDistance
       }
     });
   }
 
+  network(
+    serverAddress
+  ) {
+    return this.addConfig({
+      network: {
+        ...(this.config.network || {}),
+        serverAddress
+      }
+    });
+  }
+  
   initialVars(vars = {}) {
     return this.addConfig({
       vars: {

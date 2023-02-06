@@ -40,7 +40,7 @@ export class ScrollList extends GameObjectClass {
 
     GameObjectClass.prototype.onCreate.call(this);
     this.scrollHitbox = new Three.Mesh(
-      new Three.BoxBufferGeometry(1.0, 1.0, 1.0),
+      new Three.BoxGeometry(1.0, 1.0, 1.0),
       new Three.MeshBasicMaterial({
         color: getRandomColor(),
         opacity: debugScrollVisible ? 0.5 : 1.0,

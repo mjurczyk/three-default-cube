@@ -114,7 +114,11 @@ class ParserServiceClass {
       onCreate(parserPayload);
     }
 
-    RenderService.getRenderer().compile(RenderService.getScene(), RenderService.getNativeCamera());
+    const renderer = RenderService.getRenderer();
+
+    if (renderer) {
+      renderer.compile(RenderService.getScene(), RenderService.getNativeCamera());
+    }
   }
 }
 

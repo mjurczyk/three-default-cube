@@ -8,9 +8,12 @@ import { UtilsService } from './utils-service';
 import { VarService } from './var-service';
 import * as packageInfo from '../../package.json';
 import { PhysicsService } from './physics-service';
+import { NetworkService, NetworkEnums } from './network-service';
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
+const LogsSuccessColor = '#33ff33';
+const LogsErrorColor = '#ff3333';
 
 export const DebugFlags = {
   DEBUG_ENABLE: 'DEBUG_ENABLE',
@@ -24,7 +27,8 @@ export const DebugFlags = {
   DEBUG_STORAGE: 'DEBUG_STORAGE',
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
-  DEBUG_PHYSICS: 'DEBUG_PHYSICS'
+  DEBUG_PHYSICS: 'DEBUG_PHYSICS',
+  DEBUG_NETWORK: 'DEBUG_NETWORK'
 };
 
 class DebugServiceClass {
@@ -64,7 +68,11 @@ class DebugServiceClass {
     }
   }
 
-  showLogs() {
+  init() {
+    if (RenderService.isHeadless || !this.get(DebugFlags.DEBUG_LIVE)) {
+      return;
+    }
+
     const outputElement = document.createElement('div');
     outputElement.style.position = 'absolute';
     outputElement.style.top = '5px';
@@ -204,6 +212,22 @@ class DebugServiceClass {
           { text: packageInfo.dependencies['cannon-es'], color: LogsHighlightColor },
           { text: 'Bodies:' },
           { text: PhysicsService.physicsWorld.bodies.length, color: LogsHighlightColor },
+        ));
+      }
+
+      if (this.get(DebugFlags.DEBUG_NETWORK)) {
+        outputElement.appendChild(this.createLogLine(
+          { text: 'Network Status:' },
+          { text: NetworkService.mode === NetworkEnums.modeSinglePlayer ? NetworkEnums.modeSinglePlayer : NetworkService.status, color: [
+              NetworkService.status === NetworkEnums.statusConnected ? LogsSuccessColor : null,
+              NetworkService.status === NetworkEnums.statusNotConnected ? LogsErrorColor : null,
+              LogsHighlightColor
+            ].filter(Boolean)[0]
+          },
+          { text: 'SyncBodies:' },
+          { text: Object.keys(NetworkService.syncObjects).length, color: LogsHighlightColor },
+          { text: 'Ping:' },
+          { text: NetworkService.ping > 999 ? '999ms' : `${`000${NetworkService.ping}`.substr(-3)}ms`, color: LogsHighlightColor },
         ));
       }
     });

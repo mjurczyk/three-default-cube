@@ -14,6 +14,7 @@ import { convertMaterialType } from '../utils/materials';
 import { GameInfoService } from './game-info-service';
 import { defaultTo } from '../utils/shared';
 import { DQ } from '../utils/constants';
+import { NetworkService } from './network-service';
 
 const loaders = {
   models: {
@@ -34,7 +35,7 @@ class AssetsServiceClass {
 
   getDefaultCube() {
     const cube = new Three.Mesh(
-      new Three.BoxBufferGeometry(1, 1, 1),
+      new Three.BoxGeometry(1, 1, 1),
       new Three.MeshNormalMaterial()
     );
 
@@ -109,6 +110,10 @@ class AssetsServiceClass {
   }
 
   getHDRI(path, encoding = Three.RGBEEncoding) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three.Texture());
+    }
+
     return this.registerAsyncAsset(resolve => {
       loaders.hdri
         .load(path, (texture) => {
@@ -130,6 +135,10 @@ class AssetsServiceClass {
   }
 
   getReflectionsTexture(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three.Texture());
+    }
+
     return this.registerAsyncAsset(resolve => {
       this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
@@ -233,7 +242,9 @@ class AssetsServiceClass {
           target.onAfterRender = function () {};
         };
 
-        renderer.compile(target, camera);
+        if (renderer) {
+          renderer.compile(target, camera);
+        }
 
         target.userData.skinnedAnimations = target.animations;
         delete target.animations;
@@ -454,6 +465,12 @@ class AssetsServiceClass {
       this.markDisposed(object);
 
       this.disposables = this.disposables.filter(match => match !== object);
+    }
+
+    if (object.traverse) {
+      object.traverse(child => {
+        NetworkService.disposeSyncObject(child);
+      });
     }
 
     if (object.parent) {

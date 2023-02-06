@@ -10,6 +10,7 @@ import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { Pathfinding } from 'three-pathfinding';
 import { defaultTo, isDefined } from '../utils/shared';
+import { NetworkService } from './network-service';
 
 class PhysicsServiceClass {
   physicsWorld = null;
@@ -219,6 +220,11 @@ class PhysicsServiceClass {
       AssetsService.registerDisposeCallback(object, () => {
         this.physicsWorld.removeBody(body);
       });
+
+      body.name = object.name;
+      body.gameObject = object.gameObject;
+
+      NetworkService.registerSyncObject(body);
     }
     
     if (physicsShape === 'plane') {

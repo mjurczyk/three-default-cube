@@ -13,6 +13,8 @@ export class AnimationWrapper {
   constructor(target) {
     this.target = target;
 
+    target.animationsRef = this;
+
     this.parseAnimations();
     AssetsService.registerDisposeCallback(this.target, () => this.dispose());
   }
