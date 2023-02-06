@@ -3,6 +3,7 @@ import { AnimationService } from "../services/animation-service";
 import { AssetsService } from "../services/assets-service";
 import { AudioService } from "../services/audio-service";
 import { CameraService } from "../services/camera-service";
+import { InputService } from "../services/input-service";
 import { InteractionsService } from "../services/interactions-service";
 import { MathService } from "../services/math-service";
 import { NetworkService } from "../services/network-service";
@@ -45,6 +46,7 @@ export class ViewClass {
     AssetsService.disposeAll();
     NetworkService.disposeAll();
     SpawnService.disposeAll();
+    InputService.dispoeAll();
 
     MathService.handleLeaks();
     MathService.disposeAll();

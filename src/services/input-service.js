@@ -1,5 +1,6 @@
 class InputServiceClass {
   keys = {};
+  inputListeners = [];
 
   constructor() {
     this.onKeyDown = this.onKeyDown.bind(this);
@@ -18,13 +19,35 @@ class InputServiceClass {
   onKeyDown({ key: pressed }) {
     const id = `${pressed}`.toLowerCase();
 
+    if (this.keys[id] !== true) {
+      this.onChange(id, true);
+    }
+
     this.keys[id] = true;
   }
 
   onKeyUp({ key: released }) {
     const id = `${released}`.toLowerCase();
 
+    if (this.keys[id] !== false) {
+      this.onChange(id, false);
+    }
+
     this.keys[id] = false;
+  }
+
+  onChange(key, status) {
+    this.inputListeners.forEach(listener => {
+      listener({ key, status });
+    });
+  }
+
+  registerListener(listener) {
+    this.inputListeners.push(listener);
+  }
+
+  disposeAll() {
+    this.inputListeners = [];
   }
 
   dispose() {
@@ -32,6 +55,7 @@ class InputServiceClass {
     window.removeEventListener('keyup', this.onKeyUp);
 
     this.keys = {};
+    this.inputListeners = [];
   }
 }
 

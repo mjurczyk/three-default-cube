@@ -7,7 +7,7 @@ class SpawnServiceClass {
     this.spawnableGameObjects[type] = spawnFunction;
   }
 
-  createSpawnableGameObject(type) {
+  createSpawnableGameObject(type, payload) {
     const spawnFunction = this.spawnableGameObjects[type];
 
     if (!spawnFunction) {
@@ -15,7 +15,7 @@ class SpawnServiceClass {
       return;
     }
 
-    const object = spawnFunction();
+    const object = spawnFunction(payload);
     object.gameObject = type;
 
     AssetsService.registerDisposable(object);

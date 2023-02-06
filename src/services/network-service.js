@@ -21,6 +21,8 @@ export const NetworkServerSideInstanceUserAgent = 'dqServerInstanceUserAgent';
 class NetworkServiceClass {
   mode = NetworkEnums.modeClient;
   client = null;
+  game = null;
+  clientId = null;
   isMultiplayer = false;
   status = NetworkEnums.statusSingleplayer;
   syncObjects = {};
@@ -49,6 +51,8 @@ class NetworkServiceClass {
 
   handleGameConnection(game) {
     this.status = NetworkEnums.statusConnected;
+    this.clientId = game.sessionId;
+    this.game = game;
 
     game.onMessage('ping', (timestamp) => {
       this.ping = ~~(timestamp - this.lastTimestamp);
@@ -61,7 +65,6 @@ class NetworkServiceClass {
 
       const localPosition = MathService.getVec3();
       const localQuaternion = MathService.getQuaternion();
-
       state.syncObjects.forEach((syncObject, key) => {
         const {
           gameObject,
@@ -72,6 +75,7 @@ class NetworkServiceClass {
           quaternionY,
           quaternionZ,
           quaternionW,
+          userData,
         } = syncObject;
 
         if (!gameObject && !this.syncObjects[key]) {
@@ -79,7 +83,7 @@ class NetworkServiceClass {
         }
 
         if (!this.syncObjects[key]) {
-          const object = SpawnService.createSpawnableGameObject(gameObject);
+          const object = SpawnService.createSpawnableGameObject(gameObject, userData ? (JSON.parse(userData) || {}) : {});
           const scene = RenderService.getScene();
 
           console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', { key, gameObject, createdObject: object });
@@ -93,20 +97,31 @@ class NetworkServiceClass {
           }
         }
 
+        let target;
+
+        // NOTE Physical objects are controlled by their cannon bodies - sync cannon when possible
+        if (this.syncObjects[key].userData && this.syncObjects[key].userData.cannonRef) {
+          target = this.syncObjects[key].userData.cannonRef;
+        } else {
+          target = this.syncObjects[key];
+        }
+
         serverPosition.set(positionX, positionY, positionZ);
         serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
 
-        const { x: px, y: py, z: pz } = this.syncObjects[key].position;
+        const { x: px, y: py, z: pz } = target.position;
         localPosition.set(px, py, pz);
 
-        const { x: qx, y: qy, z: qz, w: qw } = this.syncObjects[key].quaternion;
+        const { x: qx, y: qy, z: qz, w: qw } = target.quaternion;
         localQuaternion.set(qx, qy, qz, qw);
 
         localPosition.lerp(serverPosition, 0.5);
         localQuaternion.slerp(serverQuaternion, 0.5);
 
-        this.syncObjects[key].position.set(localPosition.x, localPosition.y, localPosition.z);
-        this.syncObjects[key].quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+        target.position.set(localPosition.x, localPosition.y, localPosition.z);
+        target.quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+
+        target.userData = userData ? (JSON.parse(userData) || {}) : {};
       });
 
       MathService.releaseVec3(serverPosition);
@@ -126,6 +141,14 @@ class NetworkServiceClass {
       this.status = NetworkEnums.statusNotConnected;
       this.ping = Infinity;
     });
+  }
+
+  send(action, payload) {
+    if (!this.game) {
+      return;
+    }
+
+    this.game.send(action, payload);
   }
 
   connectAsServer() {
@@ -165,7 +188,15 @@ class NetworkServiceClass {
     this.networkActionsListeners[action].push(listener);
   }
 
-  syncPropNames = ['position', 'quaternion', 'gameObject'];
+  registerClientHandler(listener) {
+    if (!this.isMultiplayer || this.mode === NetworkEnums.modeServer) {
+      return;
+    }
+
+    listener();
+  }
+
+  syncPropNames = ['position', 'quaternion', 'gameObject', 'userData'];
 
   registerSyncObject(target) {
     if (!target.name) {

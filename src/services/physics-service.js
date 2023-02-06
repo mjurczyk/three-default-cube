@@ -224,6 +224,10 @@ class PhysicsServiceClass {
       body.name = object.name;
       body.gameObject = object.gameObject;
 
+      if (!body.userData) {
+        body.userData = {};
+      }
+
       NetworkService.registerSyncObject(body);
     }
     

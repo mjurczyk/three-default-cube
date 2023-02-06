@@ -629,7 +629,11 @@ class SpawnServiceClass {
   registerSpawnableGameObject(type, spawnFunction) {
     this.spawnableGameObjects[type] = spawnFunction;
   }
-  createSpawnableGameObject(type) {
+  createSpawnableGameObject(type, payload) {
+    console.info('create', {
+      type,
+      payload
+    });
     const spawnFunction = this.spawnableGameObjects[type];
     if (!spawnFunction) {
       console.info('SpawnService', 'createSpawnableGameObject', 'spawn function for object type does not exist', {
@@ -637,7 +641,7 @@ class SpawnServiceClass {
       });
       return;
     }
-    const object = spawnFunction();
+    const object = spawnFunction(payload);
     object.gameObject = type;
     AssetsService.registerDisposable(object);
     return object;
@@ -662,13 +666,15 @@ class NetworkServiceClass {
   constructor() {
     _defineProperty(this, "mode", NetworkEnums.modeClient);
     _defineProperty(this, "client", null);
+    _defineProperty(this, "game", null);
+    _defineProperty(this, "clientId", null);
     _defineProperty(this, "isMultiplayer", false);
     _defineProperty(this, "status", NetworkEnums.statusSingleplayer);
     _defineProperty(this, "syncObjects", {});
     _defineProperty(this, "ping", Infinity);
     _defineProperty(this, "lastTimestamp", performance.now());
     _defineProperty(this, "networkActionsListeners", {});
-    _defineProperty(this, "syncPropNames", ['position', 'quaternion', 'gameObject']);
+    _defineProperty(this, "syncPropNames", ['position', 'quaternion', 'gameObject', 'userData']);
   }
   connectAsClient() {
     const client = new Colyseus.Client(GameInfoService.config.network.serverAddress);
@@ -685,6 +691,8 @@ class NetworkServiceClass {
   }
   handleGameConnection(game) {
     this.status = NetworkEnums.statusConnected;
+    this.clientId = game.sessionId;
+    this.game = game;
     game.onMessage('ping', timestamp => {
       this.ping = ~~(timestamp - this.lastTimestamp);
       this.lastTimestamp = timestamp;
@@ -703,13 +711,14 @@ class NetworkServiceClass {
           quaternionX,
           quaternionY,
           quaternionZ,
-          quaternionW
+          quaternionW,
+          userData
         } = syncObject;
         if (!gameObject && !this.syncObjects[key]) {
           return;
         }
         if (!this.syncObjects[key]) {
-          const object = SpawnService.createSpawnableGameObject(gameObject);
+          const object = SpawnService.createSpawnableGameObject(gameObject, userData ? JSON.parse(userData) || {} : {});
           const scene = RenderService.getScene();
           console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', {
             key,
@@ -723,25 +732,34 @@ class NetworkServiceClass {
             return;
           }
         }
+        let target;
+
+        // NOTE Physical objects are controlled by their cannon bodies - sync cannon when possible
+        if (this.syncObjects[key].userData && this.syncObjects[key].userData.cannonRef) {
+          target = this.syncObjects[key].userData.cannonRef;
+        } else {
+          target = this.syncObjects[key];
+        }
         serverPosition.set(positionX, positionY, positionZ);
         serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
         const {
           x: px,
           y: py,
           z: pz
-        } = this.syncObjects[key].position;
+        } = target.position;
         localPosition.set(px, py, pz);
         const {
           x: qx,
           y: qy,
           z: qz,
           w: qw
-        } = this.syncObjects[key].quaternion;
+        } = target.quaternion;
         localQuaternion.set(qx, qy, qz, qw);
         localPosition.lerp(serverPosition, 0.5);
         localQuaternion.slerp(serverQuaternion, 0.5);
-        this.syncObjects[key].position.set(localPosition.x, localPosition.y, localPosition.z);
-        this.syncObjects[key].quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+        target.position.set(localPosition.x, localPosition.y, localPosition.z);
+        target.quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+        target.userData = userData ? JSON.parse(userData) || {} : {};
       });
       MathService.releaseVec3(serverPosition);
       MathService.releaseQuaternion(serverQuaternion);
@@ -760,6 +778,12 @@ class NetworkServiceClass {
       this.status = NetworkEnums.statusNotConnected;
       this.ping = Infinity;
     });
+  }
+  send(action, payload) {
+    if (!this.game) {
+      return;
+    }
+    this.game.send(action, payload);
   }
   connectAsServer() {
     this.mode = NetworkEnums.modeServer;
@@ -791,6 +815,12 @@ class NetworkServiceClass {
       this.networkActionsListeners[action] = [];
     }
     this.networkActionsListeners[action].push(listener);
+  }
+  registerClientHandler(listener) {
+    if (!this.isMultiplayer || this.mode === NetworkEnums.modeServer) {
+      return;
+    }
+    listener();
   }
   registerSyncObject(target) {
     if (!target.name) {
@@ -990,6 +1020,9 @@ class PhysicsServiceClass {
       });
       body.name = object.name;
       body.gameObject = object.gameObject;
+      if (!body.userData) {
+        body.userData = {};
+      }
       NetworkService.registerSyncObject(body);
     }
     if (physicsShape === 'plane') {
@@ -2496,6 +2529,7 @@ const InteractionsService = new InteractionsServiceClass();
 class InputServiceClass {
   constructor() {
     _defineProperty(this, "keys", {});
+    _defineProperty(this, "inputListeners", []);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
   }
@@ -2510,18 +2544,39 @@ class InputServiceClass {
     key: pressed
   }) {
     const id = `${pressed}`.toLowerCase();
+    if (this.keys[id] !== true) {
+      this.onChange(id, true);
+    }
     this.keys[id] = true;
   }
   onKeyUp({
     key: released
   }) {
     const id = `${released}`.toLowerCase();
+    if (this.keys[id] !== false) {
+      this.onChange(id, false);
+    }
     this.keys[id] = false;
+  }
+  onChange(key, status) {
+    this.inputListeners.forEach(listener => {
+      listener({
+        key,
+        status
+      });
+    });
+  }
+  registerListener(listener) {
+    this.inputListeners.push(listener);
+  }
+  disposeAll() {
+    this.inputListeners = [];
   }
   dispose() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     this.keys = {};
+    this.inputListeners = [];
   }
 }
 const InputService = new InputServiceClass();
@@ -5291,6 +5346,7 @@ class ViewClass {
     AssetsService.disposeAll();
     NetworkService.disposeAll();
     SpawnService.disposeAll();
+    InputService.dispoeAll();
     MathService.handleLeaks();
     MathService.disposeAll();
   }
