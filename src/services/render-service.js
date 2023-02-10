@@ -13,7 +13,7 @@ import { DebugFlags, DebugService } from './debug-service';
 import { AudioService } from './audio-service';
 import { ParticleService } from './particle-service';
 import { GameInfoService } from './game-info-service';
-import { NetworkServerSideInstanceUserAgent } from './network-service';
+import { NetworkServerSideInstanceUserAgent, NetworkService } from './network-service';
 
 class RenderServiceClass {
   isHeadless = navigator.userAgent === NetworkServerSideInstanceUserAgent;
@@ -359,12 +359,12 @@ class RenderServiceClass {
       const logicSteps = Math.min(this.logicMaxSteps, Math.floor(dt / this.logicFixedStep));
       const physicsSteps = Math.min(this.physicsMaxSteps, Math.floor(dt / this.logicFixedStep));
 
-      for (let i = 0; i < logicSteps; i++) {
-        this.onLogicFrame();
-      }
-
       for (let i = 0; i < physicsSteps; i++) {
         this.onPhysicsFrame();
+      }
+
+      for (let i = 0; i < logicSteps; i++) {
+        this.onLogicFrame();
       }
     }
   }
@@ -379,6 +379,7 @@ class RenderServiceClass {
     }
 
     TimeService.onFrame({ dt, elapsedTime });
+    NetworkService.onFrame();
   }
 
   onPhysicsFrame() {

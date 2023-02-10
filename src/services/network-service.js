@@ -32,6 +32,7 @@ class NetworkServiceClass {
   status = NetworkEnums.statusSingleplayer;
   syncObjects = {};
   previousSyncObjects = {};
+  state = {};
   lastSyncState = {};
 
   ping = Infinity;
@@ -46,8 +47,8 @@ class NetworkServiceClass {
     this.status = NetworkEnums.statusConnecting;
     this.isMultiplayer = true;
 
-    PhysicsService.physicsSmoothing = 0.25;
-    this.snapshotSmoothing = 0.75;
+    PhysicsService.physicsSmoothing = 0.33;
+    this.snapshotSmoothing = 0.33;
 
     client.joinOrCreate('dqGame')
       .then(this.handleGameConnection.bind(this))
@@ -72,7 +73,7 @@ class NetworkServiceClass {
     });
 
     game.onStateChange(state => {
-      this.onFrame(state);
+      this.state = state;
     });
 
     game.onError(() => {
@@ -88,7 +89,9 @@ class NetworkServiceClass {
     });
   }
 
-  onFrame(state) {
+  onFrame() {
+    const state = this.state;
+
     const serverPosition = MathService.getVec3();
     const serverQuaternion = MathService.getQuaternion();
 
@@ -212,6 +215,7 @@ class NetworkServiceClass {
     this.isMultiplayer = true;
 
     RenderService.physicsMaxSteps = 1;
+    RenderService.logicMaxSteps = 1;
     PhysicsService.physicsSmoothing = 1.0;
     this.snapshotSmoothing = 1.0;
 

@@ -556,7 +556,7 @@ class VarServiceClass {
 }
 const VarService = new VarServiceClass();
 
-var version = "0.3.0";
+var version = "0.3.1";
 var dependencies = {
 	"@babel/core": "7.14.6",
 	"@babel/plugin-proposal-class-properties": "7.14.5",
@@ -670,6 +670,7 @@ class NetworkServiceClass {
     _defineProperty(this, "status", NetworkEnums.statusSingleplayer);
     _defineProperty(this, "syncObjects", {});
     _defineProperty(this, "previousSyncObjects", {});
+    _defineProperty(this, "state", {});
     _defineProperty(this, "lastSyncState", {});
     _defineProperty(this, "ping", Infinity);
     _defineProperty(this, "lastTimestamp", performance.now());
@@ -681,8 +682,8 @@ class NetworkServiceClass {
     const client = new Colyseus.Client(GameInfoService.config.network.serverAddress);
     this.status = NetworkEnums.statusConnecting;
     this.isMultiplayer = true;
-    PhysicsService.physicsSmoothing = 0.25;
-    this.snapshotSmoothing = 0.75;
+    PhysicsService.physicsSmoothing = 0.33;
+    this.snapshotSmoothing = 0.33;
     client.joinOrCreate('dqGame').then(this.handleGameConnection.bind(this)).catch(error => {
       console.warn('NetworkServiceClass', 'connect', {
         error
@@ -701,7 +702,7 @@ class NetworkServiceClass {
       this.lastTimestamp = timestamp;
     });
     game.onStateChange(state => {
-      this.onFrame(state);
+      this.state = state;
     });
     game.onError(() => {
       console.warn('NetworkServiceClass', 'handleGameConnection', {
@@ -716,7 +717,8 @@ class NetworkServiceClass {
       this.ping = Infinity;
     });
   }
-  onFrame(state) {
+  onFrame() {
+    const state = this.state;
     const serverPosition = MathService.getVec3();
     const serverQuaternion = MathService.getQuaternion();
     const localPosition = MathService.getVec3();
@@ -825,6 +827,7 @@ class NetworkServiceClass {
     this.ping = 0;
     this.isMultiplayer = true;
     RenderService.physicsMaxSteps = 1;
+    RenderService.logicMaxSteps = 1;
     PhysicsService.physicsSmoothing = 1.0;
     this.snapshotSmoothing = 1.0;
     TimeService.registerPersistentFrameListener(() => {
@@ -3359,11 +3362,11 @@ class RenderServiceClass {
       this.lastFrameTimestamp = now;
       const logicSteps = Math.min(this.logicMaxSteps, Math.floor(dt / this.logicFixedStep));
       const physicsSteps = Math.min(this.physicsMaxSteps, Math.floor(dt / this.logicFixedStep));
-      for (let i = 0; i < logicSteps; i++) {
-        this.onLogicFrame();
-      }
       for (let i = 0; i < physicsSteps; i++) {
         this.onPhysicsFrame();
+      }
+      for (let i = 0; i < logicSteps; i++) {
+        this.onLogicFrame();
       }
     }
   }
@@ -3378,6 +3381,7 @@ class RenderServiceClass {
       dt,
       elapsedTime
     });
+    NetworkService.onFrame();
   }
   onPhysicsFrame() {
     const dt = this.physicsClock.getDelta();
