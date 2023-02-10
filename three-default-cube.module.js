@@ -254,12 +254,13 @@ class GameInfoServiceClass {
       }
     });
   }
-  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, radius = 4, type = Three.PCFShadowMap, drawDistance) {
+  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, sunShadowResolution = 2048, radius = 4, type = Three.PCFShadowMap, drawDistance) {
     return this.addConfig({
       system: {
         ...(this.config.system || {}),
         shadows: enabled,
         shadowsResolution: resolution,
+        shadowsSunShadowResolution: sunShadowResolution,
         shadowsRadius: radius,
         shadowMapType: type,
         shadowDrawDistance: drawDistance
@@ -570,7 +571,7 @@ var dependencies = {
 	postprocessing: "6.29.2",
 	rollup: "2.79.1",
 	three: "0.148.0",
-	"three-csm": "3.1.1",
+	"three-csm": "3.2.0",
 	"three-pathfinding": "1.1.0",
 	"troika-three-text": "0.47.1",
 	"colyseus.js": "0.14.13"
@@ -630,10 +631,6 @@ class SpawnServiceClass {
     this.spawnableGameObjects[type] = spawnFunction;
   }
   createSpawnableGameObject(type, payload) {
-    console.info('create', {
-      type,
-      payload
-    });
     const spawnFunction = this.spawnableGameObjects[type];
     if (!spawnFunction) {
       console.info('SpawnService', 'createSpawnableGameObject', 'spawn function for object type does not exist', {
@@ -664,6 +661,7 @@ const NetworkEnums = {
 const NetworkServerSideInstanceUserAgent = 'dqServerInstanceUserAgent';
 class NetworkServiceClass {
   constructor() {
+    _defineProperty(this, "snapshotSmoothing", 0.75);
     _defineProperty(this, "mode", NetworkEnums.modeClient);
     _defineProperty(this, "client", null);
     _defineProperty(this, "game", null);
@@ -671,15 +669,20 @@ class NetworkServiceClass {
     _defineProperty(this, "isMultiplayer", false);
     _defineProperty(this, "status", NetworkEnums.statusSingleplayer);
     _defineProperty(this, "syncObjects", {});
+    _defineProperty(this, "previousSyncObjects", {});
+    _defineProperty(this, "lastSyncState", {});
     _defineProperty(this, "ping", Infinity);
     _defineProperty(this, "lastTimestamp", performance.now());
     _defineProperty(this, "networkActionsListeners", {});
     _defineProperty(this, "syncPropNames", ['position', 'quaternion', 'gameObject', 'userData']);
   }
   connectAsClient() {
+    console.info('NetworkServiceClass', 'connectAsClient');
     const client = new Colyseus.Client(GameInfoService.config.network.serverAddress);
     this.status = NetworkEnums.statusConnecting;
     this.isMultiplayer = true;
+    PhysicsService.physicsSmoothing = 0.25;
+    this.snapshotSmoothing = 0.75;
     client.joinOrCreate('dqGame').then(this.handleGameConnection.bind(this)).catch(error => {
       console.warn('NetworkServiceClass', 'connect', {
         error
@@ -698,73 +701,7 @@ class NetworkServiceClass {
       this.lastTimestamp = timestamp;
     });
     game.onStateChange(state => {
-      const serverPosition = MathService.getVec3();
-      const serverQuaternion = MathService.getQuaternion();
-      const localPosition = MathService.getVec3();
-      const localQuaternion = MathService.getQuaternion();
-      state.syncObjects.forEach((syncObject, key) => {
-        const {
-          gameObject,
-          positionX,
-          positionY,
-          positionZ,
-          quaternionX,
-          quaternionY,
-          quaternionZ,
-          quaternionW,
-          userData
-        } = syncObject;
-        if (!gameObject && !this.syncObjects[key]) {
-          return;
-        }
-        if (!this.syncObjects[key]) {
-          const object = SpawnService.createSpawnableGameObject(gameObject, userData ? JSON.parse(userData) || {} : {});
-          const scene = RenderService.getScene();
-          console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', {
-            key,
-            gameObject,
-            createdObject: object
-          });
-          if (object) {
-            this.syncObjects[key] = object;
-            scene.add(object);
-          } else {
-            return;
-          }
-        }
-        let target;
-
-        // NOTE Physical objects are controlled by their cannon bodies - sync cannon when possible
-        if (this.syncObjects[key].userData && this.syncObjects[key].userData.cannonRef) {
-          target = this.syncObjects[key].userData.cannonRef;
-        } else {
-          target = this.syncObjects[key];
-        }
-        serverPosition.set(positionX, positionY, positionZ);
-        serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
-        const {
-          x: px,
-          y: py,
-          z: pz
-        } = target.position;
-        localPosition.set(px, py, pz);
-        const {
-          x: qx,
-          y: qy,
-          z: qz,
-          w: qw
-        } = target.quaternion;
-        localQuaternion.set(qx, qy, qz, qw);
-        localPosition.lerp(serverPosition, 0.5);
-        localQuaternion.slerp(serverQuaternion, 0.5);
-        target.position.set(localPosition.x, localPosition.y, localPosition.z);
-        target.quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
-        target.userData = userData ? JSON.parse(userData) || {} : {};
-      });
-      MathService.releaseVec3(serverPosition);
-      MathService.releaseQuaternion(serverQuaternion);
-      MathService.releaseVec3(localPosition);
-      MathService.releaseQuaternion(localQuaternion);
+      this.onFrame(state);
     });
     game.onError(() => {
       console.warn('NetworkServiceClass', 'handleGameConnection', {
@@ -779,6 +716,102 @@ class NetworkServiceClass {
       this.ping = Infinity;
     });
   }
+  onFrame(state) {
+    const serverPosition = MathService.getVec3();
+    const serverQuaternion = MathService.getQuaternion();
+    const localPosition = MathService.getVec3();
+    const localQuaternion = MathService.getQuaternion();
+    (state.syncObjects || []).forEach((syncObject, key) => {
+      const {
+        gameObject,
+        positionX,
+        positionY,
+        positionZ,
+        quaternionX,
+        quaternionY,
+        quaternionZ,
+        quaternionW,
+        userData
+      } = syncObject;
+      if (!gameObject && !this.syncObjects[key]) {
+        return;
+      }
+      if (!this.syncObjects[key]) {
+        const object = SpawnService.createSpawnableGameObject(gameObject, userData ? JSON.parse(userData) || {} : {});
+        const scene = RenderService.getScene();
+        console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', {
+          key,
+          gameObject,
+          createdObject: object
+        });
+        if (object) {
+          this.syncObjects[key] = object;
+          scene.add(object);
+        } else {
+          return;
+        }
+      }
+      let target;
+
+      // NOTE Physical objects are controlled by their cannon bodies - sync cannon when possible
+      //      Reset body properties when syncing with server
+      if (this.syncObjects[key].userData && this.syncObjects[key].userData.cannonRef) {
+        target = this.syncObjects[key].userData.cannonRef;
+      } else {
+        target = this.syncObjects[key];
+      }
+      serverPosition.set(positionX, positionY, positionZ);
+      serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
+      const {
+        x: px,
+        y: py,
+        z: pz
+      } = target.position;
+      localPosition.set(px, py, pz);
+      const {
+        x: qx,
+        y: qy,
+        z: qz,
+        w: qw
+      } = target.quaternion;
+      localQuaternion.set(qx, qy, qz, qw);
+      localPosition.lerp(serverPosition, this.snapshotSmoothing);
+      localQuaternion.slerp(serverQuaternion, this.snapshotSmoothing);
+      target.position.set(localPosition.x, localPosition.y, localPosition.z);
+      target.quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+      if (target instanceof Cannon$1.Body) {
+        target.velocity.set(0.0, 0.0, 0.0);
+        target.angularVelocity.set(0.0, 0.0, 0.0);
+        target.torque.set(0.0, 0.0, 0.0);
+        target.force.set(0.0, 0.0, 0.0);
+        target.previousPosition.copy(target.position);
+        target.interpolatedPosition.copy(target.position);
+        target.initPosition.copy(target.position);
+        target.previousQuaternion.copy(target.quaternion);
+        target.interpolatedQuaternion.copy(target.quaternion);
+        target.initQuaternion.copy(target.quaternion);
+        target.inertia.set(0.0, 0.0, 0.0);
+        target.invInertia.set(0.0, 0.0, 0.0);
+        target.invMassSolve = 0.0;
+        target.invInertiaSolve.set(0.0, 0.0, 0.0);
+        target.linearFactor.set(1.0, 1.0, 1.0);
+        target.angularFactor.set(1.0, 1.0, 1.0);
+      }
+      target.userData = userData ? JSON.parse(userData) || {} : {};
+      delete this.previousSyncObjects[key];
+    });
+    Object.entries(this.previousSyncObjects).forEach(([key, target]) => {
+      AssetsService.disposeAsset(target);
+      delete this.previousSyncObjects[key];
+    });
+    (state.syncObjects || []).forEach((_, key) => {
+      this.previousSyncObjects[key] = this.syncObjects[key];
+    });
+    MathService.releaseVec3(serverPosition);
+    MathService.releaseQuaternion(serverQuaternion);
+    MathService.releaseVec3(localPosition);
+    MathService.releaseQuaternion(localQuaternion);
+  }
   send(action, payload) {
     if (!this.game) {
       return;
@@ -786,10 +819,14 @@ class NetworkServiceClass {
     this.game.send(action, payload);
   }
   connectAsServer() {
+    console.info('NetworkServiceClass', 'connectAsServer');
     this.mode = NetworkEnums.modeServer;
     this.status = NetworkEnums.statusServing;
     this.ping = 0;
-    this.isMultiplayer = !!GameInfoService.config.network.serverAddress;
+    this.isMultiplayer = true;
+    RenderService.physicsMaxSteps = 1;
+    PhysicsService.physicsSmoothing = 1.0;
+    this.snapshotSmoothing = 1.0;
     TimeService.registerPersistentFrameListener(() => {
       if (typeof window.dqSendToServer === 'undefined') {
         return;
@@ -856,6 +893,7 @@ const NetworkService = new NetworkServiceClass();
 
 class PhysicsServiceClass {
   constructor() {
+    _defineProperty(this, "physicsSmoothing", 0.75);
     _defineProperty(this, "physicsWorld", null);
     _defineProperty(this, "physicsLoop", null);
     _defineProperty(this, "physicsStaticBodies", null);
@@ -872,24 +910,27 @@ class PhysicsServiceClass {
         gravity: new Cannon$1.Vec3(0.0, -9.86, 0.0)
       });
       this.physicsWorld = physicsWorld;
-      this.physicsLoop = TimeService.registerFrameListener(({
-        dt
-      }) => {
-        this.physicsWorld.bodies.forEach(body => {
-          const {
-            targetRef
-          } = body;
-          if (body.mass === 0.0 || body.type === Cannon$1.Body.STATIC) {
-            body.allowSleep = true;
-            return;
-          }
-          targetRef.position.lerp(body.position, 0.75);
-          targetRef.quaternion.copy(body.quaternion);
-        });
-        if (this.physicsWorld && dt !== 0) {
-          this.physicsWorld.fixedStep();
-        }
-      });
+    }
+  }
+  onFrame({
+    dt
+  }) {
+    if (!this.physicsWorld) {
+      return;
+    }
+    this.physicsWorld.bodies.forEach(body => {
+      const {
+        targetRef
+      } = body;
+      if (body.mass === 0.0 || body.type === Cannon$1.Body.STATIC) {
+        body.allowSleep = true;
+        return;
+      }
+      targetRef.position.lerp(body.position, this.physicsSmoothing);
+      targetRef.quaternion.copy(body.quaternion);
+    });
+    if (dt !== 0) {
+      this.physicsWorld.fixedStep();
     }
   }
   registerBody(object, physicsConfig) {
@@ -1217,6 +1258,9 @@ class DebugServiceClass {
     return this.flags['DEBUG_ENABLE'] && this.flags[debugFlag] || false;
   }
   showStats() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const stats = new Stats();
     stats.showPanel(0);
     document.body.appendChild(stats.dom);
@@ -1462,6 +1506,11 @@ class DebugServiceClass {
         }, {
           text: NetworkService.mode === NetworkEnums.modeSinglePlayer ? NetworkEnums.modeSinglePlayer : NetworkService.status,
           color: [NetworkService.status === NetworkEnums.statusConnected ? LogsSuccessColor : null, NetworkService.status === NetworkEnums.statusNotConnected ? LogsErrorColor : null, LogsHighlightColor].filter(Boolean)[0]
+        }, {
+          text: 'Mode:'
+        }, {
+          text: NetworkService.mode,
+          color: LogsHighlightColor
         }, {
           text: 'SyncBodies:'
         }, {
@@ -1931,6 +1980,9 @@ class CameraServiceClass {
     camera,
     renderer
   } = {}) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.camera = camera;
     this.camera.position.copy(this.cameraPosition);
     this.camera.quaternion.copy(this.cameraQuaternion);
@@ -1950,6 +2002,9 @@ class CameraServiceClass {
     }
   }
   resetCamera() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.camera.position.set(0.0, 0.0, 0.0);
     this.camera.rotation.set(0.0, 0.0, 0.0);
     this.camera.quaternion.identity();
@@ -1959,6 +2014,9 @@ class CameraServiceClass {
     this.pointerLockControls.unlock();
   }
   updateCamera(dt = 0.0) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     if (this.pointerLockControls.isLocked) {
       if (this.followedObject) {
         this.followedObject.getWorldPosition(this.cameraPosition);
@@ -1967,15 +2025,21 @@ class CameraServiceClass {
       return;
     }
     if (this.followedObject) {
-      this.followedObject.getWorldPosition(this.cameraPosition);
-      this.followedObject.getWorldQuaternion(this.cameraQuaternion);
+      const targetPosition = MathService.getVec3();
+      const targetQuaternion = MathService.getQuaternion();
+      this.followedObject.getWorldPosition(targetPosition);
+      this.followedObject.getWorldQuaternion(targetQuaternion);
+      this.cameraPosition.lerp(targetPosition, this.tween);
+      this.cameraQuaternion.slerp(targetQuaternion, this.tween);
+      MathService.releaseVec3(targetPosition);
+      MathService.releaseQuaternion(targetQuaternion);
       const worldAlignedOffset = MathService.getVec3();
       worldAlignedOffset.copy(this.followOffset);
       worldAlignedOffset.applyQuaternion(this.cameraQuaternion);
       if (this.rotationLocked) {
         this.cameraControls.setLookAt(this.cameraPosition.x + worldAlignedOffset.x, this.cameraPosition.y + worldAlignedOffset.y, this.cameraPosition.z + worldAlignedOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
       } else {
-        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z);
+        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
       }
       MathService.releaseVec3(worldAlignedOffset);
       if (this.followListener) {
@@ -1997,6 +2061,9 @@ class CameraServiceClass {
     }
   }
   addCamera(id, camera) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.cameras[id] = camera;
   }
   getCamera(id) {
@@ -2006,6 +2073,9 @@ class CameraServiceClass {
     this.tween = tween;
   }
   useGameObjectCamera(gameObjectOrId) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     let camera;
     if (typeof gameObjectOrId === 'string') {
       camera = this.getCamera(gameObjectOrId);
@@ -2029,6 +2099,9 @@ class CameraServiceClass {
     }
   }
   useStaticCamera(position, target, allowOrbit = false) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
     this.followedObject = null;
     this.followOffset.set(0.1, 0.1, 0.1);
@@ -2048,6 +2121,9 @@ class CameraServiceClass {
     }
   }
   useFirstPersonCamera(object) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnPointerMove);
     this.followedObject = object;
     this.followOffset.set(0.0, 0.0, 0.0);
@@ -2056,6 +2132,9 @@ class CameraServiceClass {
     this.cameraControls.enabled = false;
   }
   useThirdPersonCamera(object, offset, preventOcclusion = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
     this.followedObject = object;
     this.followedObject.getWorldPosition(this.cameraPosition);
@@ -2075,6 +2154,9 @@ class CameraServiceClass {
     });
   }
   registerCameraColliders(preventOcclusion) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     if (preventOcclusion) {
       const scene = RenderService.getScene();
       if (scene) {
@@ -2118,6 +2200,9 @@ class CameraServiceClass {
     minFilter,
     magFilter
   } = {}) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const camera = this.cameras[id];
     if (!camera) {
       console.warn('CameraService', 'getCameraAsTexture', `camera ${id} does not exist`);
@@ -2192,10 +2277,14 @@ class CameraServiceClass {
     this.followedObject = null;
     this.followListener = null;
     this.followListenerThreshold = 0.001;
-    this.cameraControls.enabled = false;
-    this.cameraControls.dampingFactor = 0.05;
-    this.cameraControls.colliderMeshes = [];
-    this.pointerLockControls.unlock();
+    if (this.cameraControls) {
+      this.cameraControls.enabled = false;
+      this.cameraControls.dampingFactor = 0.05;
+      this.cameraControls.colliderMeshes = [];
+    }
+    if (this.pointerLockControls) {
+      this.pointerLockControls.unlock();
+    }
     this.resetCamera();
     this.tween = 0.2;
   }
@@ -3003,6 +3092,7 @@ class RenderServiceClass {
     _defineProperty(this, "isHeadless", navigator.userAgent === NetworkServerSideInstanceUserAgent);
     _defineProperty(this, "systemClock", new Three$2.Clock());
     _defineProperty(this, "animationClock", new Three$2.Clock());
+    _defineProperty(this, "physicsClock", new Three$2.Clock());
     _defineProperty(this, "animationDelta", 0.0);
     _defineProperty(this, "camera", null);
     _defineProperty(this, "renderer", null);
@@ -3025,6 +3115,8 @@ class RenderServiceClass {
     _defineProperty(this, "logicLoop", null);
     _defineProperty(this, "lastFrameTimestamp", 0);
     _defineProperty(this, "logicFixedStep", 1000.0 / 60.0);
+    _defineProperty(this, "logicMaxSteps", Infinity);
+    _defineProperty(this, "physicsMaxSteps", Infinity);
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', () => this.onResize());
     }
@@ -3115,23 +3207,25 @@ class RenderServiceClass {
     }
   }
   initEssentialServices() {
-    DebugService.init();
     VarService.init({
       language: 'en'
     });
-    InteractionsService.init({
-      camera: this.camera
-    });
     PhysicsService.init();
-    CameraService.init({
-      camera: this.camera,
-      renderer: this.renderer
-    });
-    InputService.init();
     ParticleService.init();
-    AudioService.init({
-      root: this.camera
-    });
+    if (!this.isHeadless) {
+      DebugService.init();
+      InteractionsService.init({
+        camera: this.camera
+      });
+      CameraService.init({
+        camera: this.camera,
+        renderer: this.renderer
+      });
+      InputService.init();
+      AudioService.init({
+        root: this.camera
+      });
+    }
   }
   initPostProcessing() {
     if (this.isHeadless) {
@@ -3263,9 +3357,13 @@ class RenderServiceClass {
     const dt = now - this.lastFrameTimestamp;
     if (dt >= this.logicFixedStep) {
       this.lastFrameTimestamp = now;
-      const steps = Math.floor(dt / this.logicFixedStep);
-      for (let i = 0; i < steps; i++) {
+      const logicSteps = Math.min(this.logicMaxSteps, Math.floor(dt / this.logicFixedStep));
+      const physicsSteps = Math.min(this.physicsMaxSteps, Math.floor(dt / this.logicFixedStep));
+      for (let i = 0; i < logicSteps; i++) {
         this.onLogicFrame();
+      }
+      for (let i = 0; i < physicsSteps; i++) {
+        this.onPhysicsFrame();
       }
     }
   }
@@ -3279,6 +3377,12 @@ class RenderServiceClass {
     TimeService.onFrame({
       dt,
       elapsedTime
+    });
+  }
+  onPhysicsFrame() {
+    const dt = this.physicsClock.getDelta();
+    PhysicsService.onFrame({
+      dt
     });
   }
   onAnimationFrame() {
@@ -3660,6 +3764,9 @@ class AssetsServiceClass {
     });
   }
   preloadFont(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       preloadFont({
         font: path,
@@ -3668,6 +3775,9 @@ class AssetsServiceClass {
     });
   }
   preloadAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       const audio = new Howl({
         src: [path],
@@ -3683,6 +3793,9 @@ class AssetsServiceClass {
     });
   }
   getAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       if (this.audioBuffers[path]) {
         return resolve(this.audioBuffers[path]);
@@ -3933,6 +4046,14 @@ class Text extends GameObjectClass {
   } = {}) {
     super();
     _defineProperty(this, "troikaText", null);
+    if (RenderService.isHeadless) {
+      this.troikaText = new Three$2.Group();
+      this.troikaText.text = '';
+      this.troikaText.color = new Three$2.Color(0x000000);
+      this.troikaText.sync = () => {};
+      this.add(this.troikaText);
+      return;
+    }
     const troikaText = new Text$1();
     troikaText.font = font;
     troikaText.text = text;
@@ -5276,7 +5397,7 @@ class SceneServiceClass {
       maxFar: shadowDrawDistance || GameInfoService.config.system.shadowDrawDistance,
       lightNear: near,
       lightFar: far,
-      shadowMapSize: GameInfoService.config.system.shadowsResolution,
+      shadowMapSize: GameInfoService.config.system.shadowsSunShadowResolution || GameInfoService.config.system.shadowsResolution,
       lightDirection: position.negate(),
       lightIntensity: intensity,
       camera: camera,

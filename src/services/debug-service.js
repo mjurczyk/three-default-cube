@@ -53,6 +53,10 @@ class DebugServiceClass {
   }
 
   showStats() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const stats = new Stats();
 
     stats.showPanel(0);
@@ -224,6 +228,8 @@ class DebugServiceClass {
               LogsHighlightColor
             ].filter(Boolean)[0]
           },
+          { text: 'Mode:' },
+          { text: NetworkService.mode, color: LogsHighlightColor },
           { text: 'SyncBodies:' },
           { text: Object.keys(NetworkService.syncObjects).length, color: LogsHighlightColor },
           { text: 'Ping:' },

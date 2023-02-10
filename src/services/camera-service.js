@@ -32,6 +32,10 @@ class CameraServiceClass {
   cameraMovementType = CameraMovementTypeEnums.rotateOnButtonDown;
 
   init({ camera, renderer } = {}) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.camera = camera;
     this.camera.position.copy(this.cameraPosition);
     this.camera.quaternion.copy(this.cameraQuaternion);
@@ -56,6 +60,10 @@ class CameraServiceClass {
   }
 
   resetCamera() {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.camera.position.set(0.0, 0.0, 0.0);
     this.camera.rotation.set(0.0, 0.0, 0.0);
     this.camera.quaternion.identity();
@@ -69,6 +77,10 @@ class CameraServiceClass {
   }
 
   updateCamera(dt = 0.0) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     if (this.pointerLockControls.isLocked) {
       if (this.followedObject) {
         this.followedObject.getWorldPosition(this.cameraPosition);
@@ -79,8 +91,17 @@ class CameraServiceClass {
     }
 
     if (this.followedObject) {
-      this.followedObject.getWorldPosition(this.cameraPosition);
-      this.followedObject.getWorldQuaternion(this.cameraQuaternion);
+      const targetPosition = MathService.getVec3();
+      const targetQuaternion = MathService.getQuaternion();
+
+      this.followedObject.getWorldPosition(targetPosition);
+      this.followedObject.getWorldQuaternion(targetQuaternion);
+
+      this.cameraPosition.lerp(targetPosition, this.tween);
+      this.cameraQuaternion.slerp(targetQuaternion, this.tween);
+
+      MathService.releaseVec3(targetPosition);
+      MathService.releaseQuaternion(targetQuaternion);
 
       const worldAlignedOffset = MathService.getVec3();
       worldAlignedOffset.copy(this.followOffset);
@@ -97,7 +118,7 @@ class CameraServiceClass {
           true
         );
       } else {
-        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z);
+        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
       }
 
       MathService.releaseVec3(worldAlignedOffset);
@@ -129,6 +150,10 @@ class CameraServiceClass {
   }
 
   addCamera(id, camera) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.cameras[id] = camera;
   }
 
@@ -141,6 +166,10 @@ class CameraServiceClass {
   }
 
   useGameObjectCamera(gameObjectOrId) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     let camera;
 
     if (typeof gameObjectOrId === 'string') {
@@ -168,6 +197,10 @@ class CameraServiceClass {
   }
 
   useStaticCamera(position, target, allowOrbit = false) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
     this.followedObject = null;
@@ -192,6 +225,10 @@ class CameraServiceClass {
   }
 
   useFirstPersonCamera(object) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnPointerMove);
 
     this.followedObject = object;
@@ -204,6 +241,10 @@ class CameraServiceClass {
   }
 
   useThirdPersonCamera(object, offset, preventOcclusion = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
 
     this.followedObject = object;
@@ -238,6 +279,10 @@ class CameraServiceClass {
   }
 
   registerCameraColliders(preventOcclusion) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     if (preventOcclusion) {
       const scene = RenderService.getScene();
 
@@ -286,6 +331,10 @@ class CameraServiceClass {
   }
 
   getCameraAsTexture(id, { width, height, minFilter, magFilter } = {}) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+
     const camera = this.cameras[id];
 
     if (!camera) {
@@ -395,11 +444,15 @@ class CameraServiceClass {
     this.followListener = null;
     this.followListenerThreshold = 0.001;
 
-    this.cameraControls.enabled = false;
-    this.cameraControls.dampingFactor = 0.05;
-    this.cameraControls.colliderMeshes = [];
+    if (this.cameraControls) {
+      this.cameraControls.enabled = false;
+      this.cameraControls.dampingFactor = 0.05;
+      this.cameraControls.colliderMeshes = [];
+    }
 
-    this.pointerLockControls.unlock();
+    if (this.pointerLockControls) {
+      this.pointerLockControls.unlock();
+    }
 
     this.resetCamera();
     this.tween = 0.2;

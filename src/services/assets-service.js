@@ -283,6 +283,10 @@ class AssetsServiceClass {
   }
 
   preloadFont(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
+
     return this.registerAsyncAsset(resolve => {
       troikaPreloadFont({
         font: path,
@@ -297,6 +301,10 @@ class AssetsServiceClass {
   }
 
   preloadAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
+
     return this.registerAsyncAsset(resolve => {
       const audio = new Howl({
         src: [ path ],
@@ -314,6 +322,10 @@ class AssetsServiceClass {
   }
 
   getAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
+
     return this.registerAsyncAsset(resolve => {
       if (this.audioBuffers[path]) {
         return resolve(this.audioBuffers[path]);

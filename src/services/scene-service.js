@@ -96,7 +96,7 @@ export class SceneServiceClass {
       maxFar: shadowDrawDistance || GameInfoService.config.system.shadowDrawDistance,
       lightNear: near,
       lightFar: far,
-      shadowMapSize: GameInfoService.config.system.shadowsResolution,
+      shadowMapSize: GameInfoService.config.system.shadowsSunShadowResolution || GameInfoService.config.system.shadowsResolution,
       lightDirection: position.negate(),
       lightIntensity: intensity,
       camera: camera,

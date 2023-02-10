@@ -75,6 +75,7 @@ class GameInfoServiceClass {
   shadows(
     enabled = DQ.ShadowsAllObjects,
     resolution = 1024,
+    sunShadowResolution = 2048,
     radius = 4,
     type = Three.PCFShadowMap,
     drawDistance
@@ -84,6 +85,7 @@ class GameInfoServiceClass {
         ...(this.config.system || {}),
         shadows: enabled,
         shadowsResolution: resolution,
+        shadowsSunShadowResolution: sunShadowResolution,
         shadowsRadius: radius,
         shadowMapType: type,
         shadowDrawDistance: drawDistance

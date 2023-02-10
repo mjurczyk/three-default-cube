@@ -1,6 +1,7 @@
 import * as Three from 'three';
 import { GameObjectClass } from '../../../classes/game-object-class';
 import { Text as TroikaText } from 'troika-three-text';
+import { RenderService } from '../../../services/render-service';
 
 export class Text extends GameObjectClass {
   troikaText = null;
@@ -17,6 +18,16 @@ export class Text extends GameObjectClass {
   } = {}) {
     super();
 
+    if (RenderService.isHeadless) {
+      this.troikaText = new Three.Group();
+      this.troikaText.text = '';
+      this.troikaText.color = new Three.Color(0x000000);
+      this.troikaText.sync = () => {};
+      this.add(this.troikaText);
+
+      return;
+    }
+    
     const troikaText = new TroikaText();
     troikaText.font = font;
     troikaText.text = text;

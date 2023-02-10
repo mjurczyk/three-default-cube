@@ -10,9 +10,11 @@ import { TimeService } from './time-service';
 import { UtilsService } from './utils-service';
 import { Pathfinding } from 'three-pathfinding';
 import { defaultTo, isDefined } from '../utils/shared';
-import { NetworkService } from './network-service';
+import { NetworkEnums, NetworkService } from './network-service';
 
 class PhysicsServiceClass {
+  physicsSmoothing = 0.75;
+
   physicsWorld = null;
   physicsLoop = null;
   physicsStaticBodies = null;
@@ -32,25 +34,29 @@ class PhysicsServiceClass {
       });
 
       this.physicsWorld = physicsWorld;
+    }
+  }
 
-      this.physicsLoop = TimeService.registerFrameListener(({ dt }) => {
-        this.physicsWorld.bodies.forEach(body => {
-          const { targetRef } = body;
+  onFrame({ dt }) {
+    if (!this.physicsWorld) {
+      return;
+    }
 
-          if (body.mass === 0.0 || body.type === Cannon.Body.STATIC) {
-            body.allowSleep = true;
+    this.physicsWorld.bodies.forEach(body => {
+      const { targetRef } = body;
 
-            return;
-          }
+      if (body.mass === 0.0 || body.type === Cannon.Body.STATIC) {
+        body.allowSleep = true;
 
-          targetRef.position.lerp(body.position, 0.75);
-          targetRef.quaternion.copy(body.quaternion);
-        });
+        return;
+      }
 
-        if (this.physicsWorld && dt !== 0) {
-          this.physicsWorld.fixedStep();
-        }
-      });
+      targetRef.position.lerp(body.position, this.physicsSmoothing);
+      targetRef.quaternion.copy(body.quaternion);
+    });
+
+    if (dt !== 0) {
+      this.physicsWorld.fixedStep();
     }
   }
 

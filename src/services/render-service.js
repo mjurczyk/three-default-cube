@@ -19,6 +19,7 @@ class RenderServiceClass {
   isHeadless = navigator.userAgent === NetworkServerSideInstanceUserAgent;
   systemClock = new Three.Clock();
   animationClock = new Three.Clock();
+  physicsClock = new Three.Clock();
   animationDelta = 0.0;
   camera = null;
   renderer = null;
@@ -167,14 +168,17 @@ class RenderServiceClass {
   }
 
   initEssentialServices() {
-    DebugService.init();
     VarService.init({ language: 'en' });
-    InteractionsService.init({ camera: this.camera });
     PhysicsService.init();
-    CameraService.init({ camera: this.camera, renderer: this.renderer });
-    InputService.init();
     ParticleService.init();
-    AudioService.init({ root: this.camera });
+    
+    if (!this.isHeadless) {
+      DebugService.init();
+      InteractionsService.init({ camera: this.camera });
+      CameraService.init({ camera: this.camera, renderer: this.renderer });
+      InputService.init();
+      AudioService.init({ root: this.camera });
+    }
   }
 
   initPostProcessing() {
@@ -335,6 +339,8 @@ class RenderServiceClass {
 
   lastFrameTimestamp = 0;
   logicFixedStep = 1000.0 / 60.0;
+  logicMaxSteps = Infinity;
+  physicsMaxSteps = Infinity;
 
   runLogicLoop() {
     if (this.logicLoop) {
@@ -350,10 +356,15 @@ class RenderServiceClass {
     if (dt >= this.logicFixedStep) {
       this.lastFrameTimestamp = now;
 
-      const steps = Math.floor(dt / this.logicFixedStep);
+      const logicSteps = Math.min(this.logicMaxSteps, Math.floor(dt / this.logicFixedStep));
+      const physicsSteps = Math.min(this.physicsMaxSteps, Math.floor(dt / this.logicFixedStep));
 
-      for (let i = 0; i < steps; i++) {
+      for (let i = 0; i < logicSteps; i++) {
         this.onLogicFrame();
+      }
+
+      for (let i = 0; i < physicsSteps; i++) {
+        this.onPhysicsFrame();
       }
     }
   }
@@ -368,6 +379,12 @@ class RenderServiceClass {
     }
 
     TimeService.onFrame({ dt, elapsedTime });
+  }
+
+  onPhysicsFrame() {
+    const dt = this.physicsClock.getDelta();
+
+    PhysicsService.onFrame({ dt });
   }
 
   onAnimationFrame() {
