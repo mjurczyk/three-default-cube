@@ -1,22 +1,28 @@
-import * as Three from 'three';
+import * as Three$2 from 'three';
 import { MathUtils as MathUtils$1 } from 'three';
+import * as Cannon$1 from 'cannon-es';
 import * as uuid from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
-import { EffectComposer, RenderPass, ClearPass, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode, EffectPass, BloomEffect, SMAAImageLoader } from 'postprocessing';
+import { EffectComposer, RenderPass, ClearPass, SMAAEffect, SMAAPreset, EdgeDetectionMode, PredicationMode, EffectPass, ToneMappingEffect, ToneMappingMode, BloomEffect, SMAAImageLoader } from 'postprocessing';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { NativeStorage } from '@ionic-native/native-storage';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
-import { Pathfinding } from 'three-pathfinding';
-import { Howler, Howl } from 'howler';
-import { preloadFont, Text as Text$1 } from 'troika-three-text';
-import { isDefined as isDefined$1, AssetsService as AssetsService$1 } from 'three-default-cube';
 import { Plugins } from '@capacitor/core';
+import { NativeStorage } from '@ionic-native/native-storage';
 import { NavigationBar } from '@ionic-native/navigation-bar';
 import { ScreenOrientation } from '@ionic-native/screen-orientation';
+import * as BufferGeometryScope from 'three/examples/jsm/utils/BufferGeometryUtils';
+import { Pathfinding } from 'three-pathfinding';
+import * as Colyseus from 'colyseus.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import CameraControls from 'camera-controls';
+import { Howler, Howl } from 'howler';
+import { preloadFont, Text as Text$1 } from 'troika-three-text';
+import CSM from 'three-csm';
+import { isDefined as isDefined$1, AssetsService as AssetsService$1 } from 'three-default-cube';
 
 function _defineProperty(obj, key, value) {
+  key = _toPropertyKey(key);
   if (key in obj) {
     Object.defineProperty(obj, key, {
       value: value,
@@ -27,103 +33,174 @@ function _defineProperty(obj, key, value) {
   } else {
     obj[key] = value;
   }
-
   return obj;
 }
+function _toPrimitive(input, hint) {
+  if (typeof input !== "object" || input === null) return input;
+  var prim = input[Symbol.toPrimitive];
+  if (prim !== undefined) {
+    var res = prim.call(input, hint || "default");
+    if (typeof res !== "object") return res;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return (hint === "string" ? String : Number)(input);
+}
+function _toPropertyKey(arg) {
+  var key = _toPrimitive(arg, "string");
+  return typeof key === "symbol" ? key : String(key);
+}
+
+const {
+  App,
+  StatusBar
+} = Plugins;
+const MobileAdapterConstants = {
+  screenOrientation: {
+    landscape: ScreenOrientation.ORIENTATIONS.LANDSCAPE,
+    portrait: ScreenOrientation.ORIENTATIONS.PORTRAIT
+  }
+};
+class MobileAdapterClass {
+  constructor() {
+    _defineProperty(this, "appStateListeners", []);
+    App.addListener('appStateChange', state => {
+      this.appStateListeners.forEach(callback => {
+        if (typeof callback === 'function') {
+          callback(state);
+        }
+      });
+    });
+  }
+  isMobile() {
+    return typeof cordova !== 'undefined';
+  }
+  getNativeStorage() {
+    return {
+      keys: NativeStorage.keys,
+      getItem: NativeStorage.getItem,
+      setItem: NativeStorage.setItem
+    };
+  }
+  getNavigationBar() {
+    return {
+      hide: () => {
+        try {
+          NavigationBar.setUp(true);
+          setTimeout(() => {
+            StatusBar.hide();
+            StatusBar.setOverlaysWebView(false);
+          }, 500);
+          this.appStateListeners.push(({
+            isActive
+          }) => {
+            if (isActive) {
+              StatusBar.hide();
+            }
+          });
+        } catch {}
+      }
+    };
+  }
+  getScreenOrientation() {
+    return {
+      lock: orientation => ScreenOrientation.lock(orientation)
+    };
+  }
+  disposeAll() {
+    this.appStateListeners = [];
+  }
+}
+const MobileAdapter = new MobileAdapterClass();
 
 class StorageServiceClass {
   constructor() {
     _defineProperty(this, "reads", 0);
-
     _defineProperty(this, "writes", 0);
-
     _defineProperty(this, "useNative", true);
-
-    this.useNative = typeof cordova !== 'undefined';
+    this.useNative = MobileAdapter.isMobile();
   }
-
   init() {
     this.set('system.control', Date.now());
   }
-
   getAllKeys() {
     return new Promise(resolve => {
       if (!this.useNative) {
         return resolve(Object.keys(localStorage));
       }
-
-      return NativeStorage.keys(keys => resolve(keys), error => {
-        if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+      return MobileAdapter.getNativeStorage().keys(keys => resolve(keys), error => {
+        if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
           console.info('StorageServiceClass', 'getAllKeys', 'error', {
             error
           });
         }
-
         return resolve([]);
       });
     });
   }
-
   set(key, value) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'set', {
         key,
         value
       });
     }
-
     this.writes++;
-
     if (!this.useNative) {
       return Promise.resolve(localStorage.setItem(key, JSON.stringify(value)));
     }
-
-    return NativeStorage.setItem(key, value).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    return MobileAdapter.getNativeStorage().setItem(key, value).catch(error => {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'set', 'not saved', {
           key,
           value,
           error
         });
       }
-
       return Promise.resolve(null);
     });
   }
-
   get(key) {
-    if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
       console.info('StorageServiceClass', 'get', {
         key
       });
     }
-
     this.reads++;
-
     if (!this.useNative) {
       return Promise.resolve(JSON.parse(localStorage.getItem(key) || 'null'));
     }
-
-    return NativeStorage.getItem(key).catch(error => {
-      if (DummyDebug.get(DebugFlags.DEBUG_STORAGE)) {
+    return MobileAdapter.getNativeStorage().getItem(key).catch(error => {
+      if (DebugService.get(DebugFlags.DEBUG_STORAGE)) {
         console.info('StorageServiceClass', 'get', 'not read', {
           key,
           error
         });
       }
-
       return Promise.resolve(null);
     });
   }
-
 }
-
 const StorageService = new StorageServiceClass();
+
+const DQ = {
+  ShadowsAllObjects: 0x111111,
+  ShadowsNoneObjects: 0x000000,
+  ShadowsStaticObjects: 0x100000,
+  ShadowsDynamicObjects: 0x010000
+};
+const math2Pi = Math.PI * 2.0;
+const mathPi2 = Math.PI / 2.0;
+const mathPi4 = Math.PI / 4.0;
+const mathPi8 = Math.PI / 8.0;
+const axisX = new Three$2.Vector3(1.0, 0.0, 0.0);
+const axisY = new Three$2.Vector3(0.0, 1.0, 0.0);
+const axisZ = new Three$2.Vector3(0.0, 0.0, 1.0);
 
 class GameInfoServiceClass {
   constructor() {
     _defineProperty(this, "config", {
       system: {},
+      network: {},
       vars: {},
       labels: {},
       textures: {},
@@ -133,44 +210,42 @@ class GameInfoServiceClass {
       fonts: {},
       animations: {}
     });
-
     this.system();
     this.camera();
   }
-
   addConfig(config = {}) {
-    this.config = { ...this.config,
+    this.config = {
+      ...this.config,
       ...config
     };
     return this;
   }
-
-  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true, useSingleLoop = false) {
+  system(fps = 0, pixelRatio, antialiasing = true, postprocessing = true, sceneBackgroundDefault = 0x000000, correctBlenderLights = true) {
     return this.addConfig({
-      system: { ...(this.config.system || {}),
+      system: {
+        ...(this.config.system || {}),
         fps,
         pixelRatio: typeof pixelRatio !== 'undefined' ? pixelRatio : window.devicePixelRatio,
         antialiasing,
         postprocessing,
         sceneBackgroundDefault,
-        correctBlenderLights,
-        useSingleLoop
+        correctBlenderLights
       }
     });
   }
-
   vr(enabled = true) {
     return this.addConfig({
-      system: { ...(this.config.system || {}),
+      system: {
+        ...(this.config.system || {}),
         vr: enabled,
         postprocessing: false
       }
     });
   }
-
   camera(fov = 50, near = 0.1, far = 2000.0) {
     return this.addConfig({
-      system: { ...(this.config.system || {}),
+      system: {
+        ...(this.config.system || {}),
         camera: {
           fov,
           near,
@@ -179,176 +254,167 @@ class GameInfoServiceClass {
       }
     });
   }
-
+  shadows(enabled = DQ.ShadowsAllObjects, resolution = 1024, sunShadowResolution = 2048, radius = 4, type = Three.PCFShadowMap, drawDistance) {
+    return this.addConfig({
+      system: {
+        ...(this.config.system || {}),
+        shadows: enabled,
+        shadowsResolution: resolution,
+        shadowsSunShadowResolution: sunShadowResolution,
+        shadowsRadius: radius,
+        shadowMapType: type,
+        shadowDrawDistance: drawDistance
+      }
+    });
+  }
+  network(serverAddress) {
+    return this.addConfig({
+      network: {
+        ...(this.config.network || {}),
+        serverAddress
+      }
+    });
+  }
   initialVars(vars = {}) {
     return this.addConfig({
-      vars: { ...(this.config.vars || {}),
+      vars: {
+        ...(this.config.vars || {}),
         ...vars
       }
     });
   }
-
   vars(vars = {}) {
     return this.initialVars(vars);
   }
-
   labels(language = 'en', vars = {}) {
     return this.addConfig({
-      labels: { ...(this.config.labels || {}),
+      labels: {
+        ...(this.config.labels || {}),
         [language]: vars
       }
     });
   }
-
   animation(id, animation) {
     return this.addConfig({
-      animations: { ...(this.config.animations || {}),
+      animations: {
+        ...(this.config.animations || {}),
         [id]: animation
       }
     });
   }
-
   font(id, font) {
     return this.addConfig({
-      fonts: { ...(this.config.fonts || {}),
+      fonts: {
+        ...(this.config.fonts || {}),
         [id]: font
       }
     });
   }
-
   texture(id, texture) {
     return this.addConfig({
-      textures: { ...(this.config.textures || {}),
+      textures: {
+        ...(this.config.textures || {}),
         [id]: texture
       }
     });
   }
-
   model(id, model) {
     return this.addConfig({
-      models: { ...(this.config.models || {}),
+      models: {
+        ...(this.config.models || {}),
         [id]: model
       }
     });
   }
-
   audio(id, audio) {
     return this.addConfig({
-      audio: { ...(this.config.audio || {}),
+      audio: {
+        ...(this.config.audio || {}),
         [id]: audio
       }
     });
   }
-
   shader(id, shader) {
     return this.addConfig({
-      shaders: { ...(this.config.shaders || {}),
+      shaders: {
+        ...(this.config.shaders || {}),
         [id]: shader
       }
     });
   }
-
   custom(key, value) {
     if (!key) {
       return;
     }
-
     return this.addConfig({
       [key]: value
     });
   }
-
 }
-
 const GameInfoService = new GameInfoServiceClass();
 
 class UtilsServiceClass {
   constructor() {
     _defineProperty(this, "poolRaycaster", []);
-
     _defineProperty(this, "poolBox3", []);
-
     _defineProperty(this, "poolCamera", []);
-
     _defineProperty(this, "poolEmpty", []);
-
     _defineProperty(this, "poolBlankMaterial", []);
-
     _defineProperty(this, "poolRaycasterTotal", 0);
-
     _defineProperty(this, "poolBox3Total", 0);
-
     _defineProperty(this, "poolCameraTotal", 0);
-
     _defineProperty(this, "poolEmptyTotal", 0);
-
     _defineProperty(this, "poolBlankMaterialTotal", 0);
   }
-
   getRaycaster() {
     const pooled = this.poolRaycaster.pop();
-
     if (pooled) {
       return pooled;
     }
-
     this.poolRaycasterTotal++;
-    return new Three.Raycaster();
+    return new Three$2.Raycaster();
   }
-
   releaseRaycaster(raycaster) {
     raycaster.near = 0.0;
     raycaster.far = Infinity;
     this.poolRaycaster.push(raycaster);
   }
-
   getBox3() {
     const pooled = this.poolBox3.pop();
-
     if (pooled) {
       return pooled;
     }
-
     this.poolBox3Total++;
-    return new Three.Box3();
+    return new Three$2.Box3();
   }
-
   releaseBox3(box3) {
     box3.makeEmpty();
     this.poolBox3.push(box3);
   }
-
   getCamera() {
     const pooled = this.poolCamera.pop();
-
     if (pooled) {
       return pooled;
     }
-
     this.poolCameraTotal++;
-    return new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
+    return new Three$2.PerspectiveCamera(GameInfoService.config.system.camera.fov, 1.0);
   }
-
   releaseCamera(camera) {
     camera.position.set(0.0, 0.0, 0.0);
     camera.rotation.set(0.0, 0.0, 0.0);
     camera.quaternion.identity();
     this.poolCamera.push(camera);
   }
-
   getEmpty() {
     const pooled = this.poolEmpty.pop();
-
     if (pooled) {
       return pooled;
     }
-
     this.poolEmptyTotal++;
-    const empty = new Three.Object3D();
+    const empty = new Three$2.Object3D();
     AssetsService.registerDisposable(empty);
     return empty;
   }
-
   releaseEmpty(object) {
     object.position.set(0.0, 0.0, 0.0);
     object.rotation.set(0.0, 0.0, 0.0);
@@ -357,51 +423,39 @@ class UtilsServiceClass {
     object.children.forEach(child => object.remove(child));
     object.children = [];
     object.userData = {};
-
     if (object.parent) {
       object.parent.remove(object);
     }
-
     this.poolEmpty.push(object);
   }
-
   getBlankMaterial() {
     const pooled = this.poolBlankMaterial.pop();
-
     if (pooled) {
       return pooled;
     }
-
     this.poolBlankMaterialTotal++;
-    const material = new Three.MeshBasicMaterial();
+    const material = new Three$2.MeshBasicMaterial();
     AssetsService.registerDisposable(material);
     return material;
   }
-
   releaseBlankMaterial(material) {
     this.poolBlankMaterial.push(material);
   }
-
   disposeAll() {
     this.poolEmpty = [];
     this.poolBlankMaterial = [];
     this.poolEmptyTotal = 0;
     this.poolBlankMaterialTotal = 0;
   }
-
 }
-
 const UtilsService = new UtilsServiceClass();
 
 class VarServiceClass {
   constructor() {
     _defineProperty(this, "variables", {});
-
     _defineProperty(this, "listeners", {});
-
     _defineProperty(this, "persistentVars", {});
   }
-
   init({
     language
   } = {}) {
@@ -411,7 +465,6 @@ class VarServiceClass {
         this.setVar(key, defaultLabels[key]);
       });
     }
-
     if (GameInfoService.config.vars) {
       const defaultGameState = GameInfoService.config.vars;
       Object.keys(defaultGameState).forEach(key => {
@@ -419,10 +472,8 @@ class VarServiceClass {
       });
     }
   }
-
   setVar(id, value) {
     this.variables[id] = value;
-
     if (!this.listeners[id]) {
       this.listeners[id] = [];
     } else {
@@ -430,52 +481,41 @@ class VarServiceClass {
         if (callback) {
           return callback(value) !== false;
         }
-
         return false;
       });
     }
-
     if (this.persistentVars[id]) {
       this.persistentVars[id](value);
     }
   }
-
   getVar(id, onUpdate, onCreate) {
     if (!this.listeners[id]) {
       this.listeners[id] = [];
     }
-
     if (onUpdate) {
       this.listeners[id].push(onUpdate);
       onUpdate(this.variables[id]);
     }
-
     if (onCreate) {
       onCreate(onUpdate);
     }
-
     return this.variables[id];
   }
-
   removeVar(id) {
     delete this.variables[id];
     delete this.listeners[id];
   }
-
   registerPersistentVar(id, defaultValue) {
     return StorageService.get(id).then(initialValue => {
       this.persistentVars[id] = newValue => {
         StorageService.set(id, newValue);
       };
-
       if (initialValue !== null || typeof defaultValue !== 'undefined') {
         VarService.setVar(id, initialValue !== null ? initialValue : defaultValue);
       }
-
       return Promise.resolve();
     });
   }
-
   retrievePersistentVars() {
     return new Promise(async resolve => {
       const keys = await StorageService.getAllKeys();
@@ -485,12 +525,10 @@ class VarServiceClass {
       resolve();
     });
   }
-
   resolveVar(variableString, onResolve, onCreate) {
-    if (!variableString) {
+    if (typeof variableString === 'undefined') {
       return onResolve();
     }
-
     if (variableString[0] === ':' && variableString[variableString.length - 1] === ':') {
       return this.getVar(variableString.substr(1, variableString.length - 2), value => {
         onResolve ? onResolve(value) : null;
@@ -498,10 +536,8 @@ class VarServiceClass {
         onCreate ? onCreate(listener) : null;
       });
     }
-
     return onResolve(variableString);
   }
-
   disposeListener(id, callback) {
     if (id && this.listeners[id]) {
       this.listeners[id] = this.listeners[id].filter(match => match !== callback);
@@ -511,29 +547,691 @@ class VarServiceClass {
       });
     }
   }
-
   disposeListeners() {
     Object.keys(this.listeners).forEach(key => {
       delete this.listeners[key];
     });
     this.listeners = {};
   }
-
 }
-
 const VarService = new VarServiceClass();
 
-var version = "0.2.4";
+var version = "0.3.1";
+var dependencies = {
+	"@babel/core": "7.14.6",
+	"@babel/plugin-proposal-class-properties": "7.14.5",
+	"@ionic-native/native-storage": "5.33.1",
+	"@ionic-native/navigation-bar": "5.33.1",
+	"@ionic-native/screen-orientation": "5.30.0",
+	"@rollup/plugin-babel": "5.3.0",
+	"@rollup/plugin-json": "6.0.0",
+	"camera-controls": "1.37.4",
+	"cannon-es": "0.20.0",
+	howler: "2.2.3",
+	postprocessing: "6.29.2",
+	rollup: "2.79.1",
+	three: "0.148.0",
+	"three-csm": "3.2.0",
+	"three-pathfinding": "1.1.0",
+	"troika-three-text": "0.47.1",
+	"colyseus.js": "0.14.13"
+};
+
+const createArrowHelper = (container, id, vector, origin, color) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.ArrowHelper(vector, undefined, vector.length(), color || getRandomColor());
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  helper.setLength(vector.length());
+  helper.setDirection(vector.normalize());
+  if (origin) {
+    helper.position.copy(origin);
+  }
+  return helper;
+};
+const createBoxHelper = (container, id, box) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.Box3Helper(box, getRandomColor());
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  helper.box.copy(box);
+  return helper;
+};
+const createDefaultCube = (container, id, {
+  position,
+  size,
+  color
+} = {}) => {
+  let helper = container.getObjectByName(id);
+  if (!helper) {
+    helper = new Three$2.Mesh(new Three$2.BoxGeometry(size || 1.0, size || 1.0, size || 1.0), new Three$2.MeshStandardMaterial({
+      color: color || getRandomColor()
+    }));
+    helper.name = id;
+    AssetsService.registerDisposable(helper);
+    container.add(helper);
+  }
+  if (position) {
+    helper.position.copy(position);
+  }
+  return helper;
+};
+
+class SpawnServiceClass {
+  constructor() {
+    _defineProperty(this, "spawnableGameObjects", {});
+  }
+  registerSpawnableGameObject(type, spawnFunction) {
+    this.spawnableGameObjects[type] = spawnFunction;
+  }
+  createSpawnableGameObject(type, payload) {
+    const spawnFunction = this.spawnableGameObjects[type];
+    if (!spawnFunction) {
+      console.info('SpawnService', 'createSpawnableGameObject', 'spawn function for object type does not exist', {
+        type
+      });
+      return;
+    }
+    const object = spawnFunction(payload);
+    object.gameObject = type;
+    AssetsService.registerDisposable(object);
+    return object;
+  }
+  disposeAll() {
+    this.spawnableGameObjects = {};
+  }
+}
+const SpawnService = new SpawnServiceClass();
+
+const NetworkEnums = {
+  statusSingleplayer: 'offline',
+  statusConnecting: 'connecting',
+  statusNotConnected: 'not-connected',
+  statusConnected: 'connected',
+  statusServing: 'server',
+  modeClient: 'client',
+  modeServer: 'server'
+};
+const NetworkServerSideInstanceUserAgent = 'dqServerInstanceUserAgent';
+class NetworkServiceClass {
+  constructor() {
+    _defineProperty(this, "snapshotSmoothing", 0.75);
+    _defineProperty(this, "mode", NetworkEnums.modeClient);
+    _defineProperty(this, "client", null);
+    _defineProperty(this, "game", null);
+    _defineProperty(this, "clientId", null);
+    _defineProperty(this, "isMultiplayer", false);
+    _defineProperty(this, "status", NetworkEnums.statusSingleplayer);
+    _defineProperty(this, "syncObjects", {});
+    _defineProperty(this, "previousSyncObjects", {});
+    _defineProperty(this, "state", {});
+    _defineProperty(this, "lastSyncState", {});
+    _defineProperty(this, "ping", Infinity);
+    _defineProperty(this, "lastTimestamp", performance.now());
+    _defineProperty(this, "networkActionsListeners", {});
+    _defineProperty(this, "syncPropNames", ['position', 'quaternion', 'gameObject', 'userData']);
+  }
+  connectAsClient() {
+    console.info('NetworkServiceClass', 'connectAsClient');
+    const client = new Colyseus.Client(GameInfoService.config.network.serverAddress);
+    this.status = NetworkEnums.statusConnecting;
+    this.isMultiplayer = true;
+    PhysicsService.physicsSmoothing = 0.33;
+    this.snapshotSmoothing = 0.33;
+    client.joinOrCreate('dqGame').then(this.handleGameConnection.bind(this)).catch(error => {
+      console.warn('NetworkServiceClass', 'connect', {
+        error
+      });
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+    this.client = client;
+  }
+  handleGameConnection(game) {
+    this.status = NetworkEnums.statusConnected;
+    this.clientId = game.sessionId;
+    this.game = game;
+    game.onMessage('ping', timestamp => {
+      this.ping = ~~(timestamp - this.lastTimestamp);
+      this.lastTimestamp = timestamp;
+    });
+    game.onStateChange(state => {
+      this.state = state;
+    });
+    game.onError(() => {
+      console.warn('NetworkServiceClass', 'handleGameConnection', {
+        game,
+        error
+      });
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+    game.onLeave(() => {
+      this.status = NetworkEnums.statusNotConnected;
+      this.ping = Infinity;
+    });
+  }
+  onFrame() {
+    const state = this.state;
+    const serverPosition = MathService.getVec3();
+    const serverQuaternion = MathService.getQuaternion();
+    const localPosition = MathService.getVec3();
+    const localQuaternion = MathService.getQuaternion();
+    (state.syncObjects || []).forEach((syncObject, key) => {
+      const {
+        gameObject,
+        positionX,
+        positionY,
+        positionZ,
+        quaternionX,
+        quaternionY,
+        quaternionZ,
+        quaternionW,
+        userData
+      } = syncObject;
+      if (!gameObject && !this.syncObjects[key]) {
+        return;
+      }
+      if (!this.syncObjects[key]) {
+        const object = SpawnService.createSpawnableGameObject(gameObject, userData ? JSON.parse(userData) || {} : {});
+        const scene = RenderService.getScene();
+        console.info('NetworkService', 'handleGameConnection', 'syncObject does not exist, creating', {
+          key,
+          gameObject,
+          createdObject: object
+        });
+        if (object) {
+          this.syncObjects[key] = object;
+          scene.add(object);
+        } else {
+          return;
+        }
+      }
+      let target;
+
+      // NOTE Physical objects are controlled by their cannon bodies - sync cannon when possible
+      //      Reset body properties when syncing with server
+      if (this.syncObjects[key].userData && this.syncObjects[key].userData.cannonRef) {
+        target = this.syncObjects[key].userData.cannonRef;
+      } else {
+        target = this.syncObjects[key];
+      }
+      serverPosition.set(positionX, positionY, positionZ);
+      serverQuaternion.set(quaternionX, quaternionY, quaternionZ, quaternionW);
+      const {
+        x: px,
+        y: py,
+        z: pz
+      } = target.position;
+      localPosition.set(px, py, pz);
+      const {
+        x: qx,
+        y: qy,
+        z: qz,
+        w: qw
+      } = target.quaternion;
+      localQuaternion.set(qx, qy, qz, qw);
+      localPosition.lerp(serverPosition, this.snapshotSmoothing);
+      localQuaternion.slerp(serverQuaternion, this.snapshotSmoothing);
+      target.position.set(localPosition.x, localPosition.y, localPosition.z);
+      target.quaternion.set(localQuaternion.x, localQuaternion.y, localQuaternion.z, localQuaternion.w);
+      if (target instanceof Cannon$1.Body) {
+        target.velocity.set(0.0, 0.0, 0.0);
+        target.angularVelocity.set(0.0, 0.0, 0.0);
+        target.torque.set(0.0, 0.0, 0.0);
+        target.force.set(0.0, 0.0, 0.0);
+        target.previousPosition.copy(target.position);
+        target.interpolatedPosition.copy(target.position);
+        target.initPosition.copy(target.position);
+        target.previousQuaternion.copy(target.quaternion);
+        target.interpolatedQuaternion.copy(target.quaternion);
+        target.initQuaternion.copy(target.quaternion);
+        target.inertia.set(0.0, 0.0, 0.0);
+        target.invInertia.set(0.0, 0.0, 0.0);
+        target.invMassSolve = 0.0;
+        target.invInertiaSolve.set(0.0, 0.0, 0.0);
+        target.linearFactor.set(1.0, 1.0, 1.0);
+        target.angularFactor.set(1.0, 1.0, 1.0);
+      }
+      target.userData = userData ? JSON.parse(userData) || {} : {};
+      delete this.previousSyncObjects[key];
+    });
+    Object.entries(this.previousSyncObjects).forEach(([key, target]) => {
+      AssetsService.disposeAsset(target);
+      delete this.previousSyncObjects[key];
+    });
+    (state.syncObjects || []).forEach((_, key) => {
+      this.previousSyncObjects[key] = this.syncObjects[key];
+    });
+    MathService.releaseVec3(serverPosition);
+    MathService.releaseQuaternion(serverQuaternion);
+    MathService.releaseVec3(localPosition);
+    MathService.releaseQuaternion(localQuaternion);
+  }
+  send(action, payload) {
+    if (!this.game) {
+      return;
+    }
+    this.game.send(action, payload);
+  }
+  connectAsServer() {
+    console.info('NetworkServiceClass', 'connectAsServer');
+    this.mode = NetworkEnums.modeServer;
+    this.status = NetworkEnums.statusServing;
+    this.ping = 0;
+    this.isMultiplayer = true;
+    RenderService.physicsMaxSteps = 1;
+    RenderService.logicMaxSteps = 1;
+    PhysicsService.physicsSmoothing = 1.0;
+    this.snapshotSmoothing = 1.0;
+    TimeService.registerPersistentFrameListener(() => {
+      if (typeof window.dqSendToServer === 'undefined') {
+        return;
+      }
+      window.dqSendToServer('sync', {
+        syncObjects: this.syncObjects
+      });
+    });
+    const dqReceiveFromServer = (action, payload) => {
+      if (this.networkActionsListeners[action]) {
+        this.networkActionsListeners[action].forEach(listener => {
+          listener(payload);
+        });
+      }
+    };
+    window.dqSendToGame = (action, payload) => dqReceiveFromServer(action, payload);
+  }
+  registerServerActionListener(action, listener) {
+    if (!this.isMultiplayer) {
+      return;
+    }
+    if (!this.networkActionsListeners[action]) {
+      this.networkActionsListeners[action] = [];
+    }
+    this.networkActionsListeners[action].push(listener);
+  }
+  registerClientHandler(listener) {
+    if (!this.isMultiplayer || this.mode === NetworkEnums.modeServer) {
+      return;
+    }
+    listener();
+  }
+  registerSyncObject(target) {
+    if (!target.name) {
+      console.warn('NetworkServiceClass', 'registerSyncObject', 'sync object missing a name, assign name before registering as SyncObject', target);
+      return;
+    }
+    if (this.syncObjects[target.name]) {
+      console.warn('NetworkServiceClass', 'registerSyncObject', 'attempting to register two objects with the same name', {
+        original: this.syncObjects[target.name],
+        new: target
+      });
+      return;
+    }
+    console.info('NetworkServiceClass', 'registerSyncObject', 'sync new object', {
+      target
+    });
+    this.syncObjects[target.name] = {};
+    this.syncPropNames.forEach(name => {
+      this.syncObjects[target.name][name] = target[name];
+    });
+  }
+  disposeSyncObject(target) {
+    if (this.syncObjects[target.name]) {
+      delete this.syncObjects[target.name];
+    }
+  }
+  disposeAll() {
+    this.syncObjects = {};
+    this.networkActionsListeners = {};
+  }
+}
+const NetworkService = new NetworkServiceClass();
+
+class PhysicsServiceClass {
+  constructor() {
+    _defineProperty(this, "physicsSmoothing", 0.75);
+    _defineProperty(this, "physicsWorld", null);
+    _defineProperty(this, "physicsLoop", null);
+    _defineProperty(this, "physicsStaticBodies", null);
+    _defineProperty(this, "navmaps", []);
+    _defineProperty(this, "pathfinder", null);
+    _defineProperty(this, "pathfinedEnabled", false);
+    _defineProperty(this, "pathfinderZoneId", 'zone');
+    _defineProperty(this, "surfaceHandlers", {});
+    _defineProperty(this, "surfaces", []);
+  }
+  init() {
+    if (!this.physicsWorld) {
+      const physicsWorld = new Cannon$1.World({
+        gravity: new Cannon$1.Vec3(0.0, -9.86, 0.0)
+      });
+      this.physicsWorld = physicsWorld;
+    }
+  }
+  onFrame({
+    dt
+  }) {
+    if (!this.physicsWorld) {
+      return;
+    }
+    this.physicsWorld.bodies.forEach(body => {
+      const {
+        targetRef
+      } = body;
+      if (body.mass === 0.0 || body.type === Cannon$1.Body.STATIC) {
+        body.allowSleep = true;
+        return;
+      }
+      targetRef.position.lerp(body.position, this.physicsSmoothing);
+      targetRef.quaternion.copy(body.quaternion);
+    });
+    if (dt !== 0) {
+      this.physicsWorld.fixedStep();
+    }
+  }
+  registerBody(object, physicsConfig) {
+    const {
+      physicsShape,
+      physicsSize,
+      physicsCapsuleHeight,
+      physicsStatic,
+      physicsFriction,
+      physicsRestitution,
+      physicsWeight,
+      physicsCollisionGroup,
+      physicsPreventRotation,
+      physicsHidden,
+      physicsDamping
+    } = physicsConfig;
+    const scene = RenderService.getScene();
+    if (object.userData.cannonRef) {
+      return;
+    }
+    if (object === scene) {
+      console.warn('PhysicsService', 'registerBody', 'attempting to register root scene as physically active object', {
+        object
+      });
+      return;
+    }
+    if (object.parent !== scene) {
+      console.warn('PhysicsService', 'registerBody', 'only direct children of the Scene can be physically active', {
+        object
+      });
+      const worldPosition = MathService.getVec3();
+      object.getWorldPosition(worldPosition);
+      scene.add(object);
+      object.position.copy(worldPosition);
+      MathService.releaseVec3(worldPosition);
+    }
+    if (physicsHidden) {
+      object.visible = false;
+    }
+    const quaternion = MathService.getQuaternion();
+    quaternion.copy(object.quaternion);
+    object.quaternion.identity();
+    const position = MathService.getVec3();
+    position.copy(object.position);
+    object.position.set(0.0, 0.0, 0.0);
+    const box3 = UtilsService.getBox3();
+    if (!physicsSize) {
+      object.traverse(child => {
+        if (child.isMesh) {
+          const worldBbox = UtilsService.getBox3();
+          worldBbox.expandByObject(child);
+          child.updateMatrix();
+          child.updateMatrixWorld();
+          const worldTransform = child.matrixWorld.clone();
+          const [e11, e21, e31, e41, e12, e22, e32, e42, e13, e23, e33, e43, e14, e24, e34, e44] = worldTransform.elements;
+          worldTransform.set(e11, e12, e13, 0.0, e21, e22, e23, 0.0, e31, e32, e33, 0.0, e41, e42, e43, e44);
+          worldBbox.applyMatrix4(worldTransform);
+          box3.union(worldBbox);
+          UtilsService.releaseBox3(worldBbox);
+        }
+      });
+    } else {
+      box3.setFromCenterAndSize(new Three$2.Vector3(0.0, 0.0, 0.0), new Three$2.Vector3(physicsSize / 2.0, physicsSize / 2.0, physicsSize / 2.0));
+    }
+    object.quaternion.copy(quaternion);
+    object.position.copy(position);
+    MathService.releaseVec3(position);
+    MathService.releaseQuaternion(quaternion);
+    const objectSize = MathService.getVec3();
+    box3.getSize(objectSize);
+    const shape = {
+      'box': new Cannon$1.Box(new Cannon$1.Vec3(objectSize.x / 2.0, objectSize.y / 2.0, objectSize.z / 2.0)),
+      'plane': new Cannon$1.Plane(),
+      'sphere': new Cannon$1.Sphere(objectSize.x / 2.0)
+    }[physicsShape] || new Cannon$1.Sphere(objectSize.x / 2.0);
+    const material = new Cannon$1.Material({
+      friction: defaultTo(physicsFriction, 0.3),
+      restitution: defaultTo(physicsRestitution, 0.3)
+    });
+    let body;
+    let bodyDebugColor;
+    if (physicsShape === 'plane') {
+      object.rotateX(-Math.PI / 2.0); // NOTE Fix z-up planes
+    }
+
+    if (physicsStatic) {
+      if (!this.physicsStaticBodies) {
+        const physicsStaticBodies = new Cannon$1.Body({
+          mass: 0.0,
+          material: material,
+          allowSleep: true,
+          type: Cannon$1.Body.STATIC
+        });
+        this.physicsWorld.addBody(physicsStaticBodies);
+        this.physicsStaticBodies = physicsStaticBodies;
+      }
+      this.physicsStaticBodies.addShape(shape, new Cannon$1.Vec3().copy(object.position), new Cannon$1.Quaternion().copy(object.quaternion));
+      body = this.physicsStaticBodies;
+      bodyDebugColor = new Three$2.Color(0xff00ff);
+
+      // NOTE Cannot remove or dispose a merged static body
+    } else {
+      body = new Cannon$1.Body({
+        mass: physicsStatic ? 0.0 : physicsWeight || 1.0,
+        material: material,
+        collisionFilterGroup: physicsCollisionGroup || -1,
+        collisionFilterMask: physicsCollisionGroup || -1,
+        fixedRotation: isDefined(physicsPreventRotation),
+        linearDamping: physicsDamping,
+        angularDamping: physicsDamping
+      });
+      bodyDebugColor = new Three$2.Color(Math.random() * 0x888888 + 0x888888);
+      if (physicsShape === 'capsule') {
+        const horizontalSpan = objectSize.x / 2.0;
+        body.addShape(new Cannon$1.Sphere(horizontalSpan), new Cannon$1.Vec3(0.0, horizontalSpan / 2.0, 0.0));
+        if (physicsCapsuleHeight > 0.0) {
+          body.addShape(new Cannon$1.Box(new Cannon$1.Vec3(horizontalSpan / 2.0, physicsCapsuleHeight / 2.0, horizontalSpan / 2.0)), new Cannon$1.Vec3(0.0, physicsCapsuleHeight / 2.0 + horizontalSpan / 2.0, 0.0));
+          body.addShape(new Cannon$1.Sphere(horizontalSpan), new Cannon$1.Vec3(0.0, physicsCapsuleHeight + horizontalSpan / 2.0, 0.0));
+        }
+      } else {
+        body.addShape(shape);
+      }
+      body.position.copy(object.position);
+      body.quaternion.copy(object.quaternion);
+      this.physicsWorld.addBody(body);
+      AssetsService.registerDisposeCallback(object, () => {
+        this.physicsWorld.removeBody(body);
+      });
+      body.name = object.name;
+      body.gameObject = object.gameObject;
+      if (!body.userData) {
+        body.userData = {};
+      }
+      NetworkService.registerSyncObject(body);
+    }
+    if (physicsShape === 'plane') {
+      object.rotateX(Math.PI / 2.0);
+    }
+    object.userData.cannonRef = body;
+    body.targetRef = object;
+    if (DebugService.get(DebugFlags.DEBUG_PHYSICS)) {
+      if (object.userData.collisionBox) {
+        return;
+      }
+      const helper = createBoxHelper(object, object.uuid, box3.clone());
+      helper.material.color.set(bodyDebugColor);
+      helper.material.transparent = true;
+      helper.material.opacity = 0.25;
+      const debugSize = new Three$2.Vector3();
+      box3.getSize(debugSize);
+      debugSize.addScalar(0.01);
+      const debugBox = new Three$2.Mesh({
+        'box': new Three$2.BoxBufferGeometry(debugSize.x / 2.0, debugSize.y / 2.0, debugSize.z / 2.0),
+        'plane': new Three$2.PlaneBufferGeometry(debugSize.x, debugSize.z),
+        'sphere': new Three$2.SphereBufferGeometry(debugSize.x / 2.0, 8, 8),
+        'capsule': new Three$2.CapsuleGeometry(debugSize.x / 2.0, physicsCapsuleHeight, 8, 8)
+      }[physicsShape] || new Three$2.SphereBufferGeometry(debugSize.x / 2.0, 8, 8), new Three$2.MeshBasicMaterial({
+        color: bodyDebugColor,
+        wireframe: true
+      }));
+      box3.getCenter(debugBox.position);
+      if (physicsShape === 'plane') {
+        debugBox.rotateX(Math.PI / 2.0);
+      } else if (physicsShape === 'capsule') {
+        debugBox.translateY(physicsCapsuleHeight / 2.0 + debugSize.x / 4.0);
+      }
+      object.add(debugBox);
+      object.userData.collisionBox = debugBox;
+    }
+    MathService.releaseVec3(objectSize);
+    UtilsService.releaseBox3(box3);
+    return body;
+  }
+  registerConstraint(objectA, objectB, distance) {
+    if (!this.physicsWorld) {
+      return;
+    }
+    const scene = RenderService.getScene();
+    if (objectA === scene || objectB === scene) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect object to root scene. Forgot to assign parent?', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectA.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    if (!objectB.userData.cannonRef) {
+      console.info('PhysicsService', 'registerConstraint', 'attempting to connect non-physical object to a constraint', {
+        objectA,
+        objectB
+      });
+      return;
+    }
+    this.disposeConstraintOnBody(objectA.userData.cannonRef);
+    this.disposeConstraintOnBody(objectB.userData.cannonRef);
+    const constraint = new Cannon$1.PointToPointConstraint(objectA.userData.cannonRef, new Cannon$1.Vec3(0.0, 0.0, 0.0), objectB.userData.cannonRef, new Cannon$1.Vec3(0.0, -distance, 0.0));
+    this.physicsWorld.addConstraint(constraint);
+    objectA.physicsConstraintRef = constraint;
+    objectB.physicsConstraintRef = constraint;
+    return constraint;
+  }
+  disposeConstraintOnBody(object) {
+    if (!this.physicsWorld || !object.physicsConstraintRef) {
+      return;
+    }
+    this.physicsWorld.removeConstraint(object.physicsConstraintRef);
+    object.physicsConstraintRef = null;
+  }
+  registerNavmap(object) {
+    this.enableNavmap(object);
+  }
+  enableNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+    this.navmaps.push(object);
+    this.updatePathfinder();
+  }
+  disableNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+    this.updatePathfinder();
+  }
+  updatePathfinder() {
+    if (!this.pathfinder) {
+      this.pathfinder = new Pathfinding();
+    }
+    const navmapGeometries = this.navmaps.filter(navmap => navmap.geometry).map(navmap => navmap.geometry);
+    if (!navmapGeometries.length) {
+      this.pathfinedEnabled = false;
+      return;
+    }
+    const navmeshGeometry = (BufferGeometryScope.mergeBufferGeometries ? BufferGeometryScope : BufferGeometryScope.BufferGeometryUtils).mergeBufferGeometries(navmapGeometries, false);
+    const zone = Pathfinding.createZone(navmeshGeometry);
+    this.pathfinder.setZoneData(this.pathfinderZoneId, zone);
+    this.pathfinedEnabled = this.pathfinder.zones.length > 0;
+  }
+  registerSurfaceHandler(surfaceType, handlerClass, onInteraction = 'onInteraction', onEnter = 'onEnter', onLeave = 'onLeave') {
+    this.surfaceHandlers[surfaceType] = {
+      cls: handlerClass,
+      onInteraction,
+      onEnter,
+      onLeave
+    };
+  }
+  registerSurface(object) {
+    const surfaceType = object.userData.surface;
+    const surfaceHandler = this.surfaceHandlers[surfaceType];
+    if (!surfaceType) {
+      return;
+    }
+    if (!surfaceHandler) {
+      console.warn('registerSurface', `surfaceHandler for "${surfaceType}" does not exist`);
+      return;
+    }
+    const surfaceConstructor = surfaceHandler.cls;
+    const surface = new surfaceConstructor(object);
+    if (surface.onInteraction) surface.onInteraction = surface.onInteraction.bind(surface);
+    if (surface.onEnter) surface.onEnter = surface.onEnter.bind(surface);
+    if (surface.onLeave) surface.onLeave = surface.onLeave.bind(surface);
+    object.userData.surfaceRef = surface;
+    this.surfaces.push(object);
+  }
+  getNavmaps() {
+    return this.navmaps;
+  }
+  disposeNavmap(object) {
+    this.navmaps = this.navmaps.filter(match => match !== object);
+  }
+  disposeSurface(object) {
+    this.surfaces = this.surfaces.filter(match => match !== object);
+  }
+  disposeAll() {
+    this.physicsWorld.removeBody(this.physicsStaticBodies);
+    this.physicsStaticBodies = null;
+    this.navmaps = [];
+    this.surfaces = [];
+    MathService.releaseVec3(this.emptyVector3);
+    if (this.pathfinder) {
+      this.pathfinder = null;
+    }
+  }
+}
+const PhysicsService = new PhysicsServiceClass();
 
 const LogsNaturalColor = '#ffffff';
 const LogsHighlightColor = '#ffff33';
+const LogsSuccessColor = '#33ff33';
+const LogsErrorColor = '#ff3333';
 const DebugFlags = {
   DEBUG_ENABLE: 'DEBUG_ENABLE',
   DEBUG_LIVE: 'DEBUG_LIVE',
   DEBUG_LOG_MEMORY: 'DEBUG_LOG_MEMORY',
   DEBUG_LOG_POOLS: 'DEBUG_LOG_POOLS',
   DEBUG_LOG_ASSETS: 'DEBUG_LOG_ASSETS',
-  DEBUG_ORBIT_CONTROLS: 'DEBUG_ORBIT_CONTROLS',
   DEBUG_SCROLL_VISIBLE: 'DEBUG_SCROLL_VISIBLE',
   DEBUG_TIME_LISTENERS: 'DEBUG_TIME_LISTENERS',
   DEBUG_SKINNING_SKELETONS: 'DEBUG_SKINNING_SKELETONS',
@@ -541,49 +1239,45 @@ const DebugFlags = {
   DEBUG_AI_NODES: 'DEBUG_AI_NODES',
   DEBUG_AI_TARGETS: 'DEBUG_AI_TARGETS',
   DEBUG_PHYSICS: 'DEBUG_PHYSICS',
-  DEBUG_PHYSICS_DYNAMIC: 'DEBUG_PHYSICS_DYNAMIC'
+  DEBUG_NETWORK: 'DEBUG_NETWORK'
 };
-
-class DummyDebugClass {
+class DebugServiceClass {
   constructor() {
     _defineProperty(this, "stats", null);
-
     _defineProperty(this, "logs", null);
-
     _defineProperty(this, "leaks", {
       textures: 0,
       geometries: 0
     });
-
     _defineProperty(this, "flags", {});
   }
-
   on(debugFlag) {
     this.flags[debugFlag] = true;
   }
-
   off(debugFlag) {
     this.flags[debugFlag] = false;
   }
-
   get(debugFlag) {
     return this.flags['DEBUG_ENABLE'] && this.flags[debugFlag] || false;
   }
-
   showStats() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const stats = new Stats();
     stats.showPanel(0);
     document.body.appendChild(stats.dom);
     this.stats = stats;
   }
-
   hideStats() {
     if (this.stats) {
       document.body.removeChild(this.stats.dom);
     }
   }
-
-  showLogs() {
+  init() {
+    if (RenderService.isHeadless || !this.get(DebugFlags.DEBUG_LIVE)) {
+      return;
+    }
     const outputElement = document.createElement('div');
     outputElement.style.position = 'absolute';
     outputElement.style.top = '5px';
@@ -606,10 +1300,8 @@ class DummyDebugClass {
       if (!this.logs) {
         return false;
       }
-
       const outputElement = this.logs;
       outputElement.innerHTML = '';
-
       if (this.get(DebugFlags.DEBUG_LOG_MEMORY)) {
         outputElement.appendChild(this.createLogLine({
           text: 'Geometries:'
@@ -643,7 +1335,6 @@ class DummyDebugClass {
           color: LogsHighlightColor
         }));
       }
-
       if (this.get(DebugFlags.DEBUG_LOG_ASSETS)) {
         outputElement.appendChild(this.createLogLine({
           text: 'Disposables:'
@@ -667,7 +1358,6 @@ class DummyDebugClass {
           color: LogsHighlightColor
         }));
       }
-
       if (this.get(DebugFlags.DEBUG_LOG_POOLS)) {
         outputElement.appendChild(this.createLogLine({
           text: 'Vec3:'
@@ -753,7 +1443,6 @@ class DummyDebugClass {
           color: LogsHighlightColor
         }));
       }
-
       if (this.get(DebugFlags.DEBUG_TIME_LISTENERS)) {
         outputElement.appendChild(this.createLogLine({
           text: 'Timed Fn.:'
@@ -772,7 +1461,6 @@ class DummyDebugClass {
           color: LogsHighlightColor
         }));
       }
-
       if (this.get(DebugFlags.DEBUG_STORAGE)) {
         outputElement.appendChild(this.createLogLine({
           text: 'Storage'
@@ -788,19 +1476,58 @@ class DummyDebugClass {
           color: LogsHighlightColor
         }));
       }
-
       outputElement.appendChild(this.createLogLine({
-        text: 'Version:'
+        text: 'DQ Ver:'
       }, {
         text: version,
         color: LogsHighlightColor
       }, {
         text: '(dev)',
         color: LogsHighlightColor
+      }, {
+        text: 'Three.js Ver:'
+      }, {
+        text: dependencies.three,
+        color: LogsHighlightColor
       }));
+      if (this.get(DebugFlags.DEBUG_PHYSICS)) {
+        outputElement.appendChild(this.createLogLine({
+          text: 'CannonES Ver:'
+        }, {
+          text: dependencies['cannon-es'],
+          color: LogsHighlightColor
+        }, {
+          text: 'Bodies:'
+        }, {
+          text: PhysicsService.physicsWorld.bodies.length,
+          color: LogsHighlightColor
+        }));
+      }
+      if (this.get(DebugFlags.DEBUG_NETWORK)) {
+        outputElement.appendChild(this.createLogLine({
+          text: 'Network Status:'
+        }, {
+          text: NetworkService.mode === NetworkEnums.modeSinglePlayer ? NetworkEnums.modeSinglePlayer : NetworkService.status,
+          color: [NetworkService.status === NetworkEnums.statusConnected ? LogsSuccessColor : null, NetworkService.status === NetworkEnums.statusNotConnected ? LogsErrorColor : null, LogsHighlightColor].filter(Boolean)[0]
+        }, {
+          text: 'Mode:'
+        }, {
+          text: NetworkService.mode,
+          color: LogsHighlightColor
+        }, {
+          text: 'SyncBodies:'
+        }, {
+          text: Object.keys(NetworkService.syncObjects).length,
+          color: LogsHighlightColor
+        }, {
+          text: 'Ping:'
+        }, {
+          text: NetworkService.ping > 999 ? '999ms' : `${`000${NetworkService.ping}`.substr(-3)}ms`,
+          color: LogsHighlightColor
+        }));
+      }
     });
   }
-
   createLogLine(...logs) {
     const logLineElement = document.createElement('div');
     logs.forEach(({
@@ -815,175 +1542,133 @@ class DummyDebugClass {
     });
     return logLineElement;
   }
-
 }
-
-const DummyDebug = new DummyDebugClass();
+const DebugService = new DebugServiceClass();
 
 class MathServiceClass {
   constructor() {
     _defineProperty(this, "poolVec2", []);
-
     _defineProperty(this, "poolVec3", []);
-
     _defineProperty(this, "poolQuaternions", []);
-
     _defineProperty(this, "poolMatrix4", []);
-
     _defineProperty(this, "poolVec2Total", 0);
-
     _defineProperty(this, "poolVec3Total", 0);
-
     _defineProperty(this, "poolQuaternionsTotal", 0);
-
     _defineProperty(this, "poolMatrix4Total", 0);
-
     _defineProperty(this, "leakRegistry", {});
   }
-
   getVec2(x = 0.0, y = 0.0, id) {
     const pooled = this.poolVec2.pop();
-
     if (pooled) {
       return pooled.set(x, y);
     }
-
     this.poolVec2Total++;
-    const vector = new Three.Vector2(x, y);
+    const vector = new Three$2.Vector2(x, y);
     this.registerId(vector, id);
     return vector;
   }
-
   releaseVec2(vector) {
     vector.set(0, 0);
     this.unregisterId(vector);
     this.poolVec2.push(vector);
   }
-
   getQuaternion(id) {
     const pooled = this.poolQuaternions.pop();
-
     if (pooled) {
       return pooled.identity();
     }
-
     this.poolQuaternionsTotal++;
-    const quaternion = new Three.Quaternion();
+    const quaternion = new Three$2.Quaternion();
     this.registerId(quaternion, id);
     return quaternion;
   }
-
   releaseQuaternion(quaternion) {
     quaternion.identity();
     this.unregisterId(quaternion);
     this.poolQuaternions.push(quaternion);
   }
-
   getMatrix4(id) {
     const pooled = this.poolMatrix4.pop();
-
     if (pooled) {
       return pooled.identity();
     }
-
     this.poolMatrix4Total++;
-    const matrix = new Three.Matrix4();
+    const matrix = new Three$2.Matrix4();
     this.registerId(matrix, id);
     return matrix;
   }
-
   releaseMatrix4(matrix) {
     matrix.identity();
     this.unregisterId(matrix);
     this.poolMatrix4.push(matrix);
   }
-
   getVec3(x = 0.0, y = 0.0, z = 0.0, id) {
     const pooled = this.poolVec3.pop();
-
     if (pooled) {
       return pooled.set(x, y, z);
     }
-
     this.poolVec3Total++;
-    const vector = new Three.Vector3(x, y, z);
+    const vector = new Three$2.Vector3(x, y, z);
     this.registerId(vector, id);
     return vector;
   }
-
   cloneVec3(sourceVector) {
     const pooled = this.poolVec3.pop();
-
     if (pooled) {
       return pooled.copy(sourceVector);
     }
-
     this.poolVec3Total++;
-    return new Three.Vector3().copy(sourceVector);
+    return new Three$2.Vector3().copy(sourceVector);
   }
-
   releaseVec3(vector) {
     if (!vector) {
       return;
     }
-
     vector.set(0, 0, 0);
     this.unregisterId(vector);
     this.poolVec3.push(vector);
   }
-
   registerId(object, id) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !id) {
       return;
     }
-
     object.userData = {
       id
     };
     const key = `${object.constructor.name}:${id}`;
-
     if (this.leakRegistry[key]) {
       this.leakRegistry[key]++;
     } else {
       this.leakRegistry[key] = 1;
     }
   }
-
   unregisterId(object) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS) || !object.userData || !object.userData.id) {
       return;
     }
-
     const {
       id
     } = object.userData;
     const key = `${object.constructor.name}:${id}`;
-
     if (this.leakRegistry[key]) {
       this.leakRegistry[key]--;
     }
-
     if (this.leakRegistry[key] <= 0) {
       delete this.leakRegistry[key];
     }
-
     delete object.userData;
   }
-
   handleLeaks() {
-    if (!DummyDebug.get(DebugFlags.DEBUG_LOG_POOLS)) {
+    if (!DebugService.get(DebugFlags.DEBUG_LOG_POOLS)) {
       return;
     }
-
     const leaks = Object.keys(this.leakRegistry);
-
     if (leaks.length > 0) {
       console.info('MathService', 'handleLeaks', 'leakedPools', {
         leaks: this.leakRegistry
       });
     }
   }
-
   disposeAll() {
     this.poolVec2 = [];
     this.poolVec3 = [];
@@ -994,15 +1679,13 @@ class MathServiceClass {
     this.poolQuaternionsTotal = 0;
     this.poolMatrix4Total = 0;
   }
-
 }
-
 const MathService = new MathServiceClass();
 
-const MathUtils = Three.MathUtils;
+const MathUtils = Three$2.MathUtils;
 const isDefined = value => typeof value !== 'undefined';
 const cloneValue = value => JSON.parse(JSON.stringify(value));
-const getRandomColor = () => new Three.Color(Math.random() * 0xffffff);
+const getRandomColor = () => new Three$2.Color(Math.random() * 0xffffff);
 const getRandomElement = set => set[Math.floor(Math.random() * set.length)];
 const spliceRandomElement = set => set.splice(Math.floor(Math.random() * set.length), 1)[0];
 const moduloAngle = x => Math.atan2(Math.sin(x), Math.cos(x));
@@ -1014,7 +1697,8 @@ const swapVectors = (vectorA, vectorB) => {
   vectorB.copy(helper);
   MathService.releaseVec3(helper);
 };
-const textureFields = [// NOTE Excluding lightMap and envMap
+const textureFields = [
+// NOTE Excluding lightMap and envMap
 'alphaMap', 'aoMap', 'bumpMap', 'clearcoatMap', 'clearcoatNormalMap', 'clearcoatRoughnessMap', 'emissiveMap', 'gradientMap', 'displacementMap', 'map', 'metalnessMap', 'matcap', 'normalMap', 'transmissionMap', 'roughnessMap', 'specularMap'];
 const forAllMaterialTextures = (material, callback) => {
   textureFields.forEach(key => {
@@ -1027,48 +1711,36 @@ const forAllMaterialTextures = (material, callback) => {
 class TimeServiceClass {
   constructor() {
     _defineProperty(this, "frameListeners", []);
-
     _defineProperty(this, "intervals", {});
-
     _defineProperty(this, "persistentFrameListeners", {});
-
     _defineProperty(this, "lastDt", 0.0);
-
     _defineProperty(this, "lastInverseDt", 0.0);
-
     _defineProperty(this, "totalElapsedTime", 0.0);
   }
-
   createTimeoutPromise(timeout = 1000) {
     return new Promise(resolve => {
       setTimeout(resolve, timeout);
     });
   }
-
   registerFrameListener(onFrame) {
     this.frameListeners.push(onFrame);
     return onFrame;
   }
-
   registerIntervalListener(onIntervalStep, intervalTime = 1000) {
     const interval = intervalTime / 1000.0;
-
     if (!this.intervals[interval]) {
       this.intervals[interval] = {
         time: interval,
         listeners: []
       };
     }
-
     this.intervals[interval].listeners.push(onIntervalStep);
   }
-
   registerPersistentFrameListener(onFrame) {
     const persistentUid = uuid.v4();
     this.persistentFrameListeners[persistentUid] = onFrame;
     return persistentUid;
   }
-
   onFrame({
     dt,
     elapsedTime
@@ -1086,7 +1758,6 @@ class TimeServiceClass {
     });
     Object.keys(this.persistentFrameListeners).forEach(uid => {
       const listener = this.persistentFrameListeners[uid];
-
       if (listener({
         dt,
         elapsedTime,
@@ -1098,7 +1769,6 @@ class TimeServiceClass {
     Object.keys(this.intervals).forEach(key => {
       const intervals = this.intervals[key];
       intervals.time -= dt;
-
       if (intervals.time <= 0.0) {
         intervals.listeners = intervals.listeners.filter(listener => {
           return listener({
@@ -1107,65 +1777,50 @@ class TimeServiceClass {
             inverseDt
           }) !== false;
         });
-
         if (intervals.listeners.length === 0) {
           delete this.intervals[key];
         }
-
         intervals.time = key;
       }
     });
   }
-
   getLastDt() {
     return this.lastDt;
   }
-
   getLastInverseDt() {
     return this.lastInverseDt;
   }
-
   getTotalElapsedTime() {
     return this.totalElapsedTime;
   }
-
   disposeFrameListener(frameListener) {
     this.frameListeners = this.frameListeners.filter(match => match !== frameListener);
   }
-
   disposePersistentListener(uid) {
     delete this.persistentFrameListeners[uid];
   }
-
   disposeIntervalListener(intervalListener, intervalTime) {
     if (intervalTime) {
       if (this.intervals[intervalTime]) {
         this.intervals[intervalTime].listeners = this.intervals[intervalTime].listeners.filter(match => match !== intervalListener);
-
         if (this.intervals[intervalTime].listeners.length === 0) {
           delete this.intervals[intervalTime];
         }
       }
-
       return;
     }
-
     Object.keys(this.intervals).forEach(key => {
       this.intervals[key].listeners = this.intervals[key].listeners.filter(match => match !== intervalListener);
-
       if (this.intervals[key].listeners.length === 0) {
         delete this.intervals[key];
       }
     });
   }
-
   disposeAll() {
     this.frameListeners = [];
     this.intervals = {};
   }
-
 }
-
 const TimeService = new TimeServiceClass();
 
 const animateLinearInverse = (x, duration = 1.0, offset = 1.0) => offset - Math.min(x, duration) / duration * offset;
@@ -1177,16 +1832,12 @@ const AnimationOverrideType = {
   overrideIfExists: 1,
   ignoreIfExists: 2
 };
-
 class AnimationServiceClass {
   constructor() {
     _defineProperty(this, "animations", []);
-
     _defineProperty(this, "frameListenerUid", null);
-
     this.initLoop();
   }
-
   initLoop() {
     this.frameListenerUid = TimeService.registerPersistentFrameListener(({
       dt,
@@ -1198,7 +1849,6 @@ class AnimationServiceClass {
       });
     });
   }
-
   onStep({
     dt,
     elapsedTime
@@ -1210,19 +1860,15 @@ class AnimationServiceClass {
         target,
         interval
       } = animation;
-
       if (typeof onStep !== 'function' || !target) {
         return false;
       }
-
       if (target.__disposed__) {
         AssetsService.disposeAsset(target);
         return false;
       }
-
       animation.animationTime += dt;
       animation.intervalTime += dt;
-
       if (interval === 0 || animation.intervalTime >= interval) {
         const result = onStep({
           target,
@@ -1232,17 +1878,14 @@ class AnimationServiceClass {
           intervalTime: animation.intervalTime
         });
         animation.intervalTime = animation.intervalTime - interval;
-
         if (result === false) {
           animation.dispose();
           return false;
         }
       }
-
       return true;
     });
   }
-
   registerAnimation({
     target,
     onCreate,
@@ -1255,7 +1898,6 @@ class AnimationServiceClass {
     if (!target || !onStep) {
       return;
     }
-
     if (target.userData.animationServiceRef) {
       if (override === AnimationOverrideType.ignoreIfExists) {
         return target.userData.animationServiceRef;
@@ -1263,7 +1905,6 @@ class AnimationServiceClass {
         this.cancelAnimation(target.userData.animationServiceRef);
       }
     }
-
     const animation = {
       target,
       onStep,
@@ -1276,29 +1917,23 @@ class AnimationServiceClass {
             target
           });
         }
-
         this.animations = this.animations.filter(item => item !== animation);
         delete target.userData.animationServiceRef;
       }
     };
-
     if (onCreate) {
       onCreate(animation);
     }
-
     this.animations.push(animation);
     target.userData.animationServiceRef = animation;
     return animation;
   }
-
   cancelAnimation(animation) {
     if (animation.dispose) {
       animation.dispose();
     }
-
     this.animations = this.animations.filter(item => item !== animation);
   }
-
   disposeAll() {
     this.animations = this.animations.filter(({
       target
@@ -1306,497 +1941,357 @@ class AnimationServiceClass {
       if (target.userData) {
         delete target.userData.animationServiceRef;
       }
-
       return false;
     });
     this.animations = [];
   }
-
   dispose() {
     if (this.frameListenerUid) {
       TimeService.disposePersistentListener(this.frameListenerUid);
     }
   }
-
 }
-
 const AnimationService = new AnimationServiceClass();
 
-const OcclusionStepEnum = {
-  progressive: 'progressive'
+CameraControls.install({
+  THREE: Three$2
+});
+const CameraMovementTypeEnums = {
+  rotateOnButtonDown: 'rotateOnButtonDown',
+  rotateOnPointerMove: 'rotateOnPointerMove'
 };
-
 class CameraServiceClass {
   constructor() {
     _defineProperty(this, "cameras", {});
-
-    _defineProperty(this, "detachedControls", null);
-
     _defineProperty(this, "renderTargets", {});
-
     _defineProperty(this, "autoUpdateRenderTargets", false);
-
-    _defineProperty(this, "cameraPosition", MathService.getVec3(0.0, 0.0, 0.0, 'camera-1'));
-
+    _defineProperty(this, "cameraPosition", MathService.getVec3(0.0, 1.0, 1.0, 'camera-1'));
     _defineProperty(this, "cameraQuaternion", MathService.getQuaternion());
-
     _defineProperty(this, "defaultTween", 0.2);
-
     _defineProperty(this, "tween", 0.2);
-
     _defineProperty(this, "camera", null);
-
     _defineProperty(this, "followedObject", null);
-
     _defineProperty(this, "followListener", null);
-
-    _defineProperty(this, "followThreshold", 0.001);
-
-    _defineProperty(this, "followPivot", null);
-
-    _defineProperty(this, "followPivotPosition", MathService.getVec3(0.0, 0.0, 0.0, 'camera-2'));
-
-    _defineProperty(this, "occlusionTest", false);
-
-    _defineProperty(this, "occlusionSettings", {});
-
-    _defineProperty(this, "occlusionStep", OcclusionStepEnum.progressive);
-
-    _defineProperty(this, "occlusionSphere", 0.1);
-
-    _defineProperty(this, "translationLocked", false);
-
+    _defineProperty(this, "followListenerThreshold", 0.001);
+    _defineProperty(this, "followOffset", new Three$2.Vector3(0.0, 0.0, 0.0));
     _defineProperty(this, "rotationLocked", false);
+    _defineProperty(this, "cameraControls", null);
+    _defineProperty(this, "pointerLockControls", null);
+    _defineProperty(this, "cameraMovementType", CameraMovementTypeEnums.rotateOnButtonDown);
   }
-
   init({
-    camera
+    camera,
+    renderer
   } = {}) {
-    this.camera = camera;
-    this.cameraPosition.copy(camera.position);
-    this.cameraQuaternion.copy(camera.quaternion);
-  }
-
-  onFrame() {
-    this.updateCamera();
-
-    if (this.occlusionTest) {
-      this.determineTargetVisibility();
+    if (RenderService.isHeadless) {
+      return;
     }
-
+    this.camera = camera;
+    this.camera.position.copy(this.cameraPosition);
+    this.camera.quaternion.copy(this.cameraQuaternion);
+    if (!this.cameraControls) {
+      this.cameraControls = new CameraControls(RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') : renderer.domElement);
+      this.cameraControls.enabled = false;
+    }
+    if (!this.pointerLockControls) {
+      this.pointerLockControls = new PointerLockControls(RenderService.getNativeCamera(), RenderService.isHeadless ? document.createElement('div') : renderer.domElement);
+      this.pointerLockControls.unlock();
+    }
+  }
+  onFrame(dt) {
+    this.updateCamera(dt);
     if (this.autoUpdateRenderTargets) {
       this.updateRenderTargets();
     }
   }
-
   resetCamera() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.camera.position.set(0.0, 0.0, 0.0);
     this.camera.rotation.set(0.0, 0.0, 0.0);
     this.camera.quaternion.identity();
     this.cameraPosition.copy(this.camera.position);
     this.cameraQuaternion.copy(this.camera.quaternion);
+    this.cameraControls.enabled = false;
+    this.pointerLockControls.unlock();
   }
-
-  updateCamera() {
-    if (this.detachedControls) {
+  updateCamera(dt = 0.0) {
+    if (RenderService.isHeadless) {
       return;
     }
-
+    if (this.pointerLockControls.isLocked) {
+      if (this.followedObject) {
+        this.followedObject.getWorldPosition(this.cameraPosition);
+        this.camera.position.lerp(this.cameraPosition, this.tween);
+      }
+      return;
+    }
     if (this.followedObject) {
-      this.followedObject.getWorldPosition(this.cameraPosition);
-      this.followedObject.getWorldQuaternion(this.cameraQuaternion);
-
+      const targetPosition = MathService.getVec3();
+      const targetQuaternion = MathService.getQuaternion();
+      this.followedObject.getWorldPosition(targetPosition);
+      this.followedObject.getWorldQuaternion(targetQuaternion);
+      this.cameraPosition.lerp(targetPosition, this.tween);
+      this.cameraQuaternion.slerp(targetQuaternion, this.tween);
+      MathService.releaseVec3(targetPosition);
+      MathService.releaseQuaternion(targetQuaternion);
+      const worldAlignedOffset = MathService.getVec3();
+      worldAlignedOffset.copy(this.followOffset);
+      worldAlignedOffset.applyQuaternion(this.cameraQuaternion);
+      if (this.rotationLocked) {
+        this.cameraControls.setLookAt(this.cameraPosition.x + worldAlignedOffset.x, this.cameraPosition.y + worldAlignedOffset.y, this.cameraPosition.z + worldAlignedOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
+      } else {
+        this.cameraControls.moveTo(this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, true);
+      }
+      MathService.releaseVec3(worldAlignedOffset);
       if (this.followListener) {
         const distanceToTarget = MathService.getVec3(0.0, 0.0, 0.0, 'camera-3').copy(this.camera.position).sub(this.cameraPosition);
-
-        if (distanceToTarget.length() <= this.followThreshold) {
+        if (distanceToTarget.length() <= this.followListenerThreshold) {
           this.followListener();
           delete this.followListener;
         }
-
         MathService.releaseVec3(distanceToTarget);
       }
-
-      this.followPivot.position.lerp(this.followPivotPosition, this.tween);
-
-      if (this.followPivot && !this.occlusionSettings.faceTarget) {
-        const mock = UtilsService.getEmpty();
-        mock.position.copy(this.followPivot.position);
-        mock.quaternion.copy(this.followPivot.quaternion);
-        mock.matrix.copy(this.followPivot.matrix);
-        mock.matrixWorld.copy(this.followPivot.matrixWorld);
-        mock.isCamera = true;
-        this.followPivot.parent.add(mock);
-        mock.lookAt(this.cameraPosition);
-        this.followPivot.quaternion.slerp(mock.quaternion, this.tween);
-        mock.isCamera = false;
-        UtilsService.releaseEmpty(mock);
+    }
+    if (!this.cameraControls.enabled) {
+      if (!this.rotationLocked) {
+        this.camera.quaternion.slerp(this.cameraQuaternion, this.tween);
       }
-    }
-
-    if (!this.translationLocked) {
       this.camera.position.lerp(this.cameraPosition, this.tween);
-    }
-
-    if (!this.rotationLocked) {
-      this.camera.quaternion.slerp(this.cameraQuaternion, this.tween);
+    } else {
+      this.cameraControls.update(dt);
     }
   }
-
-  setCameraPosition(x, y, z) {
-    this.cameraPosition.set(x, y, z);
-  }
-
-  setCameraQuaternion(quaternion) {
-    this.cameraQuaternion.set(quaternion);
-  }
-
-  copyCameraPosition(position) {
-    this.cameraPosition.copy(position);
-  }
-
-  copyCameraQuaternion(quaternion) {
-    this.cameraQuaternion.copy(quaternion);
-  }
-
   addCamera(id, camera) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     this.cameras[id] = camera;
   }
-
   getCamera(id) {
     return this.cameras[id];
   }
-
-  useCamera(camera, instant = false) {
-    this.stopFollowing();
-    this.reattachCamera();
+  setTween(tween = 0.2) {
+    this.tween = tween;
+  }
+  useGameObjectCamera(gameObjectOrId) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+    let camera;
+    if (typeof gameObjectOrId === 'string') {
+      camera = this.getCamera(gameObjectOrId);
+    } else {
+      camera = gameObjectOrId;
+    }
+    if (!camera) {
+      console.warn('CameraService', 'useStaticCamera', 'camera not found', {
+        cameraOrId
+      });
+      return;
+    }
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+    this.followedObject = null;
+    this.cameraControls.enabled = false;
     this.cameraPosition.copy(camera.position);
     this.cameraQuaternion.copy(camera.quaternion);
-
-    if (instant) {
+    if (this.tween >= 1.0) {
+      this.camera.position.copy(camera.position);
+      this.camera.quaternion.copy(camera.quaternion);
+    }
+  }
+  useStaticCamera(position, target, allowOrbit = false) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+    this.followedObject = null;
+    this.followOffset.set(0.1, 0.1, 0.1);
+    this.cameraControls.enabled = allowOrbit;
+    this.cameraControls.setOrbitPoint(target.x, target.y, target.z);
+    this.cameraPosition.copy(position);
+    if (target) {
+      const mock = UtilsService.getEmpty();
+      mock.position.copy(position);
+      mock.lookAt(target);
+      this.cameraQuaternion.copy(mock.quaternion);
+      UtilsService.releaseEmpty(mock);
+    }
+    if (this.tween >= 1.0) {
       this.camera.position.copy(this.cameraPosition);
       this.camera.quaternion.copy(this.cameraQuaternion);
     }
   }
-
-  follow(object, onReachTarget, freezeFrame = true) {
-    const callback = () => {
-      this.stopFollowing();
-      this.reattachCamera();
-      this.followedObject = object;
-      this.followListener = onReachTarget;
-      const pivot = UtilsService.getEmpty();
-      this.camera.parent.add(pivot);
-      pivot.position.copy(this.camera.position);
-      pivot.quaternion.copy(this.camera.quaternion);
-      this.camera.position.set(0.0, 0.0, 0.0);
-      this.camera.quaternion.identity();
-      pivot.add(this.camera);
-      this.followPivot = this.camera;
-      this.camera = pivot;
-
-      if (freezeFrame) {
-        RenderService.resumeRendering();
-      }
-    };
-
-    if (freezeFrame) {
-      RenderService.pauseRendering(() => callback());
+  useFirstPersonCamera(object) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnPointerMove);
+    this.followedObject = object;
+    this.followOffset.set(0.0, 0.0, 0.0);
+    this.registerCameraColliders(false);
+    this.cameraControls.dampingFactor = 1.0;
+    this.cameraControls.enabled = false;
+  }
+  useThirdPersonCamera(object, offset, preventOcclusion = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+    this.setCameraMovementType(CameraMovementTypeEnums.rotateOnButtonDown);
+    this.followedObject = object;
+    this.followedObject.getWorldPosition(this.cameraPosition);
+    this.registerCameraColliders(preventOcclusion);
+    if (offset) {
+      this.followOffset.copy(offset);
     } else {
-      callback();
+      this.followOffset.set(0.1, 0.1, 0.1);
+    }
+    this.cameraControls.setLookAt(this.cameraPosition.x + this.followOffset.x, this.cameraPosition.y + this.followOffset.y, this.cameraPosition.z + this.followOffset.z, this.cameraPosition.x, this.cameraPosition.y, this.cameraPosition.z, false);
+    this.cameraControls.dampingFactor = this.tween;
+    this.cameraControls.enabled = true;
+  }
+  ignoreCameraCollisions(object) {
+    object.traverse(child => {
+      child.userData._ignoreCameraCollision = true;
+    });
+  }
+  registerCameraColliders(preventOcclusion) {
+    if (RenderService.isHeadless) {
+      return;
+    }
+    if (preventOcclusion) {
+      const scene = RenderService.getScene();
+      if (scene) {
+        this.cameraControls.colliderMeshes = [];
+        scene.traverseVisible(child => {
+          if (child === this.followedObject || !(child instanceof Three$2.Mesh) || child.children.length) {
+            return;
+          }
+          let ignoreCollision = false;
+          child.traverseAncestors(ancestor => {
+            if (ancestor && (ancestor === this.followedObject || ancestor.userData._ignoreCameraCollision)) {
+              ignoreCollision = true;
+            }
+          });
+          if (ignoreCollision) {
+            return;
+          }
+          this.cameraControls.colliderMeshes.push(child);
+        });
+      }
+    } else {
+      this.cameraControls.colliderMeshes = [];
     }
   }
-
-  getFollowPivot() {
-    return this.followPivot;
-  }
-
-  stopFollowing() {
-    delete this.followedObject;
-
-    if (this.followPivot) {
-      const originalCamera = this.followPivot;
-      originalCamera.position.copy(this.camera.position);
-      originalCamera.quaternion.copy(this.camera.quaternion);
-      const cameraRoot = this.camera.parent;
-      this.camera.remove(originalCamera);
-      cameraRoot.remove(this.camera);
-      cameraRoot.add(originalCamera);
-      const pivot = this.camera;
-      this.camera = this.followPivot;
-      UtilsService.releaseEmpty(pivot);
-      this.followPivot = null;
+  setCameraMovementType(cameraMovementType) {
+    this.cameraMovementType = cameraMovementType;
+    if (cameraMovementType === CameraMovementTypeEnums.rotateOnButtonDown) {
+      this.cameraControls.enabled = true;
+      this.pointerLockControls.unlock();
+    } else {
+      this.cameraControls.enabled = false;
+      this.pointerLockControls.lock();
     }
-
-    this.cameraPosition.copy(this.camera.position);
-    this.cameraQuaternion.copy(this.camera.quaternion);
   }
-
+  onReachTarget(callback) {
+    this.followListener = callback;
+  }
   getCameraAsTexture(id, {
     width,
     height,
     minFilter,
     magFilter
   } = {}) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const camera = this.cameras[id];
-
     if (!camera) {
       console.warn('CameraService', 'getCameraAsTexture', `camera ${id} does not exist`);
       return;
     }
-
     if (this.renderTargets[id]) {
       return this.renderTargets[id].texture;
     }
-
-    const renderTarget = new Three.WebGLRenderTarget(width || window.innerWidth, height || window.innerHeight, {
-      minFilter: minFilter || Three.LinearFilter,
-      magFilter: magFilter || Three.NearestFilter,
-      format: Three.RGBFormat
+    const renderTarget = new Three$2.WebGLRenderTarget(width || window.innerWidth, height || window.innerHeight, {
+      minFilter: minFilter || Three$2.LinearFilter,
+      magFilter: magFilter || Three$2.NearestFilter,
+      format: Three$2.RGBFormat
     });
     this.renderTargets[id] = renderTarget;
     return renderTarget.texture;
   }
-
   updateRenderTargets() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const scene = RenderService.getScene();
     const renderer = RenderService.getRenderer();
-
     if (!scene || !renderer) {
       console.info('CameraService', 'updateRenderTargets', 'missing scene or renderer');
       return;
     }
-
     const uncontrolledCamera = UtilsService.getCamera();
     Object.keys(this.renderTargets).forEach(id => {
       const renderTarget = this.renderTargets[id];
       const camera = this.cameras[id];
       uncontrolledCamera.position.copy(camera.position);
       uncontrolledCamera.quaternion.copy(camera.quaternion);
-
       if (!camera) {
         console.info('CameraService', 'updateRenderTargets', `missing camera ${id}`);
         this.disposeRenderTarget(renderTarget);
         return;
       }
-
       renderer.setRenderTarget(renderTarget);
       renderer.render(scene, uncontrolledCamera);
     });
     renderer.setRenderTarget(null);
     UtilsService.releaseCamera(uncontrolledCamera);
   }
-
   disposeRenderTarget(renderTarget) {
     AssetsService.disposeAsset(renderTarget.texture);
     AssetsService.disposeAsset(renderTarget);
   }
-
-  preventOcclusion({
-    allowTransparent,
-    faceTarget,
-    collisionRadius,
-    occlusionStep
-  } = {}) {
-    if (!this.followedObject) {
-      console.warn('CameraService', 'preventOcclusion', 'unable to prevent occlusion unless following a target');
-      return;
-    }
-
-    this.occlusionTest = true;
-    this.occlusionSettings = {
-      allowTransparent: allowTransparent || false,
-      faceTarget: faceTarget !== false
-    };
-    this.occlusionSphere = collisionRadius || 0.1;
-    this.occlusionStep = occlusionStep || OcclusionStepEnum.progressive;
-  }
-
-  allowOcclusion() {
-    this.occlusionTest = false;
-    this.occlusionSettings = {};
-    this.occlusionSphere = 0.1;
-  }
-
-  determineTargetVisibility() {
-    if (!this.followedObject) {
-      return;
-    }
-
-    const scene = RenderService.getScene();
-
-    if (!scene) {
-      return;
-    }
-
-    let latestHits = null;
-    let step = null;
-    const pivotDirection = MathService.getVec3(0.0, 0.0, 0.0, 'camera-4').copy(this.followPivot.position).normalize().negate();
-    const raycaster = UtilsService.getRaycaster();
-    raycaster.near = Number.MIN_VALUE;
-    const targetPosition = MathService.getVec3(0.0, 0.0, 0.0, 'camera-5');
-    this.camera.getWorldPosition(targetPosition);
-    const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0, 'camera-6');
-
-    if (this.occlusionStep !== OcclusionStepEnum.progressive) {
-      step = this.occlusionStep;
-    }
-
-    const direction = MathService.getVec3(0.0, 0.0, 0.0, 'camera-7');
-    this.followPivot.getWorldPosition(cameraPosition);
-    direction.copy(targetPosition).sub(cameraPosition).normalize();
-
-    const determineVisibility = () => {
-      this.followPivot.getWorldPosition(cameraPosition);
-      raycaster.far = Math.max(this.followPivot.position.length(), raycaster.near);
-      raycaster.set(cameraPosition, direction);
-
-      if (raycaster.far <= raycaster.near) {
-        return false;
-      }
-
-      let hits = raycaster.intersectObjects(scene.children, true);
-
-      if (this.occlusionStep === OcclusionStepEnum.progressive) {
-        if (!step) {
-          step = this.occlusionSphere;
-        } else {
-          const newStep = Math.sqrt(latestHits[latestHits.length - 1].distance);
-
-          if (step === newStep) {
-            return false;
-          }
-
-          step = newStep;
-        }
-      }
-
-      if (hits.length) {
-        hits = hits.filter(({
-          object
-        }) => {
-          if (!object.visible) {
-            return false;
-          }
-
-          if (this.occlusionSettings.allowTransparent) {
-            return !(object.material && object.material.transparent && object.material.opacity < 1.0);
-          }
-
-          return true;
-        });
-        this.followedObject.traverse(child => {
-          hits = hits.filter(({
-            object
-          }) => object.uuid !== child.uuid);
-        });
-      }
-
-      if (hits.length > 0) {
-        this.followPivot.position.add(pivotDirection.clone().multiplyScalar(step));
-        latestHits = hits;
-        return true;
-      } else {
-        if (latestHits) {
-          const nearbyHits = latestHits.filter(({
-            point
-          }) => point.clone().sub(cameraPosition).length() <= this.occlusionSphere);
-
-          if (nearbyHits.length > 0) {
-            this.followPivot.position.add(pivotDirection.clone().multiplyScalar(step));
-            latestHits = nearbyHits;
-            return true;
-          }
-        }
-      }
-
-      return false;
-    };
-
-    while (determineVisibility());
-
-    MathService.releaseVec3(direction);
-    MathService.releaseVec3(pivotDirection);
-    MathService.releaseVec3(targetPosition);
-    MathService.releaseVec3(cameraPosition);
-    UtilsService.releaseRaycaster(raycaster);
-    latestHits = null;
-  }
-
-  detachCamera() {
-    this.stopFollowing();
-    this.allowOcclusion();
-    this.detachedControls = new OrbitControls(RenderService.getNativeCamera(), RenderService.getRenderer().domElement);
-  }
-
-  reattachCamera() {
-    if (!this.detachedControls) {
-      return;
-    }
-
-    this.detachedControls.dispose();
-    this.detachedControls = null;
-  }
-
-  lockTranslation() {
-    this.translationLocked = true;
-  }
-
   lockRotation() {
     this.rotationLocked = true;
   }
-
-  unlockTranslation() {
-    this.translationLocked = false;
-  }
-
   unlockRotation() {
     this.rotationLocked = false;
   }
-
   disposeCamera(id) {
     this.cameras[id] = null;
   }
-
   disposeAll() {
-    this.stopFollowing();
     this.cameras = {};
     Object.keys(this.renderTargets).forEach(id => {
       const renderTarget = this.renderTargets[id];
       this.disposeRenderTarget(renderTarget);
     });
     this.renderTargets = {};
-
     if (this.cameraPosition) {
       MathService.releaseVec3(this.cameraPosition);
     }
-
     this.cameraPosition = MathService.getVec3(0.0, 0.0, 0.0, 'camera-7');
-
-    if (this.followPivotPosition) {
-      MathService.releaseVec3(this.followPivotPosition);
-    }
-
-    this.followPivotPosition = MathService.getVec3(0.0, 0.0, 0.0, 'camera-8');
-
     if (this.cameraQuaternion) {
       MathService.releaseQuaternion(this.cameraQuaternion);
     }
-
     this.cameraQuaternion = MathService.getQuaternion();
     this.followedObject = null;
     this.followListener = null;
-    this.followThreshold = 0.001;
-    this.occlusionTest = false;
-    this.occlusionSettings = {};
-    this.allowOcclusion();
+    this.followListenerThreshold = 0.001;
+    if (this.cameraControls) {
+      this.cameraControls.enabled = false;
+      this.cameraControls.dampingFactor = 0.05;
+      this.cameraControls.colliderMeshes = [];
+    }
+    if (this.pointerLockControls) {
+      this.pointerLockControls.unlock();
+    }
     this.resetCamera();
-    this.reattachCamera();
     this.tween = 0.2;
   }
-
 }
-
 const CameraService = new CameraServiceClass();
 
 const InteractionEnums = {
@@ -1812,29 +2307,21 @@ const InteractionEnums = {
   stateIntActive: 2,
   stateIntPending: 1
 };
-
 class InteractionsServiceClass {
   constructor() {
     _defineProperty(this, "listeners", []);
-
     _defineProperty(this, "camera", null);
-
     _defineProperty(this, "pointer", MathService.getVec2());
-
     _defineProperty(this, "delta", MathService.getVec2());
-
     _defineProperty(this, "touches", []);
-
     _defineProperty(this, "useTouch", false);
   }
-
   init({
     camera
   } = {}) {
     if (window.interactionsService) {
       window.interactionsService.dispose();
     }
-
     this.onTouchMove = this.onTouchMove.bind(this);
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
@@ -1845,8 +2332,10 @@ class InteractionsServiceClass {
     this.camera = camera;
     this.addListeners();
   }
-
   addListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.addEventListener('touchstart', this.onTouchStart);
     renderer.domElement.addEventListener('touchmove', this.onTouchMove);
@@ -1855,7 +2344,6 @@ class InteractionsServiceClass {
     renderer.domElement.addEventListener('pointermove', this.onPointerMove);
     renderer.domElement.addEventListener('pointerup', this.onPointerUp);
   }
-
   onPointerDown(event) {
     const fauxTouch = {
       identifier: 'pointer',
@@ -1866,12 +2354,10 @@ class InteractionsServiceClass {
     event.source = 'pointer';
     this.onTouchStart(event);
   }
-
   onPointerMove(event) {
     if (this.useTouch) {
       return;
     }
-
     const fauxTouch = {
       identifier: 'pointer',
       clientX: event.clientX,
@@ -1880,12 +2366,10 @@ class InteractionsServiceClass {
     event.changedTouches = [fauxTouch];
     this.onTouchMove(event);
   }
-
   onPointerUp(event) {
     if (this.useTouch) {
       return;
     }
-
     const fauxTouch = {
       identifier: 'pointer',
       clientX: event.clientX,
@@ -1894,16 +2378,11 @@ class InteractionsServiceClass {
     event.changedTouches = [fauxTouch];
     this.onTouchEnd(event);
   }
-
   onTouchStart(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
     if (!this.useTouch && event.source !== 'pointer') {
       this.disposePointerListeners();
       this.useTouch = true;
     }
-
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
       this.pointer.x = touch.clientX / window.innerWidth * 2 - 1;
@@ -1920,18 +2399,12 @@ class InteractionsServiceClass {
       });
     }
   }
-
   onTouchMove(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
-
       if (!this.touches[touch.identifier]) {
         continue;
       }
-
       const {
         touch: previousTouch
       } = this.touches[touch.identifier];
@@ -1944,26 +2417,18 @@ class InteractionsServiceClass {
         delta: this.delta,
         touch: this.touches[touch.identifier]
       });
-
       if (this.delta.length() >= 0.015) {
         this.touches[touch.identifier].drag = true;
       }
-
       this.touches[touch.identifier].touch.copy(this.pointer);
     }
   }
-
   onTouchEnd(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
-
       if (!this.touches[touch.identifier]) {
         continue;
       }
-
       this.pointer.x = touch.clientX / window.innerWidth * 2 - 1;
       this.pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
       this.delta.set(0.0, 0.0);
@@ -1974,7 +2439,6 @@ class InteractionsServiceClass {
       delete this.touches[touch.identifier];
     }
   }
-
   startTouch({
     pointer,
     touch
@@ -1991,7 +2455,6 @@ class InteractionsServiceClass {
     });
     touch.hits = hits;
   }
-
   dismissTouch({
     pointer,
     touch
@@ -2000,25 +2463,21 @@ class InteractionsServiceClass {
       pointer
     });
     let bubbleStopped = false;
-
     const stopPropagation = () => {
       bubbleStopped = true;
     };
-
     hits.some(({
       object
     }) => {
       if (bubbleStopped) {
         return true;
       }
-
       if (object.userData[InteractionEnums.eventRelease]) {
         object.userData[InteractionEnums.eventRelease]({
           stopPropagation
         });
       }
     });
-
     if (!touch.drag) {
       touch.hits.some(({
         object
@@ -2026,7 +2485,6 @@ class InteractionsServiceClass {
         if (bubbleStopped) {
           return true;
         }
-
         if (object.userData[InteractionEnums.eventClick]) {
           object.userData[InteractionEnums.eventClick]({
             stopPropagation
@@ -2034,11 +2492,9 @@ class InteractionsServiceClass {
         }
       });
     }
-
     touch.hits = [];
     touch.drag = false;
   }
-
   moveTouch({
     pointer,
     delta,
@@ -2056,10 +2512,8 @@ class InteractionsServiceClass {
           deltaY: delta.y
         });
       }
-
       if (object.userData[InteractionEnums.eventLeave]) {
         const stillHit = hits.some(match => match.object.uuid === object.uuid);
-
         if (!stillHit) {
           object.userData[InteractionEnums.eventLeave]();
         }
@@ -2074,22 +2528,18 @@ class InteractionsServiceClass {
     });
     touch.hits = hits;
   }
-
   registerListener(target, eventType, callback) {
     target.userData[eventType] = callback;
-
     if (!target.userData[InteractionEnums.stateEnabled]) {
       target.userData[InteractionEnums.stateEnabled] = true;
       target.userData[InteractionEnums.stateHovered] = InteractionEnums.stateIntInactive;
       this.listeners.push(target);
     }
   }
-
   registerInvisibleListener(target, eventType, callback) {
     target.userData.interactionsServiceInvisibleListener = true;
     this.registerListener(target, eventType, callback);
   }
-
   getHits({
     pointer
   }) {
@@ -2105,23 +2555,19 @@ class InteractionsServiceClass {
         object.traverseAncestors(parent => {
           visible = parent.visible && visible;
         });
-
         if (!visible) {
           return;
         }
       }
-
       const nonUniqueHit = hits.findIndex(({
         object: searchObject
       }) => searchObject.uuid === object.uuid);
       return nonUniqueHit === index;
     });
   }
-
   disposeListener(target) {
     this.listeners = this.listeners.filter(match => match !== target);
   }
-
   disposeListeners() {
     this.listeners = this.listeners.filter(object => {
       if (object.userData) {
@@ -2129,20 +2575,23 @@ class InteractionsServiceClass {
           delete object.userData[key];
         });
       }
-
       return false;
     });
     this.listeners = [];
   }
-
   disposePointerListeners() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.removeEventListener('pointermove', this.onPointerMove);
     renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     renderer.domElement.removeEventListener('pointerup', this.onPointerUp);
   }
-
   dispose() {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const renderer = RenderService.getRenderer();
     renderer.domElement.removeEventListener('touchmove', this.onTouchMove);
     renderer.domElement.removeEventListener('touchstart', this.onTouchStart);
@@ -2151,506 +2600,95 @@ class InteractionsServiceClass {
     delete this.camera;
     this.listeners = [];
     this.camera = null;
-
     if (this.touches) {
       this.touches.forEach(touch => {
         delete touch.hits;
       });
     }
-
     this.touches = [];
-
     if (this.pointer) {
       MathService.releaseVec2(this.pointer);
     }
-
     this.pointer = MathService.getVec2();
-
     if (this.delta) {
       MathService.releaseVec2(this.delta);
     }
-
     this.delta = MathService.getVec2();
   }
-
 }
-
 const InteractionsService = new InteractionsServiceClass();
-
-const createArrowHelper = (container, id, vector, origin, color) => {
-  let helper = container.getObjectByName(id);
-
-  if (!helper) {
-    helper = new Three.ArrowHelper(vector, undefined, vector.length(), color || getRandomColor());
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-
-  helper.setLength(vector.length());
-  helper.setDirection(vector.normalize());
-
-  if (origin) {
-    helper.position.copy(origin);
-  }
-
-  return helper;
-};
-const createBoxHelper = (container, id, box) => {
-  let helper = container.getObjectByName(id);
-
-  if (!helper) {
-    helper = new Three.Box3Helper(box, getRandomColor());
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-
-  helper.box.copy(box);
-  return helper;
-};
-const createDefaultCube = (container, id, {
-  position,
-  size,
-  color
-} = {}) => {
-  let helper = container.getObjectByName(id);
-
-  if (!helper) {
-    helper = new Three.Mesh(new Three.BoxBufferGeometry(size || 1.0, size || 1.0, size || 1.0), new Three.MeshStandardMaterial({
-      color: color || getRandomColor()
-    }));
-    helper.name = id;
-    AssetsService.registerDisposable(helper);
-    container.add(helper);
-  }
-
-  if (position) {
-    helper.position.copy(position);
-  }
-
-  return helper;
-};
-
-class PhysicsServiceClass {
-  constructor() {
-    _defineProperty(this, "bodies", []);
-
-    _defineProperty(this, "dynamicBodies", []);
-
-    _defineProperty(this, "navmaps", []);
-
-    _defineProperty(this, "pathfinder", null);
-
-    _defineProperty(this, "pathfinedEnabled", false);
-
-    _defineProperty(this, "pathfinderZoneId", 'zone');
-
-    _defineProperty(this, "surfaceHandlers", {});
-
-    _defineProperty(this, "surfaces", []);
-
-    _defineProperty(this, "slopeTolerance", 1.0);
-
-    _defineProperty(this, "gravityConstant", -0.986);
-
-    _defineProperty(this, "maxDynamicBodySize", 1.0);
-
-    _defineProperty(this, "maxSurfaceInteractionDistance", 0.01);
-
-    _defineProperty(this, "emptyVector3", MathService.getVec3(0.0, 0.0, 0.0, 'physics-7'));
-  }
-
-  init() {
-    TimeService.registerPersistentFrameListener(() => {
-      this.updateDynamicBodies();
-      this.updateStaticBodies();
-    });
-  }
-
-  updateStaticBodies() {
-    if (!this.bodies.length) {
-      return;
-    }
-
-    const direction = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
-    const position = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1');
-    const raycaster = UtilsService.getRaycaster();
-    this.bodies = this.bodies.filter(body => {
-      raycaster.near = -0.00001;
-      raycaster.far = 500.0; // NOTE If navmap is not found within this limit, it's assumed body left the navmap
-
-      if (!body || !body.target) {
-        AssetsService.disposeAsset(body);
-        AssetsService.disposeAsset(body.target);
-        return false;
-      }
-
-      if (body.simpleGravity) {
-        if (body.grounded) {
-          body.simpleGravity.y = 0.0;
-        } else {
-          body.simpleGravity.y = MathUtils.lerp(body.simpleGravity.y, this.gravityConstant, 0.1);
-        }
-      }
-
-      const simpleVelocity = body.getSimpleVelocity();
-      const simpleGravity = body.simpleGravity || this.emptyVector3;
-      body.target.getWorldPosition(position);
-
-      if (simpleVelocity) {
-        position.add(simpleVelocity);
-      }
-
-      const slopeVector = MathService.getVec3(0.0, 0.0, 0.0, 'physics-1').copy(simpleGravity).normalize().multiplyScalar(-this.slopeTolerance);
-      position.add(slopeVector);
-      const gravityDirection = MathService.getVec3(0.0, -1.0, 0.0, 'physics-2');
-      position.sub(gravityDirection);
-      raycaster.set(position, gravityDirection);
-      MathService.releaseVec3(gravityDirection); // Surfaces
-
-      raycaster.far = this.maxSurfaceInteractionDistance;
-      let collisions = raycaster.intersectObjects(this.surfaces, true);
-      let cachedCollisions = Object.keys(body.surfaceCollisions || {});
-      collisions.forEach(collision => {
-        const {
-          surface: surfaceType,
-          surfaceRef
-        } = collision.object.userData;
-        const {
-          onInteraction,
-          onEnter,
-          onLeave
-        } = this.surfaceHandlers[surfaceType];
-
-        if (surfaceRef[onEnter] && !body.surfaceCollisions[collision.object.uuid]) {
-          surfaceRef[onEnter]({
-            body,
-            hit: collision
-          });
-        }
-
-        if (surfaceRef[onInteraction]) {
-          surfaceRef[onInteraction]({
-            body,
-            hit: collision
-          });
-        }
-
-        body.surfaceCollisions[collision.object.uuid] = {
-          onLeave: surfaceRef[onLeave]
-        };
-        cachedCollisions = cachedCollisions.filter(uuid => uuid !== collision.object.uuid);
-      });
-      cachedCollisions.forEach(collisionUuid => {
-        if (body.surfaceCollisions[collisionUuid].onLeave) {
-          body.surfaceCollisions[collisionUuid].onLeave({
-            body,
-            hit: null
-          });
-        }
-
-        delete body.surfaceCollisions[collisionUuid];
-      });
-      MathService.releaseVec3(slopeVector);
-      raycaster.far = 500.0;
-
-      if (simpleVelocity) {
-        // Collisions
-        collisions = raycaster.intersectObjects(this.navmaps, true);
-
-        if (collisions[0]) {
-          const {
-            point
-          } = collisions[0];
-          body.target.getWorldPosition(position);
-          const pointOffset = MathService.getVec3(0.0, 0.0, 0.0, 'physics-3').copy(point).sub(position);
-
-          if (pointOffset.length() - this.slopeTolerance <= simpleVelocity.length()) {
-            body.target.position.add(pointOffset);
-            body.grounded = true;
-          } else {
-            body.target.position.add(simpleVelocity);
-            body.target.position.add(simpleGravity);
-            body.grounded = false;
-          }
-
-          MathService.releaseVec3(pointOffset);
-        } else {
-          if (!body.noClip) {
-            if (body.collisionListener) {
-              body.collisionListener();
-            }
-
-            body.grounded = false;
-          } else {
-            body.target.position.add(simpleVelocity);
-            body.grounded = true;
-          }
-        }
-      }
-
-      if (body.dynamicCollision) {
-        body.dynamicCollision = false;
-      }
-
-      return true;
-    });
-    MathService.releaseVec3(direction);
-    MathService.releaseVec3(position);
-    UtilsService.releaseRaycaster(raycaster);
-  }
-
-  updateDynamicBodies() {
-    if (!this.dynamicBodies.length) {
-      return;
-    }
-
-    const tests = {};
-    const positionA = MathService.getVec3(0.0, 0.0, 0.0, 'physics-4');
-    const positionB = MathService.getVec3(0.0, 0.0, 0.0, 'physics-5');
-    this.dynamicBodies = this.dynamicBodies.filter(bodyA => {
-      if (!bodyA || !bodyA.target) {
-        return false;
-      }
-
-      bodyA.target.getWorldPosition(positionA);
-      this.dynamicBodies.forEach(bodyB => {
-        if (bodyA === bodyB || !bodyB || !bodyB.target) {
-          return;
-        }
-
-        bodyB.target.getWorldPosition(positionB);
-        const distance = positionB.distanceTo(positionA);
-        const isNearby = distance <= this.maxDynamicBodySize && distance > 0.0;
-        const collisionKey = [bodyA.target.uuid, bodyB.target.uuid].sort().join(':');
-        const isTested = typeof tests[collisionKey] !== 'undefined';
-
-        if (!isNearby || isTested) {
-          return;
-        }
-
-        tests[collisionKey] = {
-          bodyA,
-          bodyB
-        };
-      });
-      return true;
-    });
-    const distance = MathService.getVec3(0.0, 0.0, 0.0, 'physics-6');
-    Object.keys(tests).forEach((testId, index) => {
-      const {
-        bodyA,
-        bodyB
-      } = tests[testId];
-
-      if (bodyA === bodyB) {
-        return;
-      }
-
-      bodyA.target.getWorldPosition(positionA);
-      bodyB.target.getWorldPosition(positionB);
-      distance.copy(positionB).sub(positionA);
-      bodyA.boundingBox.setFromObject(bodyA.target);
-      bodyB.boundingBox.setFromObject(bodyB.target);
-
-      if (DummyDebug.get(DebugFlags.DEBUG_PHYSICS_DYNAMIC)) {
-        createArrowHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-distance`, distance, positionA);
-        createBoxHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-boxA`, bodyA.boundingBox);
-        createBoxHelper(RenderService.getScene(), `physicsService-updateDynamicBodies-${index}-boxB`, bodyB.boundingBox);
-      }
-
-      if (bodyA.boundingBox.intersectsBox(bodyB.boundingBox)) {
-        if (bodyA.target.userData.collisionCallbackRef) {
-          bodyA.target.userData.collisionCallbackRef(bodyB.target);
-        }
-
-        if (bodyB.target.userData.collisionCallbackRef) {
-          bodyB.target.userData.collisionCallbackRef(bodyA.target);
-        }
-      }
-    });
-    MathService.releaseVec3(positionA);
-    MathService.releaseVec3(positionB);
-    MathService.releaseVec3(distance);
-  }
-
-  registerBody(object) {
-    this.bodies.push(object);
-  }
-
-  registerDynamicCollisionBody(object, collisionCallback) {
-    if (collisionCallback) {
-      object.target.userData.collisionCallbackRef = collisionCallback;
-    }
-
-    this.dynamicBodies.push(object);
-    object.boundingBox.setFromObject(object.target);
-    const bodySize = MathService.getVec3();
-    object.boundingBox.getSize(bodySize);
-    this.maxDynamicBodySize = Math.max(this.maxDynamicBodySize, bodySize.x, bodySize.y, bodySize.z);
-    MathService.releaseVec3(bodySize);
-  }
-
-  registerNavmap(object) {
-    this.enableNavmap(object);
-  }
-
-  enableNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-    this.navmaps.push(object);
-    this.updatePathfinder();
-  }
-
-  disableNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-    this.updatePathfinder();
-  }
-
-  updatePathfinder() {
-    if (!this.pathfinder) {
-      this.pathfinder = new Pathfinding();
-    }
-
-    const navmapGeometries = this.navmaps.filter(navmap => navmap.geometry).map(navmap => navmap.geometry);
-
-    if (!navmapGeometries.length) {
-      this.pathfinedEnabled = false;
-      return;
-    }
-
-    const navmeshGeometry = (BufferGeometryScope.mergeBufferGeometries ? BufferGeometryScope : BufferGeometryScope.BufferGeometryUtils).mergeBufferGeometries(navmapGeometries, false);
-    const zone = Pathfinding.createZone(navmeshGeometry);
-    this.pathfinder.setZoneData(this.pathfinderZoneId, zone);
-    this.pathfinedEnabled = this.pathfinder.zones.length > 0;
-  }
-
-  registerSurfaceHandler(surfaceType, handlerClass, onInteraction = 'onInteraction', onEnter = 'onEnter', onLeave = 'onLeave') {
-    this.surfaceHandlers[surfaceType] = {
-      cls: handlerClass,
-      onInteraction,
-      onEnter,
-      onLeave
-    };
-  }
-
-  registerSurface(object) {
-    const surfaceType = object.userData.surface;
-    const surfaceHandler = this.surfaceHandlers[surfaceType];
-
-    if (!surfaceType) {
-      return;
-    }
-
-    if (!surfaceHandler) {
-      console.warn('registerSurface', `surfaceHandler for "${surfaceType}" does not exist`);
-      return;
-    }
-
-    const surfaceConstructor = surfaceHandler.cls;
-    const surface = new surfaceConstructor(object);
-    if (surface.onInteraction) surface.onInteraction = surface.onInteraction.bind(surface);
-    if (surface.onEnter) surface.onEnter = surface.onEnter.bind(surface);
-    if (surface.onLeave) surface.onLeave = surface.onLeave.bind(surface);
-    object.userData.surfaceRef = surface;
-    this.surfaces.push(object);
-  }
-
-  getNavmaps() {
-    return this.navmaps;
-  }
-
-  disposeBody(object) {
-    this.bodies = this.bodies.filter(match => match !== object);
-    this.dynamicBodies = this.dynamicBodies.filter(match => match !== object);
-  }
-
-  disposeNavmap(object) {
-    this.navmaps = this.navmaps.filter(match => match !== object);
-  }
-
-  disposeSurface(object) {
-    this.surfaces = this.surfaces.filter(match => match !== object);
-  }
-
-  disposeAll() {
-    this.bodies = [];
-    this.dynamicBodies = [];
-    this.navmaps = [];
-    this.surfaces = [];
-    MathService.releaseVec3(this.emptyVector3);
-
-    if (this.pathfinder) {
-      this.pathfinder = null;
-    }
-  }
-
-}
-
-const PhysicsService = new PhysicsServiceClass();
 
 class InputServiceClass {
   constructor() {
     _defineProperty(this, "keys", {});
-
+    _defineProperty(this, "inputListeners", []);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
   }
-
   init() {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
   }
-
   key(id) {
     return this.keys[id];
   }
-
   onKeyDown({
     key: pressed
   }) {
     const id = `${pressed}`.toLowerCase();
+    if (this.keys[id] !== true) {
+      this.onChange(id, true);
+    }
     this.keys[id] = true;
   }
-
   onKeyUp({
     key: released
   }) {
     const id = `${released}`.toLowerCase();
+    if (this.keys[id] !== false) {
+      this.onChange(id, false);
+    }
     this.keys[id] = false;
   }
-
+  onChange(key, status) {
+    this.inputListeners.forEach(listener => {
+      listener({
+        key,
+        status
+      });
+    });
+  }
+  registerListener(listener) {
+    this.inputListeners.push(listener);
+  }
+  disposeAll() {
+    this.inputListeners = [];
+  }
   dispose() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     this.keys = {};
+    this.inputListeners = [];
   }
-
 }
-
 const InputService = new InputServiceClass();
 
 class UiServiceClass {
   constructor() {
     _defineProperty(this, "uiElements", []);
-
     _defineProperty(this, "uiScene", this.createUiScene());
-
     _defineProperty(this, "tween", 0.8);
   }
-
   createUiScene() {
-    const scene = new Three.Scene();
-    const ambientLight = new Three.AmbientLight(0xffffff, 1.0);
+    const scene = new Three$2.Scene();
+    const ambientLight = new Three$2.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     return scene;
   }
-
   registerUiElement(object) {
     this.uiScene.add(object);
     this.uiElements.push(object);
   }
-
   isUiElement(object) {
     let result = false;
     object.traverseAncestors(parent => {
@@ -2658,7 +2696,6 @@ class UiServiceClass {
     });
     return result;
   }
-
   onFrame() {
     const camera = RenderService.getNativeCamera();
     const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0, 'ui-1');
@@ -2671,7 +2708,6 @@ class UiServiceClass {
     MathService.releaseQuaternion(cameraQuaternion);
     this.uiScene.updateMatrixWorld();
   }
-
   disposeAll() {
     this.uiElements.forEach(layer => {
       AssetsService.registerDisposable(layer);
@@ -2679,100 +2715,78 @@ class UiServiceClass {
     this.uiElements = [];
     this.tween = 0.8;
   }
-
 }
-
 const UiService = new UiServiceClass();
 
 const AudioChannelEnums = {
   ambientChannel: 'ambient',
   globalChannel: 'global'
 };
-
 class AudioServiceClass {
   constructor() {
     _defineProperty(this, "channels", {});
   }
-
   init() {
     Howler.autoUnlock = true;
   }
-
   setMasterVolume(volume = 1.0) {
     Howler.volume(volume);
   }
-
   getMasterVolume() {
     return Howler.volume();
   }
-
   setAudioVolume(audio, volume = 1.0) {
     if (!audio) {
       return;
     }
-
     audio.volume(volume);
   }
-
   setAudioPlaybackRate(audio, playbackRate = 1.0) {
     if (!audio) {
       return;
     }
-
     audio.rate(playbackRate);
   }
-
   setChannelVolume(channel, volume = 1.0, tweenDuration = 0.0) {
     if (!this.channels[channel]) {
       return;
     }
-
     if (tweenDuration) {
       this.channels[channel].fade(this.channels[channel].volume(), volume, tweenDuration * 1000);
     } else {
       this.channels[channel].volume(volume);
     }
   }
-
   setChannelPlaybackRate(channel, playbackRate = 1.0) {
     if (!this.channels[channel]) {
       return;
     }
-
     this.channels[channel].rate(playbackRate);
   }
-
   stopChannel(channel) {
     if (!this.channels[channel]) {
       return;
     }
-
     this.stopAudio(this.channels[channel]);
     this.channels[channel] = null;
   }
-
   async playAudio(channel, audioOrPromised, loop = false) {
     if (!audioOrPromised) {
       return;
     }
-
     if (channel && this.channels[channel]) {
       this.stopAudio(this.channels[channel]);
       this.channels[channel] = null;
     }
-
     const audio = await audioOrPromised;
     audio.loop(loop || channel && channel === AudioChannelEnums.ambientChannel);
     audio.mute(false);
     audio.play();
-
     if (channel) {
       this.channels[channel] = audio;
     }
-
     return audio;
   }
-
   stopAudio(sound) {
     try {
       sound.stop();
@@ -2780,7 +2794,6 @@ class AudioServiceClass {
       sound.unload();
     } catch {}
   }
-
   resetAudio() {
     Object.keys(this.channels).forEach(key => {
       const sound = this.channels[key];
@@ -2789,71 +2802,55 @@ class AudioServiceClass {
     });
     this.channels = {};
   }
-
   disposeAll() {
     this.resetAudio();
   }
-
 }
-
 const AudioService = new AudioServiceClass();
 
 const removePlaceholder = target => {
   if (target.geometry) {
     AssetsService.disposeProps(target.geometry);
   }
-
   if (target.material) {
     AssetsService.disposeProps(target.material);
   }
-
   if (target.children) {
     target.children.forEach(child => target.remove(child));
   }
-
   delete target.geometry;
   delete target.material;
   target.isGroup = true; // NOTE Very nasty hack
-
   target.isMesh = false;
 };
 
-class InstancedScene extends Three.Group {
+class InstancedScene extends Three$2.Group {
   constructor(sourceMesh, count) {
     super();
-
     _defineProperty(this, "objects", []);
-
     _defineProperty(this, "dirty", []);
-
     _defineProperty(this, "root", null);
-
-    this.root = new Three.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
+    this.root = new Three$2.InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
     this.add(this.root);
     this.onCreate();
   }
-
   onCreate() {
     TimeService.registerFrameListener(() => {
       this.onFrame();
     });
   }
-
   addVirtualObject(object) {
     object.userData.__instancedSceneUid__ = this.objects.length;
     this.objects.push(object);
     this.markDirty(object);
   }
-
   markDirty(object) {
     this.dirty.push(object);
   }
-
   onFrame() {
     if (this.dirty.length > 0) {
       this.root.instanceMatrix.needsUpdate = true;
     }
-
     this.dirty = this.dirty.filter(object => {
       const {
         __instancedSceneUid__
@@ -2862,19 +2859,16 @@ class InstancedScene extends Three.Group {
       return false;
     });
   }
-
   dispose() {
     this.dirty = null;
     this.objects = null;
   }
-
 }
 
 class ParticleServiceClass {
   constructor() {
     _defineProperty(this, "emitters", []);
   }
-
   init() {
     TimeService.registerPersistentFrameListener(({
       dt
@@ -2888,28 +2882,22 @@ class ParticleServiceClass {
           instanced,
           instancedScene
         } = emitter;
-
         if (!particles.length) {
           return;
         }
-
         let visible = true;
         particles[0].parent.traverseAncestors(parent => {
           visible = parent.visible && visible;
         });
-
         if (!visible) {
           return;
         }
-
         particles.forEach(target => {
           target.userData.lifeTime += dt;
-
           if (target.userData.lifeTime < 0.0) {
             target.visible = false;
             return;
           }
-
           if (!target.visible) {
             if (!active) {
               return;
@@ -2917,17 +2905,14 @@ class ParticleServiceClass {
               target.visible = true;
             }
           }
-
           if (target.userData.delayedCreateParticle) {
             target.userData.delayedCreateParticle();
             delete target.userData.delayedCreateParticle;
           }
-
           const originalMatrix = MathService.getMatrix4();
           const originalMatrixWorld = MathService.getMatrix4();
           originalMatrix.copy(target.children[0].matrix);
           originalMatrixWorld.copy(target.children[0].matrixWorld);
-
           if (onFrame({
             target: target.children[0],
             random: target.userData.particleEmitterRandom,
@@ -2939,19 +2924,16 @@ class ParticleServiceClass {
                   target: target.children[0]
                 });
               }
-
               this.createRandomParticle(target, emitter);
             } else {
               target.visible = false;
             }
           }
-
           if (instanced) {
             target.visible = false;
             target.children[0].visible = false;
             target.updateMatrix();
             target.updateMatrixWorld();
-
             if (!target.children[0].matrix.equals(originalMatrix) || !target.children[0].matrixWorld.equals(originalMatrixWorld)) {
               instancedScene.markDirty(target.children[0]);
             }
@@ -2960,7 +2942,6 @@ class ParticleServiceClass {
       });
     });
   }
-
   registerParticleEmitter(object, {
     particleObject,
     particleDensity,
@@ -2996,56 +2977,42 @@ class ParticleServiceClass {
       instancedScene: null
     };
     const scene = RenderService.getScene();
-
     emitterProps.play = () => emitterProps.active = true;
-
     emitterProps.stop = () => emitterProps.active = false;
-
     emitterProps.toggle = () => emitterProps.active = !emitterProps.active;
-
     removePlaceholder(object);
-
     if (!onFrame || !particleObject) {
       return;
     }
-
     if (instanced) {
       emitterProps.instancedScene = new InstancedScene(particleObject, emitterProps.particleDensity);
       scene.add(emitterProps.instancedScene);
     }
-
     AssetsService.registerDisposable(particleObject);
-
     for (let i = 0; i < emitterProps.particleDensity; i++) {
-      const particle = new Three.Group();
+      const particle = new Three$2.Group();
       particle.add(particleObject.clone());
       this.createRandomParticle(particle, emitterProps);
-
       if (onCreate) {
         onCreate({
           target: particle.children[0]
         });
       }
-
       if (globalTransforms) {
         scene.add(particle);
       } else {
         object.add(particle);
       }
-
       if (instanced) {
         particle.visible = false;
         emitterProps.instancedScene.addVirtualObject(particle.children[0]);
       }
-
       AssetsService.registerDisposable(particle);
       emitterProps.particles.push(particle);
     }
-
     this.emitters.push(emitterProps);
     return emitterProps;
   }
-
   createRandomParticle(pivot, emitterProps) {
     const {
       positionBase,
@@ -3060,7 +3027,6 @@ class ParticleServiceClass {
     } = emitterProps;
     pivot.userData.lifeTime = spawnJitter ? -Math.random() * spawnJitter : 0.0;
     pivot.userData.particleEmitterRandom = Math.random();
-
     const createParticle = () => {
       const object = pivot.children[0];
       const position = this.getUniformBase(positionBase);
@@ -3078,7 +3044,6 @@ class ParticleServiceClass {
       object.scale.x = scale[0] + scaleShift[0];
       object.scale.y = scale[0] + scaleShift[1];
       object.scale.z = scale[0] + scaleShift[2];
-
       if (globalTransforms) {
         const transformVector = MathService.getVec3(0.0, 0.0, 0.0, 'particle-1');
         const transformQuaternion = MathService.getQuaternion();
@@ -3091,208 +3056,184 @@ class ParticleServiceClass {
         MathService.releaseQuaternion(transformQuaternion);
       }
     };
-
     if (pivot.userData.lifeTime < 0.0) {
       pivot.userData.delayedCreateParticle = createParticle;
     } else {
       createParticle();
     }
   }
-
   getUniformBase(value) {
     if (value instanceof Array) {
       return [value[0], value[1], value[2]];
-    } else if (value instanceof Three.Vector3) {
+    } else if (value instanceof Three$2.Vector3) {
       return [value.x, value.y, value.z];
     } else if (typeof value === 'number') {
       return [value, value, value];
     }
-
     return [0, 0, 0];
   }
-
   getUniformRandomness(value) {
     if (value instanceof Array) {
       return [MathUtils.randFloatSpread(value[0]), MathUtils.randFloatSpread(value[1]), MathUtils.randFloatSpread(value[2])];
-    } else if (value instanceof Three.Vector3) {
+    } else if (value instanceof Three$2.Vector3) {
       return [MathUtils.randFloatSpread(value.x), MathUtils.randFloatSpread(value.y), MathUtils.randFloatSpread(value.z)];
     } else if (typeof value === 'number') {
       const uniformRandom = MathUtils.randFloatSpread(value);
       return [uniformRandom, uniformRandom, uniformRandom];
     }
-
     return [0, 0, 0];
   }
-
   disposeAll() {
     delete this.emitters;
     this.emitters = [];
   }
-
 }
-
 const ParticleService = new ParticleServiceClass();
 
 class RenderServiceClass {
   constructor() {
-    _defineProperty(this, "systemClock", new Three.Clock());
-
-    _defineProperty(this, "animationClock", new Three.Clock());
-
+    _defineProperty(this, "isHeadless", navigator.userAgent === NetworkServerSideInstanceUserAgent);
+    _defineProperty(this, "systemClock", new Three$2.Clock());
+    _defineProperty(this, "animationClock", new Three$2.Clock());
+    _defineProperty(this, "physicsClock", new Three$2.Clock());
     _defineProperty(this, "animationDelta", 0.0);
-
     _defineProperty(this, "camera", null);
-
     _defineProperty(this, "renderer", null);
-
     _defineProperty(this, "composer", null);
-
     _defineProperty(this, "postProcessingEffects", {});
-
     _defineProperty(this, "smaaPostprocessingTextures", {});
-
     _defineProperty(this, "depthMaterial", null);
-
     _defineProperty(this, "depthRenderTarget", null);
-
     _defineProperty(this, "scene", null);
-
     _defineProperty(this, "controls", null);
-
     _defineProperty(this, "currentView", null);
-
     _defineProperty(this, "paused", false);
-
     _defineProperty(this, "onPaused", null);
-
     _defineProperty(this, "onResumed", null);
-
     _defineProperty(this, "onBeforeRenderFrame", null);
-
     _defineProperty(this, "onBeforeRenderDepth", null);
-
     _defineProperty(this, "onAfterRenderDepth", null);
-
     _defineProperty(this, "onAfterRenderFrame", null);
-
     _defineProperty(this, "animationLoop", null);
-
     _defineProperty(this, "logicLoop", null);
-
     _defineProperty(this, "lastFrameTimestamp", 0);
-
     _defineProperty(this, "logicFixedStep", 1000.0 / 60.0);
-
-    window.addEventListener('resize', () => this.onResize());
+    _defineProperty(this, "logicMaxSteps", Infinity);
+    _defineProperty(this, "physicsMaxSteps", Infinity);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => this.onResize());
+    }
   }
-
   getScene() {
     return this.scene;
   }
-
   getNativeCamera() {
     return this.camera;
   }
-
   getRenderer() {
     return this.renderer;
   }
-
   init({
     domElement,
     pixelRatio
   } = {}) {
+    const isHeadless = typeof domElement === 'undefined' || this.isHeadless;
     const windowInfo = this.getWindowSize();
-    const camera = new Three.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
-    this.camera = camera;
-    const scene = new Three.Scene();
-    scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
+    this.isHeadless = isHeadless;
+    const scene = new Three$2.Scene();
+    scene.background = new Three$2.Color(GameInfoService.config.system.sceneBackgroundDefault);
     this.scene = scene;
-
+    if (!isHeadless) {
+      this.camera = new Three$2.PerspectiveCamera(GameInfoService.config.system.camera.fov, windowInfo.aspectRatio, GameInfoService.config.system.camera.near, GameInfoService.config.system.camera.far);
+    } else {
+      this.camera = new Three$2.PerspectiveCamera(1.0, 1.0, 0.0, 1.0);
+    }
+    this.scene.add(this.camera);
     if (GameInfoService.config.system.vr) {
       GameInfoService.config.system.postprocessing = false;
     }
-
-    const renderer = new Three.WebGLRenderer({
-      antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
-      powerPreference: 'high-performance'
-    });
-    renderer.toneMapping = Three.ACESFilmicToneMapping;
-    renderer.outputEncoding = Three.sRGBEncoding;
-    renderer.autoClear = false;
-    renderer.physicallyCorrectLights = true;
-    renderer.xr.enabled = GameInfoService.config.system.vr || false;
-    renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
-    renderer.setSize(windowInfo.width, windowInfo.height);
-    renderer.domElement.style.display = 'block';
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = 0;
-    renderer.domElement.style.left = 0;
-    renderer.domElement.style.width = '100vw';
-    renderer.domElement.style.height = '100vh';
-    renderer.domElement.style.overflow = 'hidden';
-    this.renderer = renderer;
-    this.scene.add(this.camera);
-
-    if (GameInfoService.config.system.postprocessing) {
-      const composer = new EffectComposer(this.renderer, {
-        frameBufferType: Three.HalfFloatType
+    let renderer;
+    if (!isHeadless) {
+      renderer = new Three$2.WebGLRenderer({
+        antialias: GameInfoService.config.system.antialiasing && !GameInfoService.config.system.postprocessing,
+        powerPreference: 'high-performance'
       });
-      composer.multisampling = 0;
-      this.composer = composer;
-      this.initPostProcessing();
-    }
-
-    if (domElement) {
+      renderer.toneMapping = Three$2.ACESFilmicToneMapping;
+      renderer.outputEncoding = Three$2.sRGBEncoding;
+      renderer.autoClear = false;
+      renderer.physicallyCorrectLights = true;
+      renderer.xr.enabled = GameInfoService.config.system.vr || false;
+      renderer.setPixelRatio(typeof pixelRatio === 'number' ? pixelRatio : GameInfoService.config.system.pixelRatio);
+      renderer.setSize(windowInfo.width, windowInfo.height);
+      if (GameInfoService.config.system.shadows) {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = GameInfoService.config.system.shadowMapType || Three$2.PCFShadowMap;
+      }
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.position = 'absolute';
+      renderer.domElement.style.top = 0;
+      renderer.domElement.style.left = 0;
+      renderer.domElement.style.width = '100vw';
+      renderer.domElement.style.height = '100vh';
+      renderer.domElement.style.overflow = 'hidden';
+      this.renderer = renderer;
+      if (GameInfoService.config.system.postprocessing) {
+        const composer = new EffectComposer(this.renderer, {
+          frameBufferType: Three$2.HalfFloatType
+        });
+        composer.multisampling = 0;
+        this.composer = composer;
+        this.initPostProcessing();
+      }
       domElement.appendChild(renderer.domElement);
     }
-
     this.initEssentialServices();
-
-    if (DummyDebug.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
-      CameraService.detachCamera();
-    }
-
-    const depthMaterial = new Three.MeshDepthMaterial();
-    depthMaterial.depthPacking = Three.RGBADepthPacking;
-    depthMaterial.blending = Three.NoBlending;
-    const depthTexturesSupport = !!renderer.extensions.get('WEBGL_depth_texture');
-    const depthRenderTarget = new Three.WebGLRenderTarget(window.innerWidth, window.innerHeight);
-    depthRenderTarget.texture.minFilter = Three.NearestFilter;
-    depthRenderTarget.texture.magFilter = Three.NearestFilter;
+    const depthMaterial = new Three$2.MeshDepthMaterial();
+    depthMaterial.depthPacking = Three$2.RGBADepthPacking;
+    depthMaterial.blending = Three$2.NoBlending;
+    const depthTexturesSupport = isHeadless ? false : !!renderer.extensions.get('WEBGL_depth_texture');
+    const depthRenderTarget = new Three$2.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+    depthRenderTarget.texture.minFilter = Three$2.NearestFilter;
+    depthRenderTarget.texture.magFilter = Three$2.NearestFilter;
     depthRenderTarget.texture.generateMipmaps = false;
     depthRenderTarget.stencilBuffer = false;
-
     if (depthTexturesSupport) {
-      depthRenderTarget.depthTexture = new Three.DepthTexture();
-      depthRenderTarget.depthTexture.type = Three.UnsignedShortType;
-      depthRenderTarget.depthTexture.minFilter = Three.NearestFilter;
-      depthRenderTarget.depthTexture.maxFilter = Three.NearestFilter;
+      depthRenderTarget.depthTexture = new Three$2.DepthTexture();
+      depthRenderTarget.depthTexture.type = Three$2.UnsignedShortType;
+      depthRenderTarget.depthTexture.minFilter = Three$2.NearestFilter;
+      depthRenderTarget.depthTexture.maxFilter = Three$2.NearestFilter;
     }
-
     this.depthMaterial = depthMaterial;
     this.depthRenderTarget = depthRenderTarget;
+    if (DebugService.get(DebugFlags.DEBUG_ORBIT_CONTROLS)) {
+      CameraService.detachCamera();
+    }
   }
-
   initEssentialServices() {
     VarService.init({
       language: 'en'
     });
-    InteractionsService.init({
-      camera: this.camera
-    });
     PhysicsService.init();
-    CameraService.init({
-      camera: this.camera
-    });
-    InputService.init();
     ParticleService.init();
-    AudioService.init({
-      root: this.camera
-    });
+    if (!this.isHeadless) {
+      DebugService.init();
+      InteractionsService.init({
+        camera: this.camera
+      });
+      CameraService.init({
+        camera: this.camera,
+        renderer: this.renderer
+      });
+      InputService.init();
+      AudioService.init({
+        root: this.camera
+      });
+    }
   }
-
   initPostProcessing() {
+    if (this.isHeadless) {
+      return;
+    }
     const worldRenderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(worldRenderPass);
     this.composer.addPass(new ClearPass(false, true, false));
@@ -3300,7 +3241,6 @@ class RenderServiceClass {
     uiRenderPass.clear = false;
     this.composer.addPass(uiRenderPass);
     this.composer.addPass(new ClearPass(false, true, false));
-
     if (GameInfoService.config.system.antialiasing && this.smaaPostprocessingTextures.area && this.smaaPostprocessingTextures.search) {
       const smaaEffect = new SMAAEffect(this.smaaPostprocessingTextures.search, this.smaaPostprocessingTextures.area, SMAAPreset.HIGH, EdgeDetectionMode.COLOR);
       smaaEffect.edgeDetectionMaterial.setEdgeDetectionThreshold(0.02);
@@ -3315,7 +3255,15 @@ class RenderServiceClass {
         search: this.smaaPostprocessingTextures.search
       });
     }
-
+    const toneMappingEffect = new ToneMappingEffect({
+      mode: ToneMappingMode.REINHARD2_ADAPTIVE,
+      resolution: 256,
+      whitePoint: 10.0,
+      middleGrey: 1.0,
+      minLuminance: 0.01,
+      averageLuminance: 0.01,
+      adaptationRate: 0.75
+    });
     const bloomDefaults = {
       luminanceThreshold: 0.0,
       luminanceSmoothing: 0.8,
@@ -3327,56 +3275,56 @@ class RenderServiceClass {
     const bloomEffect = new BloomEffect(bloomDefaults);
     const bloomPass = new EffectPass(this.camera, bloomEffect);
     this.composer.addPass(bloomPass);
+    const toneMappingPass = new EffectPass(this.camera, toneMappingEffect);
+    this.composer.addPass(toneMappingPass);
     this.postProcessingEffects.bloom = {
       effect: BloomEffect,
       pass: bloomPass,
       defaults: bloomDefaults
     };
   }
-
   updatePostProcessingEffect(id, values = {}) {
     if (!this.postProcessingEffects[id]) {
       return;
     }
-
     this.composer.removePass(this.postProcessingEffects[id].pass);
     this.postProcessingEffects[id].pass.dispose();
     this.postProcessingEffects[id].pass = null;
-    const newEffect = new BloomEffect({ ...(this.postProcessingEffects[id].defaults || {}),
+    const newEffect = new BloomEffect({
+      ...(this.postProcessingEffects[id].defaults || {}),
       ...values
     });
     const newPass = new EffectPass(this.camera, newEffect);
     this.composer.addPass(newPass);
     this.postProcessingEffects[id].pass = newPass;
   }
-
   resetPostProcessingEffect(id) {
     if (!this.postProcessingEffects[id]) {
       return;
     }
-
     this.updatePostProcessingEffect(id);
   }
-
   renderView(viewInstance) {
     if (this.currentView) {
       this.currentView.dispose();
       delete this.currentView;
     }
-
     this.currentView = viewInstance;
-    DummyDebug.leaks.geometries = Math.max(DummyDebug.leaks.geometries, this.renderer.info.memory.geometries);
-    DummyDebug.leaks.textures = Math.max(DummyDebug.leaks.textures, this.renderer.info.memory.textures);
+    if (!this.isHeadless) {
+      DebugService.leaks.geometries = Math.max(DebugService.leaks.geometries, this.renderer.info.memory.geometries);
+      DebugService.leaks.textures = Math.max(DebugService.leaks.textures, this.renderer.info.memory.textures);
+    }
     viewInstance.onCreate();
   }
-
   resetPostProcessing() {
     Object.keys(this.postProcessingEffects).forEach(effect => {
       this.resetPostProcessingEffect(effect);
     });
   }
-
   createSMAATextures() {
+    if (this.isHeadless) {
+      return;
+    }
     return new Promise(resolve => {
       const smaaImageLoader = new SMAAImageLoader();
       smaaImageLoader.disableCache = true;
@@ -3387,50 +3335,60 @@ class RenderServiceClass {
       });
     });
   }
-
   run() {
     this.runAnimationLoop();
     this.runLogicLoop();
   }
-
   runAnimationLoop() {
+    if (this.isHeadless) {
+      return;
+    }
     if (!this.renderer.xr.enabled) {
       this.onAnimationFrame();
     } else {
       this.renderer.setAnimationLoop(() => this.onAnimationFrame());
     }
   }
-
   runLogicLoop() {
     if (this.logicLoop) {
-      cancelAnimationFrame(this.logicLoop);
+      clearTimeout(this.logicLoop);
     }
 
-    this.logicLoop = requestAnimationFrame(() => this.runLogicLoop());
+    // NOTE setTimeout lets the logic progress, even if the user switched the tab and paused rendering
+    this.logicLoop = setTimeout(() => this.runLogicLoop(), this.logicFixedStep);
     const now = performance.now();
     const dt = now - this.lastFrameTimestamp;
-
     if (dt >= this.logicFixedStep) {
       this.lastFrameTimestamp = now;
-      const steps = Math.floor(dt / this.logicFixedStep);
-
-      for (let i = 0; i < steps; i++) {
+      const logicSteps = Math.min(this.logicMaxSteps, Math.floor(dt / this.logicFixedStep));
+      const physicsSteps = Math.min(this.physicsMaxSteps, Math.floor(dt / this.logicFixedStep));
+      for (let i = 0; i < physicsSteps; i++) {
+        this.onPhysicsFrame();
+      }
+      for (let i = 0; i < logicSteps; i++) {
         this.onLogicFrame();
       }
     }
   }
-
   onLogicFrame() {
     const dt = this.systemClock.getDelta();
     const elapsedTime = this.systemClock.getElapsedTime();
-    CameraService.onFrame();
-    UiService.onFrame();
+    if (!this.isHeadless) {
+      CameraService.onFrame(dt);
+      UiService.onFrame();
+    }
     TimeService.onFrame({
       dt,
       elapsedTime
     });
+    NetworkService.onFrame();
   }
-
+  onPhysicsFrame() {
+    const dt = this.physicsClock.getDelta();
+    PhysicsService.onFrame({
+      dt
+    });
+  }
   onAnimationFrame() {
     if (!this.renderer.xr.enabled) {
       if (this.animationLoop) {
@@ -3440,48 +3398,39 @@ class RenderServiceClass {
           cancelAnimationFrame(this.animationLoop);
         }
       }
-
       if (GameInfoService.config.system.fps) {
         this.animationLoop = setTimeout(() => this.onAnimationFrame(), 1000.0 / GameInfoService.config.system.fps);
       } else {
         this.animationLoop = requestAnimationFrame(() => this.onAnimationFrame());
       }
     }
-
     const dt = this.animationClock.getDelta();
-
     if (!this.paused) {
       if (this.onBeforeRenderFrame) {
         this.onBeforeRenderFrame();
       }
-
       if (this.depthMaterial && this.depthRenderTarget) {
         if (this.onBeforeRenderDepth) {
           this.onBeforeRenderDepth();
         }
-
         this.scene.overrideMaterial = this.depthMaterial;
         this.renderer.setRenderTarget(this.depthRenderTarget);
         this.renderer.render(this.scene, this.camera);
         this.renderer.setRenderTarget(null);
         this.scene.overrideMaterial = null;
-
         if (this.onAfterRenderDepth) {
           this.onAfterRenderDepth();
         }
       }
-
       if (this.composer) {
         this.composer.render(dt);
       } else {
         this.renderer.render(this.scene, this.camera);
       }
-
       if (this.onResumed) {
         this.onResumed();
         this.onResumed = null;
       }
-
       if (this.onAfterRenderFrame) {
         this.onAfterRenderFrame();
       }
@@ -3491,45 +3440,46 @@ class RenderServiceClass {
         this.onPaused = null;
       }
     }
-
-    if (DummyDebug.stats) {
-      DummyDebug.stats.update();
+    if (DebugService.stats) {
+      DebugService.stats.update();
     }
   }
-
   onResize() {
+    if (this.isHeadless) {
+      return;
+    }
     const windowInfo = this.getWindowSize();
-
     if (this.camera) {
       this.camera.aspect = windowInfo.aspectRatio;
       this.camera.updateProjectionMatrix();
     }
-
     if (this.renderer) {
       this.renderer.setSize(windowInfo.width, windowInfo.height);
     }
-
     if (this.composer) {
       this.composer.setSize(windowInfo.width, windowInfo.height);
     }
-
     if (this.depthRenderTarget) {
       this.depthRenderTarget.setSize(windowInfo.width, windowInfo.height);
     }
   }
-
   getWindowSize() {
+    if (this.isHeadless) {
+      return {
+        width: 0.0,
+        height: 0.0,
+        aspectRatio: 1.0
+      };
+    }
     return {
       width: window.innerWidth,
       height: window.innerHeight,
       aspectRatio: window.innerWidth / window.innerHeight
     };
   }
-
   pauseRendering(whenPaused) {
     this.paused = true;
     this.onResumed = null;
-
     if (whenPaused) {
       this.onPaused = whenPaused;
     } else {
@@ -3538,11 +3488,9 @@ class RenderServiceClass {
       });
     }
   }
-
   resumeRendering(whenResumed) {
     this.paused = false;
     this.onPaused = null;
-
     if (whenResumed) {
       this.onResumed = whenResumed;
     } else {
@@ -3551,34 +3499,28 @@ class RenderServiceClass {
       });
     }
   }
-
   dispose() {
     if (this.currentView) {
       this.currentView.dispose();
       delete this.currentView;
       delete this.currentView;
     }
-
     if (this.controls) {
       this.controls.dispose();
       delete this.controls;
     }
-
     if (this.renderer) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);
       this.renderer.dispose();
       delete this.renderer;
     }
-
     if (this.composer) {
       this.composer.dispose();
       delete this.composer;
     }
-
     if (this.camera) {
       delete this.camera;
     }
-
     if (this.scene) {
       AssetsService.disposeAll();
       AnimationService.disposeAll();
@@ -3586,18 +3528,14 @@ class RenderServiceClass {
       AudioService.disposeAll();
       delete this.scene;
     }
-
     if (this.onPaused) {
       this.onPaused = null;
     }
-
     if (this.onResumed) {
       this.onResumed = null;
     }
   }
-
 }
-
 const RenderService = new RenderServiceClass();
 
 const convertMaterialType = (material, targetType = 'basic') => {
@@ -3612,50 +3550,43 @@ const convertMaterialType = (material, targetType = 'basic') => {
     'toon': ['MeshToonMaterial', ['alphaMap', 'aoMap', 'displacementMap', 'displacementScale', 'emissive', 'emissiveMap', 'emissiveIntensity', 'normalMap', 'color', 'map']],
     'matcap': ['MeshMatcapMaterial', ['alphaMap', 'color', 'displacementMap', 'displacementScale', 'map', 'matcap', 'normalMap']]
   }[targetType];
-
   if (!materialConstructor || !material) {
     return;
   }
-
   const replacementProps = {};
   [...inheritProps, 'side', 'name', 'skinning', 'transparent', 'vertexColors', 'visible', 'toneMapped', 'dithering', 'premultipliedAlpha', 'precision', 'opacity'].forEach(prop => {
     replacementProps[prop] = material[prop] || null;
   });
-  return new Three[materialConstructor](replacementProps);
+  return new Three$2[materialConstructor](replacementProps);
 };
 
 const loaders = {
-  models: new GLTFLoader(),
-  images: new Three.TextureLoader(),
+  models: {
+    gltf: new GLTFLoader(),
+    fbx: new FBXLoader()
+  },
+  images: new Three$2.TextureLoader(),
   hdri: new RGBELoader(),
-  audio: new Three.AudioLoader()
+  audio: new Three$2.AudioLoader()
 };
-
 class AssetsServiceClass {
   constructor() {
     _defineProperty(this, "disposables", []);
-
     _defineProperty(this, "pending", {});
-
     _defineProperty(this, "preloaded", {});
-
     _defineProperty(this, "savedMaterials", {});
-
     _defineProperty(this, "audioBuffers", {});
   }
-
   getDefaultCube() {
-    const cube = new Three.Mesh(new Three.BoxBufferGeometry(1, 1, 1), new Three.MeshNormalMaterial());
+    const cube = new Three$2.Mesh(new Three$2.BoxGeometry(1, 1, 1), new Three$2.MeshNormalMaterial());
     this.registerDisposable(cube);
     return cube;
   }
-
   getAmbientLight(groundColor = 0xffffff, skyColor = 0xffffff, intensity = 1.0) {
-    const light = new Three.HemisphereLight(groundColor, skyColor, intensity);
+    const light = new Three$2.HemisphereLight(groundColor, skyColor, intensity);
     this.registerDisposable(light);
     return light;
   }
-
   registerAsyncAsset(promisable) {
     const pid = uuid.v4();
     const promised = new Promise((resolve, reject) => {
@@ -3664,7 +3595,6 @@ class AssetsServiceClass {
           this.disposeAsset(result);
           return reject();
         }
-
         delete this.pending[pid];
         resolve(result);
       });
@@ -3672,7 +3602,6 @@ class AssetsServiceClass {
     this.pending[pid] = promised;
     return promised;
   }
-
   getTexture(path) {
     return this.registerAsyncAsset(resolve => {
       this.getImageSync(path, image => {
@@ -3680,36 +3609,34 @@ class AssetsServiceClass {
       });
     });
   }
-
   getTextureSync(path, then) {
     return loaders.images.load(path, image => {
       this.registerDisposable(image);
-      image.encoding = Three.sRGBEncoding;
-
+      image.encoding = Three$2.sRGBEncoding;
       if (then) {
         then(image);
       }
     });
   }
-
   getImage(path) {
     console.warn('AssetsService', 'getImage', 'AssetsService.getImage is deprecated, please use AssetsService.getTexture instead');
     return this.getTexture(path);
   }
-
   getImageSync(path, then) {
     console.warn('AssetsService', 'getImageSync', 'AssetsService.getImageSync is deprecated, please use AssetsService.getTextureSync instead');
     return this.getTextureSync(path, then);
   }
-
-  getHDRI(path, encoding = Three.RGBEEncoding) {
+  getHDRI(path, encoding = Three$2.RGBEEncoding) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three$2.Texture());
+    }
     return this.registerAsyncAsset(resolve => {
-      loaders.hdri.setDataType(Three.UnsignedByteType).load(path, texture => {
+      loaders.hdri.load(path, texture => {
         const renderer = RenderService.getRenderer();
-        const generator = new Three.PMREMGenerator(renderer);
+        const generator = new Three$2.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
         const hdri = renderTarget.texture;
-        hdri.encoding = encoding || Three.RGBEEncoding;
+        hdri.encoding = encoding || Three$2.RGBEEncoding;
         AssetsService.registerDisposable(hdri);
         AssetsService.registerDisposable(renderTarget);
         texture.dispose();
@@ -3718,15 +3645,17 @@ class AssetsServiceClass {
       });
     });
   }
-
   getReflectionsTexture(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve(new Three$2.Texture());
+    }
     return this.registerAsyncAsset(resolve => {
       this.getTexture(path).then(texture => {
         const renderer = RenderService.getRenderer();
-        const generator = new Three.PMREMGenerator(renderer);
+        const generator = new Three$2.PMREMGenerator(renderer);
         const renderTarget = generator.fromEquirectangular(texture);
         const reflections = renderTarget.texture;
-        reflections.encoding = Three.sRGBEncoding;
+        reflections.encoding = Three$2.sRGBEncoding;
         AssetsService.registerDisposable(reflections);
         AssetsService.registerDisposable(renderTarget);
         texture.dispose();
@@ -3735,7 +3664,6 @@ class AssetsServiceClass {
       });
     });
   }
-
   getModel(path, {
     internalAllowPreloaded,
     forceUniqueMaterials,
@@ -3743,62 +3671,88 @@ class AssetsServiceClass {
   } = {}) {
     return this.registerAsyncAsset(resolve => {
       // NOTE Prevent fetching previously preloaded models when preloading
+
       if (internalAllowPreloaded !== false) {
         if (this.preloaded[path] && this.preloaded[path].length > 0) {
           const preloaded = this.preloaded[path].pop();
           return resolve(preloaded);
         }
       }
-
-      loaders.models.load(path, model => {
+      let modelType = 'gltf';
+      if (path.endsWith('.fbx')) {
+        modelType = 'fbx';
+      }
+      loaders.models[modelType].load(path, model => {
         const renderer = RenderService.getRenderer();
         const camera = RenderService.getNativeCamera();
-        model.parser.cache.removeAll();
-        delete model.parser;
-        delete model.asset;
-        delete model.scenes;
-        model.scene.traverse(child => {
+        let target;
+        if (model.scene) {
+          target = model.scene;
+          target.animations = model.animations;
+          model.parser.cache.removeAll();
+          delete model.parser;
+          delete model.asset;
+          delete model.scenes;
+        } else {
+          target = model;
+        }
+        target.traverse(child => {
           this.registerDisposable(child);
-
           if (child.material) {
             if (forceMaterialsType) {
               child.material = convertMaterialType(child.material, forceMaterialsType);
             } else if (forceUniqueMaterials) {
               child.material = this.cloneMaterial(child.material);
             }
+            if (GameInfoService.config.system.shadows) {
+              child.material.side = Three$2.FrontSide;
+            }
           }
-
           if (GameInfoService.config.system.correctBlenderLights) {
             // NOTE More arbitrary that you dare to imagine 👀
-            if (child instanceof Three.Light) {
+
+            if (child instanceof Three$2.Light) {
               child.intensity /= 68.3;
-
-              if (typeof child.distance === 'number') {
-                child.distance *= 10.0;
-              }
-
               if (typeof child.decay === 'number') {
                 child.decay /= 2.0;
               }
             }
           }
+          if (GameInfoService.config.system.shadows && child.visible) {
+            if (child instanceof Three$2.Mesh) {
+              child.castShadow = GameInfoService.config.system.shadows === DQ.ShadowsAllObjects;
+              child.receiveShadow = true;
+            } else if (child instanceof Three$2.Light) {
+              child.castShadow = true;
+              child.shadow.mapSize.width = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.mapSize.height = defaultTo(GameInfoService.config.system.shadowsResolution, 1024);
+              child.shadow.radius = defaultTo(GameInfoService.config.system.shadowsRadius, 4);
+            }
+          }
         });
-        model.scene.frustumCulled = false;
-
-        model.scene.onAfterRender = function () {
-          model.scene.frustumCulled = true;
-
-          model.scene.onAfterRender = function () {};
+        target.frustumCulled = false;
+        target.onAfterRender = function () {
+          target.frustumCulled = true;
+          target.onAfterRender = function () {};
         };
-
-        renderer.compile(model.scene, camera);
-        model.scene.userData.skinnedAnimations = model.animations;
-        delete model.animations;
-        resolve(model.scene);
+        if (renderer) {
+          renderer.compile(target, camera);
+        }
+        target.userData.skinnedAnimations = target.animations;
+        delete target.animations;
+        resolve(target);
       });
     });
   }
 
+  // NOTE Use this method to load FBX animations exported from Mixamo (without model)
+  getMixamoAnimation(path) {
+    return this.registerAsyncAsset(resolve => {
+      loaders.models.fbx.load(path, model => {
+        resolve(model.animations[Object.keys(model.animations)[0]]);
+      });
+    });
+  }
   preloadModel(path, {
     forceUniqueMaterials
   } = {}) {
@@ -3809,13 +3763,14 @@ class AssetsServiceClass {
       if (!this.preloaded[path]) {
         this.preloaded[path] = [];
       }
-
       this.preloaded[path].push(model);
       return Promise.resolve();
     });
   }
-
   preloadFont(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       preloadFont({
         font: path,
@@ -3823,8 +3778,10 @@ class AssetsServiceClass {
       }, resolve);
     });
   }
-
   preloadAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       const audio = new Howl({
         src: [path],
@@ -3839,94 +3796,78 @@ class AssetsServiceClass {
       resolve(audio);
     });
   }
-
   getAudio(path) {
+    if (RenderService.isHeadless) {
+      return Promise.resolve();
+    }
     return this.registerAsyncAsset(resolve => {
       if (this.audioBuffers[path]) {
         return resolve(this.audioBuffers[path]);
       }
-
       this.preloadAudio(path).then(audio => {
         return resolve(audio);
       });
     });
   }
-
   getMaterial(name) {
     if (this.savedMaterials[name]) {
       return this.cloneMaterial(this.savedMaterials[name]);
     }
   }
-
   saveMaterial(material) {
     if (this.savedMaterials[material.name]) {
       return;
     }
-
     this.registerDisposable(material);
     this.savedMaterials[material.name] = this.cloneMaterial(material);
   }
-
   cloneMaterial(material) {
     const copy = material.clone();
     this.registerDisposable(material);
     this.registerDisposable(copy);
     return copy;
   }
-
   cloneTexture(texture) {
     const copy = texture.clone();
     copy.needsUpdate = true;
     this.registerDisposable(copy);
     return copy;
   }
-
   registerDisposeCallback(object, dispose) {
     if (!object || !dispose || !object.userData) {
       return;
     }
-
     if (!object.userData.disposeRefs) {
       object.userData.disposeRefs = [];
     }
-
     object.userData.disposeRefs.push(dispose);
   }
-
   markDisposable(object) {
     object.__registeredDisposable__ = true;
   }
-
   markDisposed(object) {
     object.__registeredDisposable__ = false;
     object.__disposed__ = true;
   }
-
   markUndisposed(object, reason) {
     object.__undisposed__ = reason;
   }
-
   isDisposed(object) {
     return object.__disposed__;
   }
-
   willBeDisposed(object) {
     return object.__registeredDisposable__;
   }
-
   registerDisposable(object) {
     if (!object || object.__registeredDisposable__) {
       return;
     }
-
     this.markDisposable(object);
     this.disposables.push(object);
-
     if (object.children) {
       object.children.forEach(child => this.registerDisposable(child));
     }
   }
-
   disposeAll() {
     Object.keys(this.pending).forEach(pid => {
       delete this.preloaded[pid];
@@ -3935,7 +3876,6 @@ class AssetsServiceClass {
       while (this.preloaded[path].length > 0) {
         this.disposables.push(this.preloaded[path].pop());
       }
-
       delete this.preloaded[path];
     });
     Object.keys(this.audioBuffers).forEach(path => {
@@ -3950,149 +3890,121 @@ class AssetsServiceClass {
     this.preloaded = [];
     this.pending = {};
   }
-
   disposeAsset(object) {
     if (!object || typeof object !== 'object') {
       return;
     }
-
-    if (object instanceof Three.Scene || object instanceof Three.Camera) {
+    if (object instanceof Three$2.Scene || object instanceof Three$2.Camera) {
       this.markUndisposed(object, 'Object is a Scene or Camera');
       return;
     }
-
     if (object instanceof AudioBuffer) {
       this.markUndisposed(object, 'Object is an AudioBuffer');
       return;
     }
-
     if (object instanceof Howl) {
       AudioService.stopAudio(object);
       return;
     }
-
     object.visible = false;
-
     if (object.__registeredDisposable__) {
       this.markDisposed(object);
       this.disposables = this.disposables.filter(match => match !== object);
     }
-
+    if (object.traverse) {
+      object.traverse(child => {
+        NetworkService.disposeSyncObject(child);
+      });
+    }
     if (object.parent) {
       object.parent.remove(object);
     }
-
     if (object instanceof Text$1) {
       object.dispose();
-
       if (object._textRenderInfo && object._textRenderInfo.sdfTexture) {
         object._textRenderInfo.sdfTexture.dispose();
       }
-
       return;
     }
-
     if (object.children) {
       object.children = object.children.filter(child => {
         child.parent = null;
         this.disposeAsset(child);
       });
     }
-
     if (object.geometry) {
       object.geometry.dispose();
       delete object.geometry;
     }
-
     if (object.material) {
       this.disposeProps(object.material);
-
       try {
         object.material.dispose();
       } catch (error) {
         console.info(object);
       }
-
       delete object.material;
     }
-
     if (object.userData) {
       if (object.userData.disposeRefs) {
         object.userData.disposeRefs.forEach(dispose => dispose && dispose());
       }
-
       Object.keys(object.userData).forEach(key => {
         delete object.userData[key];
       });
     }
-
     this.disposeProps(object);
-
     if (typeof object.dispose === 'function') {
       object.dispose();
     }
   }
-
   disposeProps(object) {
     Object.keys(object).forEach(prop => {
       if (object[prop] && typeof object[prop].dispose === 'function') {
         object[prop].dispose();
       }
     });
-
     if (typeof object.dispose === 'function') {
       object.dispose();
     }
   }
-
 }
-
 const AssetsService = new AssetsServiceClass();
 
-class GameObjectClass extends Three.Group {
+class GameObjectClass extends Three$2.Group {
   constructor() {
     super();
     AssetsService.registerDisposable(this);
   }
-
   onCreate() {}
-
   dispose() {}
-
 }
 
 class AiServiceClass {
   constructor() {
     _defineProperty(this, "aiNodes", []);
   }
-
   registerAiNode(object) {
     this.aiNodes.push(object);
   }
-
   getAiNodeById(id) {
     return this.aiNodes.find(node => {
       return node.userData.aiNode === id;
     });
   }
-
   disposeAiNode(object) {
     this.aiNodes = this.aiNodes.filter(match => match !== object);
   }
-
   disposeAll() {
     this.aiNodes = [];
   }
-
 }
-
 const AiService = new AiServiceClass();
 
 const parseCamera = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.camera)) {
     object.visible = false;
     CameraService.addCamera(userData.camera, object);
@@ -4107,15 +4019,14 @@ const parseAction = (object, parserPayload) => {
   const {
     actions
   } = parserPayload;
-
   if (isDefined(userData.action)) {
     const actionCallback = actions[userData.action];
-
     if (typeof actionCallback === 'function') {
       InteractionsService.registerListener(object, InteractionEnums.eventClick, ({
         stopPropagation
       } = {}) => {
-        actionCallback(object, { ...parserPayload,
+        actionCallback(object, {
+          ...parserPayload,
           stopPropagation
         });
       });
@@ -4138,9 +4049,15 @@ class Text extends GameObjectClass {
     alwaysOnTop
   } = {}) {
     super();
-
     _defineProperty(this, "troikaText", null);
-
+    if (RenderService.isHeadless) {
+      this.troikaText = new Three$2.Group();
+      this.troikaText.text = '';
+      this.troikaText.color = new Three$2.Color(0x000000);
+      this.troikaText.sync = () => {};
+      this.add(this.troikaText);
+      return;
+    }
     const troikaText = new Text$1();
     troikaText.font = font;
     troikaText.text = text;
@@ -4148,45 +4065,36 @@ class Text extends GameObjectClass {
     troikaText.textAlign = textAlign || 'center';
     troikaText.fontSize = fontSize || 1.0;
     troikaText.material.transparent = true;
-    troikaText.color = new Three.Color(color || '#ffffff');
-
+    troikaText.color = new Three$2.Color(color || '#ffffff');
     if (alwaysOnTop) {
       troikaText.renderOrder = Number.MAX_SAFE_INTEGER;
       troikaText.material.depthTest = false;
     }
-
     if (outlineWidth) {
       troikaText.outlineWidth = `${outlineWidth}%`;
-      troikaText.outlineColor = new Three.Color(outlineColor || '#000000');
+      troikaText.outlineColor = new Three$2.Color(outlineColor || '#000000');
     }
-
     troikaText.sync();
     this.troikaText = troikaText;
     this.add(troikaText);
   }
-
 }
 
 const replacePlaceholder = (target, replacement) => {
   if (target.geometry) {
     AssetsService.disposeProps(target.geometry);
   }
-
   if (target.material) {
     AssetsService.disposeProps(target.material);
   }
-
   if (target.children) {
     target.children.forEach(child => target.remove(child));
   }
-
   delete target.geometry;
   delete target.material;
   target.isGroup = true; // NOTE Very nasty hack
-
   target.isMesh = false;
   replacement.rotation.y = Math.PI; // NOTE Blender rotations are weird
-
   target.add(replacement);
 };
 
@@ -4194,7 +4102,6 @@ const parseLabel = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.label)) {
     const label = new Text({
       font: GameInfoService.config.fonts[userData.labelFont] || GameInfoService.config.fonts.default,
@@ -4232,38 +4139,25 @@ class ScrollList extends GameObjectClass {
     scrollTween
   } = {}) {
     super();
-
     _defineProperty(this, "scrollX", false);
-
     _defineProperty(this, "scrollY", true);
-
     _defineProperty(this, "scrollPositionX", 0.0);
-
     _defineProperty(this, "scrollPositionY", 0.0);
-
     _defineProperty(this, "scrollTween", 0.1);
-
     _defineProperty(this, "scrollSpeed", 6.0);
-
     _defineProperty(this, "scrollHitbox", null);
-
     _defineProperty(this, "scrollMaxOffsetX", 0.0);
-
     _defineProperty(this, "scrollMaxOffsetY", 0.0);
-
     _defineProperty(this, "axisX", 'z');
-
     _defineProperty(this, "axisY", 'y');
-
     this.scrollSpeed = scrollSpeed || this.scrollSpeed;
     this.scrollTween = scrollTween || this.scrollTween;
     this.onCreate();
   }
-
   onCreate() {
-    const debugScrollVisible = DummyDebug.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
+    const debugScrollVisible = DebugService.get(DebugFlags.DEBUG_SCROLL_VISIBLE);
     GameObjectClass.prototype.onCreate.call(this);
-    this.scrollHitbox = new Three.Mesh(new Three.BoxBufferGeometry(1.0, 1.0, 1.0), new Three.MeshBasicMaterial({
+    this.scrollHitbox = new Three$2.Mesh(new Three$2.BoxGeometry(1.0, 1.0, 1.0), new Three$2.MeshBasicMaterial({
       color: getRandomColor(),
       opacity: debugScrollVisible ? 0.5 : 1.0,
       transparent: debugScrollVisible
@@ -4275,28 +4169,22 @@ class ScrollList extends GameObjectClass {
         if (this.scrollPositionX < 0.0) {
           this.scrollPositionX = MathUtils$1.lerp(this.scrollPositionX, 0.0, this.scrollTween);
         }
-
         if (this.scrollPositionX > this.scrollMaxOffsetX) {
           this.scrollPositionX = MathUtils$1.lerp(this.scrollPositionX, this.scrollMaxOffsetX, this.scrollTween);
         }
-
         this.position[this.axisX] = MathUtils$1.lerp(this.position[this.axisX], this.scrollPositionX, this.scrollTween);
       }
-
       if (this.scrollY) {
         if (this.scrollPositionY < 0.0) {
           this.scrollPositionY = MathUtils$1.lerp(this.scrollPositionY, 0.0, this.scrollTween);
         }
-
         if (this.scrollPositionY > this.scrollMaxOffsetY) {
           this.scrollPositionY = MathUtils$1.lerp(this.scrollPositionY, this.scrollMaxOffsetY, this.scrollTween);
         }
-
         this.position[this.axisY] = MathUtils$1.lerp(this.position[this.axisY], this.scrollPositionY, this.scrollTween);
       }
     });
   }
-
   add(object) {
     InteractionsService.registerListener(object, InteractionEnums.eventDrag, ({
       deltaX,
@@ -4305,17 +4193,14 @@ class ScrollList extends GameObjectClass {
       if (this.scrollX) {
         this.scrollPositionX -= deltaX * this.scrollSpeed;
       }
-
       if (this.scrollY) {
         this.scrollPositionY += deltaY * this.scrollSpeed;
       }
     });
-    Three.Group.prototype.add.call(this, object);
-
+    Three$2.Group.prototype.add.call(this, object);
     if (object.id === this.scrollHitbox.id) {
       return;
     }
-
     const boundingBox = UtilsService.getBox3();
     this.remove(this.scrollHitbox);
     boundingBox.setFromObject(this);
@@ -4334,7 +4219,6 @@ class ScrollList extends GameObjectClass {
     this.scrollPositionY = 0.0;
     UtilsService.releaseBox3(boundingBox);
   }
-
 }
 
 const parseScroll = (object, {
@@ -4344,15 +4228,12 @@ const parseScroll = (object, {
   const {
     userData
   } = object;
-
   if (isDefined(userData.scroll)) {
     const scrollId = Number(userData.scroll);
-
     if (!scrollLists[scrollId]) {
       scrollLists[scrollId] = new ScrollList();
       scene.add(scrollLists[scrollId]);
     }
-
     scrollLists[scrollId].add(object);
   }
 };
@@ -4361,13 +4242,11 @@ const parseIf = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.if)) {
     VarService.resolveVar(userData.if, newValue => {
       if (!object || !object.parent) {
         return false;
       }
-
       object.visible = !!newValue;
     }, listener => {
       AssetsService.registerDisposeCallback(object, () => VarService.disposeListener(userData.if, listener));
@@ -4379,13 +4258,11 @@ const parseIfNot = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.ifNot)) {
     VarService.resolveVar(userData.ifNot, newValue => {
       if (!object || !object.parent) {
         return false;
       }
-
       object.visible = !newValue;
     }, listener => {
       AssetsService.registerDisposeCallback(object, () => VarService.disposeListener(userData.ifNot, listener));
@@ -4397,7 +4274,6 @@ const parseRotateXYZ = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.rotateX) || isDefined(userData.rotateY) || isDefined(userData.rotateZ)) {
     AnimationService.registerAnimation({
       target: object,
@@ -4407,11 +4283,9 @@ const parseRotateXYZ = object => {
         if (isDefined(userData.rotateX)) {
           target.rotateX(userData.rotateX);
         }
-
         if (isDefined(userData.rotateY)) {
           target.rotateY(userData.rotateY);
         }
-
         if (isDefined(userData.rotateZ)) {
           target.rotateZ(userData.rotateZ);
         }
@@ -4424,15 +4298,12 @@ const parseMaterial = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.material)) {
     VarService.resolveVar(userData.material, materialName => {
       if (!object || !object.parent) {
         return false;
       }
-
       const material = AssetsService.getMaterial(materialName);
-
       if (material) {
         AssetsService.disposeProps(object.material);
         object.material = material;
@@ -4447,10 +4318,8 @@ const parseAnimation = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.animation)) {
     const animation = GameInfoService.config.animations[userData.animation];
-
     if (animation) {
       animation(object);
     } else {
@@ -4463,7 +4332,6 @@ const parseCacheMaterial = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.cacheMaterial)) {
     AssetsService.saveMaterial(object.material);
     object.userData.cachedMaterialId = object.material.name;
@@ -4472,41 +4340,31 @@ const parseCacheMaterial = object => {
 
 const get3dScreenHeight = (depth = 1.0, camera) => {
   let targetCamera = camera;
-
   if (!camera) {
     targetCamera = UtilsService.getCamera();
   }
-
   const fov = targetCamera.fov * MathUtils$1.DEG2RAD;
-
   if (!camera) {
     UtilsService.releaseCamera(targetCamera);
   }
-
   return 2.0 * Math.tan(fov / 2.0) * Math.abs(depth !== 0.0 ? depth : 1.0);
 };
 const get3dScreenWidth = (depth = 1.0, camera) => {
   let targetCamera = camera;
-
   if (!camera) {
     targetCamera = UtilsService.getCamera();
   }
-
   const height = get3dScreenHeight(depth, targetCamera);
-
   if (!camera) {
     UtilsService.releaseCamera(targetCamera);
   }
-
   return height * targetCamera.aspect;
 };
 const fitToScreen = (mesh, depth = 1.0, camera, preserveRatio = false) => {
   let targetCamera = camera;
-
   if (!camera) {
     targetCamera = UtilsService.getCamera();
   }
-
   const height = get3dScreenHeight(depth, targetCamera) + 1.0;
   const width = height * targetCamera.aspect + 1.0;
   const mock = mesh.clone();
@@ -4519,11 +4377,9 @@ const fitToScreen = (mesh, depth = 1.0, camera, preserveRatio = false) => {
   const ratioHeight = height / boxHeight;
   AssetsService.disposeAsset(mock);
   UtilsService.releaseBox3(box);
-
   if (!camera) {
     UtilsService.releaseCamera(targetCamera);
   }
-
   if (preserveRatio) {
     const maxRatio = Math.max(ratioWidth, ratioHeight);
     mesh.scale.set(maxRatio, maxRatio, 1.0);
@@ -4533,11 +4389,9 @@ const fitToScreen = (mesh, depth = 1.0, camera, preserveRatio = false) => {
 };
 const fitToCamera = (mesh, camera, preserveRatio = false) => {
   let targetCamera = camera;
-
   if (!camera) {
     targetCamera = UtilsService.getCamera();
   }
-
   const distance = MathService.getVec3(0.0, 0.0, 0.0, 'screen-size-1');
   targetCamera.getWorldPosition(distance);
   const meshPosition = MathService.getVec3(0.0, 0.0, 0.0, 'screen-size-1');
@@ -4546,28 +4400,21 @@ const fitToCamera = (mesh, camera, preserveRatio = false) => {
   MathService.releaseVec3(meshPosition);
   fitToScreen(mesh, distance.length(), targetCamera, preserveRatio);
   MathService.releaseVec3(distance);
-
   if (!camera) {
     UtilsService.releaseCamera(targetCamera);
   }
 };
 
-const math2Pi = Math.PI * 2.0;
-const mathPi2 = Math.PI / 2.0;
-const mathPi4 = Math.PI / 4.0;
-const mathPi8 = Math.PI / 8.0;
-
 const parseFullscreen = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.fullscreen)) {
     const camera = RenderService.getNativeCamera();
-    const originalOrientation = MathService.getVec3(0.0, 0.0, 0.0, 'fullscreen-1').copy(object.rotation); // NOTE Blender uses XZY axis orientation
+    const originalOrientation = MathService.getVec3(0.0, 0.0, 0.0, 'fullscreen-1').copy(object.rotation);
 
+    // NOTE Blender uses XZY axis orientation
     object.rotation.set(-mathPi2, -mathPi2, -mathPi2);
-
     if (userData.fullscreenOffset) {
       fitToScreen(object, userData.fullscreenOffset, camera, userData.fullscreenPreserveRatio);
     } else {
@@ -4576,7 +4423,6 @@ const parseFullscreen = object => {
       });
       AssetsService.registerDisposeCallback(object, () => TimeService.disposeFrameListener(frameListener));
     }
-
     object.scale.set(object.scale.z, object.scale.y, object.scale.x);
     object.rotation.x = originalOrientation.z;
     object.rotation.y = originalOrientation.y;
@@ -4591,7 +4437,6 @@ const registerGameObject = (object, {
   const {
     userData
   } = object;
-
   if (isDefined(userData.gameObject)) {
     gameObjectRefs[userData.gameObject] = object;
   }
@@ -4603,10 +4448,8 @@ const parseGameObject = (object, parserPayload) => {
   const {
     gameObjects
   } = parserPayload;
-
   if (isDefined(userData.gameObject)) {
     const gameObjectMap = gameObjects[userData.gameObject];
-
     if (gameObjectMap) {
       gameObjectMap(object, parserPayload);
     } else {
@@ -4619,14 +4462,13 @@ const parseAiNode = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.aiNode)) {
-    if (!DummyDebug.get(DebugFlags.DEBUG_AI_NODES)) {
+    if (!DebugService.get(DebugFlags.DEBUG_AI_NODES)) {
       removePlaceholder(object);
       object.visible = false;
     } else {
       AssetsService.disposeAsset(object.material);
-      object.material = new Three.MeshNormalMaterial();
+      object.material = new Three$2.MeshNormalMaterial();
       AssetsService.registerDisposable(object.material);
       AnimationService.registerAnimation({
         target: object,
@@ -4651,7 +4493,6 @@ const parseAiNode = object => {
         }
       });
     }
-
     AiService.registerAiNode(object);
     AssetsService.registerDisposeCallback(object, () => AiService.disposeAiNode(object));
   }
@@ -4663,7 +4504,6 @@ const parseAiSpawn = (object, {
   const {
     userData
   } = object;
-
   if (isDefined(userData.aiSpawn)) {
     removePlaceholder(object);
     object.visible = false;
@@ -4675,18 +4515,15 @@ const parseShader = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.shader)) {
     const shaderFunction = GameInfoService.config.shaders[userData.shader];
-
     if (!shaderFunction || typeof shaderFunction !== 'function') {
       console.info('parseShader', 'shader does not exist or not a valid shader', userData.shader, {
         shaderFunction
       });
       return;
     }
-
-    const shaderMaterial = new Three.ShaderMaterial(shaderFunction({
+    const shaderMaterial = new Three$2.ShaderMaterial(shaderFunction({
       target: object
     }));
     AssetsService.disposeProps(object.material);
@@ -4699,7 +4536,6 @@ const parseNavmap = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.navmap)) {
     object.visible = false;
     PhysicsService.registerNavmap(object);
@@ -4711,7 +4547,6 @@ const parseAlign = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.align)) {
     const frameListener = TimeService.registerFrameListener(() => {
       const camera = RenderService.getNativeCamera();
@@ -4721,13 +4556,11 @@ const parseAlign = object => {
       camera.getWorldPosition(cameraPosition);
       const screenWidth = get3dScreenWidth(position.sub(cameraPosition).length() / 2.0, camera);
       let targetOffset = 0;
-
       if (userData.align === 'left') {
         targetOffset = -screenWidth / 2.0 + 0.1;
       } else if (userData.align === 'right') {
         targetOffset = screenWidth / 2.0 - 0.1;
       }
-
       object.position.z = MathUtils.lerp(object.position.z, targetOffset, 0.05);
       MathService.releaseVec3(position);
       MathService.releaseVec3(cameraPosition);
@@ -4740,20 +4573,16 @@ const parseSlideshow = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.slideshow)) {
     let slidesX = parseInt(userData.slidesX, 10);
     let slidesY = parseInt(userData.slidesY, 10);
     const slideshowFrequency = 500;
-
     if (isNaN(slidesX)) {
       slidesX = 1.0;
     }
-
     if (isNaN(slidesY)) {
       slidesY = 1.0;
     }
-
     const dX = slidesX === 1 ? 0 : 1 / slidesX;
     const dY = slidesY === 1 ? 0 : 1 / slidesY;
     AnimationService.registerAnimation({
@@ -4773,7 +4602,6 @@ const parseSlideshow = object => {
         if (!target || !target.parent || !target.material || !target.material.map) {
           return false;
         }
-
         target.material.map.offset.x += dX;
         target.material.map.offset.y += dY;
       }
@@ -4785,7 +4613,6 @@ const parseSurface = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.surface)) {
     PhysicsService.registerSurface(object);
     AssetsService.registerDisposeCallback(object, () => PhysicsService.disposeSurface(object));
@@ -4796,7 +4623,6 @@ const parseShading = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.shading)) {
     VarService.resolveVar(userData.shading, value => {
       const replacementMaterial = convertMaterialType(object.material, value);
@@ -4812,36 +4638,29 @@ const parseLeft = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.left)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseLeft', 'object must be part of the UI layer');
       return;
     }
-
     let frameListener = null;
     VarService.resolveVar(userData.left, value => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
-
       if (isNaN(offset)) {
         console.info('parseLeft', 'NaN value');
         return;
       }
-
       frameListener = TimeService.registerFrameListener(() => {
         if (!object.visible) {
           return;
         }
-
         const camera = RenderService.getNativeCamera();
         const position = MathService.getVec3(0.0, 0.0, 0.0);
         const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0);
@@ -4852,13 +4671,11 @@ const parseLeft = object => {
         const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
         const screenWidth = get3dScreenWidth(cameraOffset, camera);
         object.position.x = -screenWidth / 2.0;
-
         if (percentageOffset) {
           object.position.x += offset / 100.0 * screenWidth;
         } else {
           object.position.x += offset;
         }
-
         MathService.releaseVec3(position);
         MathService.releaseVec3(cameraPosition);
         MathService.releaseVec3(cameraDirection);
@@ -4872,36 +4689,29 @@ const parseRight = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.right)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseRight', 'object must be part of the UI layer');
       return;
     }
-
     let frameListener = null;
     VarService.resolveVar(userData.right, value => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
-
       if (isNaN(offset)) {
         console.info('parseRight', 'NaN value');
         return;
       }
-
       frameListener = TimeService.registerFrameListener(() => {
         if (!object.visible) {
           return;
         }
-
         const camera = RenderService.getNativeCamera();
         const position = MathService.getVec3(0.0, 0.0, 0.0);
         const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0);
@@ -4912,13 +4722,11 @@ const parseRight = object => {
         const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
         const screenWidth = get3dScreenWidth(cameraOffset, camera);
         object.position.x = screenWidth / 2.0;
-
         if (percentageOffset) {
           object.position.x -= offset / 100.0 * screenWidth;
         } else {
           object.position.x -= offset;
         }
-
         MathService.releaseVec3(position);
         MathService.releaseVec3(cameraPosition);
         MathService.releaseVec3(cameraDirection);
@@ -4932,36 +4740,29 @@ const parseTop = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.top)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseTop', 'object must be part of the UI layer');
       return;
     }
-
     let frameListener = null;
     VarService.resolveVar(userData.top, value => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
-
       if (isNaN(offset)) {
         console.info('parseTop', 'NaN value');
         return;
       }
-
       frameListener = TimeService.registerFrameListener(() => {
         if (!object.visible) {
           return;
         }
-
         const camera = RenderService.getNativeCamera();
         const position = MathService.getVec3(0.0, 0.0, 0.0);
         const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0);
@@ -4972,13 +4773,11 @@ const parseTop = object => {
         const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
         const screenHeight = get3dScreenHeight(cameraOffset, camera);
         object.position.y = screenHeight / 2.0;
-
         if (percentageOffset) {
           object.position.y -= offset / 100.0 * screenHeight;
         } else {
           object.position.y -= offset;
         }
-
         MathService.releaseVec3(position);
         MathService.releaseVec3(cameraPosition);
         MathService.releaseVec3(cameraDirection);
@@ -4992,36 +4791,29 @@ const parseBottom = object => {
   const {
     userData
   } = object;
-
   if (isDefined(userData.bottom)) {
     if (!UiService.isUiElement(object)) {
       console.info('parseBottom', 'object must be part of the UI layer');
       return;
     }
-
     let frameListener = null;
     VarService.resolveVar(userData.bottom, value => {
       if (frameListener) {
         TimeService.disposeFrameListener(frameListener);
       }
-
-      if (!value) {
+      if (typeof value === 'undefined') {
         return;
       }
-
-      const percentageOffset = value.substr(-1) === '%';
+      const percentageOffset = `${value}`.substr(-1) === '%';
       const offset = parseFloat(value);
-
       if (isNaN(offset)) {
         console.info('parseBottom', 'NaN value');
         return;
       }
-
       frameListener = TimeService.registerFrameListener(() => {
         if (!object.visible) {
           return;
         }
-
         const camera = RenderService.getNativeCamera();
         const position = MathService.getVec3(0.0, 0.0, 0.0);
         const cameraPosition = MathService.getVec3(0.0, 0.0, 0.0);
@@ -5032,13 +4824,11 @@ const parseBottom = object => {
         const cameraOffset = position.sub(cameraPosition).projectOnVector(cameraDirection).length();
         const screenHeight = get3dScreenHeight(cameraOffset, camera);
         object.position.y = -screenHeight / 2.0;
-
         if (percentageOffset) {
           object.position.y += offset / 100.0 * screenHeight;
         } else {
           object.position.y += offset;
         }
-
         MathService.releaseVec3(position);
         MathService.releaseVec3(cameraPosition);
         MathService.releaseVec3(cameraDirection);
@@ -5048,8 +4838,413 @@ const parseBottom = object => {
   }
 };
 
-// NOTE See DOCS.md for userData declarations
+const {
+  MeshStandardMaterial,
+  RepeatWrapping,
+  RGBEEncoding
+} = Three$2;
+const utilityFunctions = `
+float sum( vec3 v ) { return v.x+v.y+v.z; }
+vec4 textureNoTile( sampler2D samp, sampler2D noise, vec2 uv )
+{
+  // sample variation pattern
+  float k = texture2D( noise, 0.005*uv ).x; // cheap (cache friendly) lookup
+  // compute index
+  float l = k*8.0;
+  float f = fract(l);
+  float ia = floor(l);
+  float ib = ia + 1.0;
+  // offsets for the different virtual patterns
+  float v = 0.4;
+  vec2 offa = sin(vec2(3.0,7.0)*ia); // can replace with any other hash
+  vec2 offb = sin(vec2(3.0,7.0)*ib); // can replace with any other hash
+  // compute derivatives for mip-mapping, requires shader extension derivatives:true
+  vec2 dx = dFdx(uv), dy = dFdy(uv);
+  // sample the two closest virtual patterns
+  vec3 cola = texture2DGradEXT( samp, uv + v*offa, dx, dy ).xyz;
+  vec3 colb = texture2DGradEXT( samp, uv + v*offb, dx, dy ).xyz;
+  // // interpolate between the two virtual patterns
+  vec3 col = mix( cola, colb, smoothstep(0.2,0.8,f-0.1*sum(cola-colb)) );
+  return vec4(col,1.0);
+  // return vec4(0.0,0.0,0.0,0.0);
+}
+vec4 blend_rnm(vec4 n1, vec4 n2){
+  vec3 t = n1.xyz*vec3( 2,  2, 2) + vec3(-1, -1,  0);
+  vec3 u = n2.xyz*vec3(-2, -2, 2) + vec3( 1,  1, -1);
+  vec3 r = t*dot(t, u) /t.z -u;
+  return vec4((r), 1.0) * 0.5 + 0.5;
+}
+/**
+* Adjusts the saturation of a color.
+*
+* @name czm_saturation
+* @glslFunction
+*
+* @param {vec3} rgb The color.
+* @param {float} adjustment The amount to adjust the saturation of the color.
+*
+* @returns {float} The color with the saturation adjusted.
+*
+* @example
+* vec3 greyScale = czm_saturation(color, 0.0);
+* vec3 doubleSaturation = czm_saturation(color, 2.0);
+*/
+vec4 czm_saturation(vec4 rgba, float adjustment)
+{
+    // Algorithm from Chapter 16 of OpenGL Shading Language
+    vec3 rgb = rgba.rgb;
+    const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+    vec3 intensity = vec3(dot(rgb, W));
+    return vec4(mix(intensity, rgb, adjustment), rgba.a);
+}
+`;
+class LandscapeMaterial extends MeshStandardMaterial {
+  constructor(parameters) {
+    super(parameters);
+    _defineProperty(this, "_splats", {
+      value: []
+    });
+    _defineProperty(this, "_diffuseMaps", {
+      value: []
+    });
+    _defineProperty(this, "_detailMaps", {
+      value: []
+    });
+    _defineProperty(this, "_normalMaps", {
+      value: []
+    });
+    _defineProperty(this, "_normalWeights", {
+      value: []
+    });
+    _defineProperty(this, "_scale", {
+      value: []
+    });
+    _defineProperty(this, "_detailScale", {
+      value: []
+    });
+    _defineProperty(this, "_saturation", {
+      value: []
+    });
+    _defineProperty(this, "_brightness", {
+      value: []
+    });
+    _defineProperty(this, "_noise", {
+      value: undefined
+    });
+    this.splats = parameters.splats || [];
+    this.diffuseMaps = parameters.diffuseMaps || [];
+    this.normalMaps = parameters.normalMaps || [];
+    this.detailMaps = parameters.detailMaps || [];
+    this.normalWeights = parameters.normalWeights || [];
+    this.scale = parameters.scale || [];
+    this.detailScale = parameters.detailScale || [];
+    this.saturation = parameters.saturation || [];
+    this.brightness = parameters.brightness || [];
+    this.noise = parameters.noise;
+    this.color = new Three$2.Color(0xff0000);
+    this.parameters = parameters;
+    this._normalWeights.value = this._normalWeights.value.length > 0 ? this._normalWeights.value : new Array(12).fill("0.75");
+    // todo estimate scale
+  }
 
+  onBeforeCompile(shader) {
+    shader.extensions = {
+      derivatives: true,
+      shaderTextureLOD: true
+    };
+    const {
+      normalMaps,
+      normalMap,
+      diffuseMaps,
+      splats,
+      noise
+    } = this.parameters;
+    if (!splats) {
+      throw new Error("splats is a required properties of SplatStandardMaterial");
+    }
+    shader.uniforms["splats"] = this._splats;
+    shader.uniforms["diffuseMaps"] = this._diffuseMaps;
+    shader.uniforms["normalMaps"] = this._normalMaps;
+    shader.uniforms["detailMaps"] = this._detailMaps;
+    shader.uniforms["normalWeights"] = this._normalWeights;
+    shader.uniforms["scale"] = this._scale;
+    shader.uniforms["detailScale"] = this._detailScale;
+    shader.uniforms["saturation"] = this._saturation;
+    shader.uniforms["brightness"] = this._brightness;
+
+    // shader.vertexUvs = true;
+    // shader.vertexTangents = true;
+
+    if (noise) shader.uniforms["noise"] = {
+      value: noise
+    };
+
+    // make sure that these textures tile correctly
+    [...(normalMaps || []), ...splats, ...diffuseMaps, normalMap, noise].filter(d => d !== null && d !== undefined).forEach(t => {
+      t.wrapS = RepeatWrapping;
+      t.wrapT = RepeatWrapping;
+    });
+    shader.fragmentShader = shader.fragmentShader.replace("uniform float opacity;", `
+          uniform float opacity;
+          uniform sampler2D noise;
+          ${sampler2d("splats", this._splats.value)}
+          ${sampler2d("diffuseMaps", this._diffuseMaps.value)}
+          ${sampler2d("detailMaps", this._detailMaps.value)}
+          ${sampler2d("normalMaps", this._normalMaps.value)}
+          ${float("normalWeights", this._normalWeights.value)}
+          ${float("scale", this._scale.value)}
+          ${float("detailScale", this._detailScale.value)}
+          ${float("saturation", this._saturation.value)}
+          ${float("brightness", this._brightness.value)}
+          
+          ${utilityFunctions}
+    `).replace("#include <map_fragment>", `
+        #include <map_fragment>
+        vec4 color_override = ${computeDiffuse({
+      splats,
+      noise,
+      diffuseMaps: this._diffuseMaps.value,
+      saturation: this._saturation.value,
+      brightness: this._brightness.value
+    })};
+        diffuseColor = vec4(color_override.rgb, 1.0);
+      `).replace("#include <normal_fragment_maps>", `
+        vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
+        vec4 _b = vec4(0.0, 0.0, 0.0, 1.0);
+        ${computeNormal({
+      normalMaps: this._normalMaps.value,
+      detailMaps: this._detailMaps.value,
+      splats,
+      noise
+    })}
+
+        mapN = _b.rgb;
+        mapN.xy *= normalScale;
+
+        #ifdef USE_TANGENT
+          normal = normalize( vTBN * mapN );
+        #else
+          normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection );
+        #endif
+`);
+  }
+  set splats(v) {
+    this._splats.value = v;
+  }
+  set normalMaps(v) {
+    this._normalMaps.value = v;
+  }
+  set normalWeights(v) {
+    this._normalWeights.value = v;
+  }
+  set detailMaps(v) {
+    this._detailMaps.value = v;
+  }
+  set diffuseMaps(v) {
+    this._diffuseMaps.value = v;
+  }
+  set scale(v) {
+    this._scale.value = v;
+  }
+  set detailScale(v) {
+    this._detailScale.value = v;
+  }
+  set saturation(v) {
+    this._saturation.value = v;
+  }
+  set brightness(v) {
+    this._brightness.value = v;
+  }
+  set noise(v) {
+    this._noise.value = v;
+  }
+}
+const computeDiffuse = ({
+  diffuseMaps = [],
+  splats,
+  saturation = [],
+  brightness = []
+}) => {
+  return diffuseMaps.filter(d => d !== null && d !== undefined).map((diffuse, i) => {
+    // base rgba values
+    let colorValue = `textureNoTile(diffuseMaps[${i}], noise, vUv * vec2(scale[${i}],scale[${i}]))`;
+    let alphaValue = `texture2D(splats[${splatIndex(i)}], vUv).${splatChannel(i)}`;
+
+    // optional modifiers
+    if (typeof saturation !== 'undefined' && i < saturation.length) colorValue = `czm_saturation(${colorValue}, saturation[${i}])`;
+    if (typeof brightness !== 'undefined' && i < brightness.length) colorValue = `(${colorValue} + vec4(brightness[${i}], brightness[${i}], brightness[${i}], 0.0))`;
+    return `${colorValue} * ${alphaValue}`;
+  }).join(" + ");
+};
+const computeNormal = ({
+  normalMaps = [],
+  detailMaps = [],
+  splats
+}) => {
+  // return normalMaps
+  //     .filter((d) => d !== null && d !== undefined)
+  //     .map((diffuse, i) => {
+  //         // base rgba values
+  //         let colorValue = `textureNoTile(normalMaps[${i}], noise, vUv * vec2(scale[${i}],scale[${i}]))`;
+  //         let alphaValue = `texture2D(splats[${splatIndex(i)}], vUv).${splatChannel(i)}`;
+
+  //         return `${colorValue} * ${alphaValue}`;
+  //     })
+  //     .join(" + ");
+  const norms = normalMaps.filter(n => n !== null && n !== undefined).map((normal, i) => {
+    let colorValue = `textureNoTile(normalMaps[${i}], noise, vUv * vec2(scale[${i}],scale[${i}]))`;
+    let alphaValue = `texture2D(splats[${splatIndex(i)}], vUv).${splatChannel(i)}`;
+
+    // let zeroN = `vec4(0.5, 0.5, 1.0, 1.0)`;
+    // const n = `mix(${zeroN}, ${colorValue}, ${alphaValue} * normalWeights[${i}])`;
+    return `_b = mix(_b, ${colorValue}, ${alphaValue})`;
+  }).join(`; \n`);
+  return norms + "; \n";
+};
+const sampler2d = (name, data) => data && data.length ? `uniform sampler2D ${name}[${data.length}];` : "";
+const float = (name, data) => data && data.length ? `uniform float ${name}[10];` : "";
+const splatIndex = i => {
+  return Math.floor(i / 4);
+};
+const splatChannel = i => {
+  return ["r", "g", "b", "a"][i % 4];
+};
+const parseLandscape = object => {
+  const {
+    userData,
+    material,
+    children
+  } = object;
+  if (!isDefined(userData.landscape) || !material || !children.length) {
+    return;
+  }
+  const {
+    map: splatMap,
+    normalMap: noiseMap,
+    roughnessMap: splatNormal
+  } = material;
+  const landscapeHelpers = object.children.filter(child => child.userData.landscapeChannel).map(child => {
+    child.userData.landscapeId = ['r', 'g', 'b', 'a'].indexOf(child.userData.landscapeChannel);
+    child.visible = false;
+    return child;
+  }).sort((a, b) => a.userData.landscapeId - b.userData.landscapeId);
+  AssetsService.registerDisposable(object.material);
+  object.material = new LandscapeMaterial({
+    splats: [splatMap],
+    normalMap: splatNormal,
+    diffuseMaps: landscapeHelpers.map(object => object.material.map),
+    normalMaps: landscapeHelpers.map(object => object.material.normalMap),
+    normalWeights: landscapeHelpers.map(object => typeof object.userData.normalWeight === 'number' ? object.userData.normalWeight : 1.0),
+    saturation: landscapeHelpers.map(object => typeof object.userData.saturation === 'number' ? object.userData.saturation : 1.0),
+    brightness: landscapeHelpers.map(object => typeof object.userData.brightness === 'number' ? object.userData.brightness : 0.1),
+    scale: landscapeHelpers.map(object => typeof object.userData.scale === 'number' ? object.userData.scale : 1.0),
+    noise: noiseMap,
+    side: Three$2.FrontSide
+  });
+  AssetsService.registerDisposable(object.material);
+  object.material.roughness = 0.5;
+  object.material.metalness = 0.0;
+  object.children = [];
+  if (isDefined(userData.key)) {
+    AssetsService.registerDisposeCallback(object, () => {});
+  }
+};
+
+class PhysicsWrapper {
+  constructor(target, physicsConfig = {}) {
+    _defineProperty(this, "target", null);
+    _defineProperty(this, "body", null);
+    _defineProperty(this, "surfaceCollisions", {});
+    this.target = target;
+    this.body = PhysicsService.registerBody(target, physicsConfig);
+    this.enableDynamicShadows();
+  }
+  getBody() {
+    return this.body;
+  }
+  enableNoClip() {
+    this.noClip = true;
+  }
+  disableNoClip() {
+    this.noClip = false;
+  }
+  enableDynamicShadows() {
+    if (!this.body) {
+      return;
+    }
+    const isStatic = this.body.type === Cannon$1.Body.STATIC;
+    this.target.traverse(child => {
+      if (GameInfoService.config.system.shadows && child.visible) {
+        if (child instanceof Three$2.Mesh) {
+          if (isStatic) {
+            child.castShadow = GameInfoService.config.system.shadows & DQ.ShadowsStaticObjects;
+          } else {
+            child.castShadow = GameInfoService.config.system.shadows & DQ.ShadowsDynamicObjects;
+          }
+        }
+      }
+    });
+  }
+  onCollision(listener) {
+    this.collisionListener = listener;
+  }
+  dispose() {
+    delete this.collisionListener;
+    this.disablePhysics();
+    this.disableDynamicCollisions();
+    if (this.target) {
+      delete this.target;
+    }
+    delete this.surfaceCollisions;
+  }
+}
+
+const parsePhysics = object => {
+  const {
+    userData
+  } = object;
+  if (isDefined(userData.physics)) {
+    new PhysicsWrapper(object, userData || {});
+  }
+};
+
+const hidePlaceholder = target => {
+  if (target.geometry) {
+    AssetsService.disposeProps(target.geometry);
+    target.geometry = new Three$2.BufferGeometry();
+    AssetsService.registerDisposable(target.geometry);
+  }
+};
+
+const parsePhysicsRope = object => {
+  const {
+    userData
+  } = object;
+  if (isDefined(userData.physicsRope)) {
+    const ropeTarget = object.parent;
+    const {
+      physicsRopeDistance
+    } = object.userData;
+    hidePlaceholder(object);
+    if (!ropeTarget.cannonRef) {
+      new PhysicsWrapper(ropeTarget, {
+        physicsShape: 'sphere',
+        physicsSize: physicsRopeDistance / 2.0,
+        physicsDamping: 0.5,
+        ...(ropeTarget.userData || {})
+      });
+    }
+    new PhysicsWrapper(object, {
+      physicsShape: 'sphere',
+      physicsSize: physicsRopeDistance / 2.0,
+      physicsDamping: 0.5,
+      ...(ropeTarget.userData || {})
+    });
+    PhysicsService.registerConstraint(object, ropeTarget, physicsRopeDistance);
+  }
+};
+
+// NOTE See DOCS.md for userData declarations
 class ParserServiceClass {
   parseModel({
     target,
@@ -5079,13 +5274,13 @@ class ParserServiceClass {
         garbageCollector.push(child);
         return;
       }
-
       children.push(child);
     });
     garbageCollector.forEach(child => {
       child.parent.remove(child);
-    }); // NOTE Parsers caching and registering scene objects
+    });
 
+    // NOTE Parsers caching and registering scene objects
     children.forEach(child => {
       registerGameObject(child, parserPayload);
       parseCamera(child);
@@ -5096,10 +5291,14 @@ class ParserServiceClass {
       parseAiSpawn(child, parserPayload);
       parseNavmap(child);
       parseSurface(child);
-    }); // NOTE Parsers potentially consuming scene objects
+      parsePhysics(child);
+    });
 
+    // NOTE Parsers potentially consuming scene objects
     children.forEach(child => {
+      parsePhysicsRope(child);
       parseShader(child);
+      parseLandscape(child);
       parseAnimation(child);
       parseGameObject(child, parserPayload);
       parseLabel(child);
@@ -5119,23 +5318,21 @@ class ParserServiceClass {
     Object.keys(scrollLists).forEach(key => {
       delete scrollLists[key];
     });
-
     if (onCreate) {
       onCreate(parserPayload);
     }
-
-    RenderService.getRenderer().compile(RenderService.getScene(), RenderService.getNativeCamera());
+    const renderer = RenderService.getRenderer();
+    if (renderer) {
+      renderer.compile(RenderService.getScene(), RenderService.getNativeCamera());
+    }
   }
-
 }
-
 const ParserService = new ParserServiceClass();
 
 class SceneServiceClass {
   constructor() {
     _defineProperty(this, "gameObjectRefs", {});
   }
-
   parseScene({
     target,
     navpath,
@@ -5150,23 +5347,25 @@ class SceneServiceClass {
       gameObjects,
       onCreate: parserPayload => {
         this.gameObjectRefs = parserPayload.gameObjectRefs;
-        onCreate(parserPayload);
+        if (onCreate) {
+          onCreate(parserPayload);
+        }
       }
     });
   }
-
   setBackground(texture, spherical = true) {
+    if (RenderService.isHeadless) {
+      return;
+    }
     const scene = RenderService.getScene();
-
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
     }
-
     if (!spherical) {
       scene.background = texture;
     } else {
       const renderer = RenderService.getRenderer();
-      const generator = new Three.PMREMGenerator(renderer);
+      const generator = new Three$2.PMREMGenerator(renderer);
       const renderTarget = generator.fromEquirectangular(texture);
       const sphericalTexture = renderTarget.texture;
       AssetsService.registerDisposable(sphericalTexture);
@@ -5176,53 +5375,80 @@ class SceneServiceClass {
       scene.background = sphericalTexture;
     }
   }
-
   setEnvironment(hdri) {
     const scene = RenderService.getScene();
-
     if (scene.environment) {
       AssetsService.disposeAsset(scene.environment);
     }
-
     scene.environment = hdri;
   }
-
   getEnvironment() {
     const scene = RenderService.getScene();
     return scene.environment;
   }
-
+  setFog(color = 0x000000, density) {
+    const scene = RenderService.getScene();
+    scene.fog = new Three$2.FogExp2(color, density);
+  }
+  getFog() {
+    const scene = RenderService.getScene();
+    return scene.fog;
+  }
+  setSun(color = 0xffffff, intensity = 1.0, position = new Three$2.Vector3(1.0, 1.0, 1.0), near = 0.0, far = 400.0, shadowDrawDistance = 100.0) {
+    const scene = RenderService.getScene();
+    const camera = RenderService.getNativeCamera();
+    const sunShadowMap = new CSM({
+      maxFar: shadowDrawDistance || GameInfoService.config.system.shadowDrawDistance,
+      lightNear: near,
+      lightFar: far,
+      shadowMapSize: GameInfoService.config.system.shadowsSunShadowResolution || GameInfoService.config.system.shadowsResolution,
+      lightDirection: position.negate(),
+      lightIntensity: intensity,
+      camera: camera,
+      parent: scene
+    });
+    sunShadowMap.lights.forEach(light => {
+      light.color = new Three$2.Color(color);
+    });
+    sunShadowMap.fade = true;
+    scene.traverse(child => {
+      if (!child.material || !child.visible) {
+        return;
+      }
+      sunShadowMap.setupMaterial(child.material);
+    });
+    const originalSceneAddHandler = scene.add.bind(scene);
+    scene.add = (...args) => {
+      originalSceneAddHandler(...args);
+    };
+    TimeService.registerFrameListener(() => {
+      sunShadowMap.update(camera.matrix);
+    });
+  }
   disposeAll() {
     const scene = RenderService.getScene();
-
     if (scene.environment) {
       AssetsService.disposeAsset(scene.environment);
       delete scene.environment;
     }
-
     if (scene.background) {
       AssetsService.disposeAsset(scene.background);
-      scene.background = new Three.Color(GameInfoService.config.system.sceneBackgroundDefault);
+      scene.background = new Three$2.Color(GameInfoService.config.system.sceneBackgroundDefault);
     }
-
     if (this.gameObjectRefs) {
       Object.keys(this.gameObjectRefs).forEach(key => {
         AssetsService.disposeAsset(this.gameObjectRefs[key]);
         delete this.gameObjectRefs[key];
       });
     }
-
     this.gameObjectRefs = {};
   }
-
 }
 const SceneService = new SceneServiceClass();
 
 class ViewClass {
   onCreate() {}
-
   onDispose() {}
-
   dispose() {
     const scene = RenderService.getScene();
     scene.children.forEach(child => {
@@ -5243,35 +5469,93 @@ class ViewClass {
     AudioService.resetAudio();
     UtilsService.disposeAll();
     AssetsService.disposeAll();
+    NetworkService.disposeAll();
+    SpawnService.disposeAll();
+    InputService.dispoeAll();
     MathService.handleLeaks();
     MathService.disposeAll();
   }
-
 }
+
+// NOTE Template only
+const parse = (object, payload) => {
+  const {
+    userData
+  } = object;
+  if (isDefined$1(userData.key)) {
+    AssetsService$1.registerDisposeCallback(object, () => {});
+  }
+};
+
+class SystemServiceClass {
+  constructor() {
+    _defineProperty(this, "promised", []);
+  }
+  init({
+    statusBar
+  } = {}) {
+    if (navigator.userAgent.includes(NetworkServerSideInstanceUserAgent)) {
+      NetworkService.connectAsServer();
+      return;
+    }
+    StorageService.init();
+    if (statusBar !== true) {
+      SystemService.hideStatusBar();
+    }
+    if (DebugService.get(DebugFlags.DEBUG_ENABLE)) {
+      DebugService.showStats();
+    }
+    this.promised.push(VarService.retrievePersistentVars());
+    if (GameInfoService.config.system.postprocessing) {
+      this.promised.push(RenderService.createSMAATextures());
+    }
+    if (GameInfoService.config.network.serverAddress) {
+      this.promised.push(NetworkService.connectAsClient());
+    }
+    if (MobileAdapter.isMobile()) {
+      this.promised.push(new Promise(resolve => {
+        document.addEventListener('deviceready', () => resolve(), false);
+      }));
+    }
+  }
+  hideStatusBar() {
+    MobileAdapter.getNavigationBar().hide();
+  }
+  lockOrientation(orientation = MobileAdapterConstants.screenOrientation.landscape) {
+    if (MobileAdapter.isMobile()) {
+      MobileAdapter.getScreenOrientation().lock(orientation);
+    }
+  }
+  onReady(then) {
+    if (!then) {
+      return;
+    }
+    Promise.all(this.promised).then(() => {
+      then();
+    });
+  }
+  disposeAll() {
+    MobileAdapter.disposeAll();
+  }
+}
+const SystemService = new SystemServiceClass();
 
 class AiWrapper {
   constructor(target) {
     _defineProperty(this, "target", null);
-
     _defineProperty(this, "targetNode", null);
-
     _defineProperty(this, "targetNodeId", 0);
-
     _defineProperty(this, "tickListener", null);
-
     _defineProperty(this, "path", []);
-
     this.target = target;
     AssetsService.registerDisposeCallback(this.target, () => this.dispose());
   }
-
   registerBehaviour(callback) {
     this.tickListener = callback;
   }
-
   getAiBehaviour() {
     if (this.tickListener) {
-      if (DummyDebug.get(DebugFlags.DEBUG_AI_TARGETS)) {
+      if (DebugService.get(DebugFlags.DEBUG_AI_TARGETS)) {
         if (this.target && this.targetNode) {
           const scene = RenderService.getScene();
           const target = MathService.getVec3(0.0, 0.0, 0.0, 'ai-1');
@@ -5284,11 +5568,9 @@ class AiWrapper {
           MathService.releaseVec3(node);
         }
       }
-
       return this.tickListener();
     }
   }
-
   hasTargetNode() {
     if (this.targetNode) {
       return true;
@@ -5297,15 +5579,12 @@ class AiWrapper {
         this.targetNode = this.path.shift();
         return true;
       }
-
       return false;
     }
   }
-
   getTargetNode() {
     return this.targetNode;
   }
-
   setTargetNode(node) {
     if (node) {
       this.targetNode = node;
@@ -5315,12 +5594,10 @@ class AiWrapper {
       this.targetNodeId = 0;
     }
   }
-
   getDistanceToTargetNode() {
     if (!this.targetNode) {
       return 0.0;
     }
-
     const position = MathService.getVec3(0.0, 0.0, 0.0, 'ai-3');
     const node = MathService.getVec3(0.0, 0.0, 0.0, 'ai-4');
     this.target.getWorldPosition(position);
@@ -5330,12 +5607,10 @@ class AiWrapper {
     MathService.releaseVec3(node);
     return distance;
   }
-
   getGroundAngleToTargetNode() {
     if (!this.target || !this.targetNode) {
       return 0.0;
     }
-
     const origin = MathService.getVec3(0.0, 0.0, 0.0, 'ai-5');
     const position = MathService.getVec3(0.0, 0.0, 0.0, 'ai-6');
     this.target.getWorldPosition(origin);
@@ -5350,18 +5625,15 @@ class AiWrapper {
     MathService.releaseVec3(position);
     return angle;
   }
-
   findPathToTargetNode() {
     if (!this.target || !this.targetNode) {
       console.info('AiWrapper', 'getPathToTargetNode', 'missing target node');
       return [];
     }
-
     if (!PhysicsService.pathfinderZoneId) {
       console.info('AiWrapper', 'getPathToTargetNode', 'pathfinder not enabled or navmesh missing');
       return [];
     }
-
     const targetPosition = MathService.getVec3();
     this.target.getWorldPosition(targetPosition);
     const groupId = PhysicsService.pathfinder.getGroup(PhysicsService.pathfinderZoneId, targetPosition);
@@ -5378,72 +5650,65 @@ class AiWrapper {
     MathService.releaseVec3(targetPosition);
     return this.path;
   }
-
   getPathLength() {
     return (this.path || []).length;
   }
-
   dispose() {
     if (this.targetNode) {
       AssetsService.registerDisposable(this.targetNode);
       delete this.targetNode;
     }
-
     if (this.tickListener) {
       delete this.tickListener;
     }
-
     if (this.target) {
       delete this.target;
     }
-
     if (this.path) {
       this.path = [];
     }
   }
-
 }
 
 class AnimationWrapper {
   constructor(target) {
     _defineProperty(this, "target", null);
-
     _defineProperty(this, "mixer", null);
-
     _defineProperty(this, "mixerActions", {});
-
     _defineProperty(this, "mixerClips", []);
-
     this.target = target;
+    target.animationsRef = this;
     this.parseAnimations();
     AssetsService.registerDisposeCallback(this.target, () => this.dispose());
   }
-
   parseAnimations() {
     const {
       userData
     } = this.target;
-
     if (!userData.skinnedAnimations) {
       console.warn('SkinnedGameObject', 'onLoaded', 'model does not have animations');
       return;
     }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
+    if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
-      const skeletorHelper = new Three.SkeletonHelper(this.target);
+      const skeletorHelper = new Three$2.SkeletonHelper(this.target);
       scene.add(skeletorHelper);
       AssetsService.registerDisposable(skeletorHelper);
     }
-
-    this.mixer = new Three.AnimationMixer(this.target);
+    this.mixer = new Three$2.AnimationMixer(this.target);
     userData.skinnedAnimations.forEach(clip => {
+      if (clip.name === 'mixamo.com') {
+        // NOTE Clean-up Mixamo exported default name
+        clip.name = 'idle';
+      }
       const action = this.mixer.clipAction(clip);
       action.reset();
-      action.play(); // NOTE Internal only
+      action.play();
 
+      // NOTE Internal only
       this.mixerActions[clip.name] = action;
       this.mixerClips.push(clip);
+      this.blendInAnimation(clip.name, 1.0);
     });
     this.stopAllAnimations();
     TimeService.registerFrameListener(({
@@ -5452,88 +5717,87 @@ class AnimationWrapper {
       if (!this.mixer) {
         return;
       }
-
       this.mixer.update(dt);
     });
   }
-
+  renameAnimation(original, newName) {
+    this.mixerActions[newName] = this.mixerActions[original];
+    delete this.mixerActions[original];
+  }
+  addMixamoAnimation(name, animation) {
+    animation.name = name;
+    const action = this.mixer.clipAction(animation);
+    action.reset();
+    action.play();
+    this.mixerActions[name] = action;
+    this.mixerClips.push(animation);
+    this.blendInAnimation(name, 1.0);
+    this.stopAllAnimations();
+  }
   playAnimation(name, tweenDuration = 1000, reset = false, onFinish) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'playAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
-
+    action.isStopping = false;
     if (action.isRunning()) {
       return;
     }
-
     if (reset) {
       action.reset();
     }
-
     if (typeof onFinish === 'function') {
       const listener = event => {
         if (event.action !== action) {
           return;
         }
-
         onFinish();
         this.mixer.removeEventListener('finished', listener);
       };
-
       this.mixer.addEventListener('finished', listener);
-      action.loop = Three.LoopOnce;
+      action.loop = Three$2.LoopOnce;
     } else {
-      action.loop = Three.LoopRepeat;
+      action.loop = Three$2.LoopRepeat;
     }
-
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeIn(tweenDuration / 1000.0);
   }
-
   stopAnimation(name, tweenDuration = 1000) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'stopAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
-
-    if (!action.isRunning()) {
+    if (!action.isRunning() || action.isStopping) {
       return;
     }
-
+    action.isStopping = true;
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeOut(tweenDuration / 1000.0);
   }
-
   blendInAnimation(name, blendWeight = 0.0) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'blendInAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
     action.enabled = true;
+    action.isStopping = false;
     action.setEffectiveWeight(blendWeight);
   }
-
   playAllAnimations(tweenDuration = 0) {
     Object.keys(this.mixerActions).forEach(name => {
       this.playAnimation(name, tweenDuration);
     });
   }
-
   stopAllAnimations(tweenDuration = 0) {
     Object.keys(this.mixerActions).forEach(name => {
       this.stopAnimation(name, tweenDuration);
     });
   }
-
   dispose() {
     if (this.mixer) {
       this.mixer.stopAllAction();
@@ -5544,108 +5808,10 @@ class AnimationWrapper {
       delete this.mixerClips;
       delete this.mixer;
     }
-
     if (this.target) {
       delete this.target;
     }
   }
-
-}
-
-class PhysicsWrapper {
-  constructor(target) {
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "simpleVelocity", null);
-
-    _defineProperty(this, "simpleGravity", null);
-
-    _defineProperty(this, "grounded", true);
-
-    _defineProperty(this, "collisionListener", null);
-
-    _defineProperty(this, "dynamicCollisions", false);
-
-    _defineProperty(this, "boundingBox", null);
-
-    _defineProperty(this, "noClip", false);
-
-    _defineProperty(this, "surfaceCollisions", {});
-
-    this.target = target;
-    PhysicsService.registerBody(this);
-    AssetsService.registerDisposeCallback(this.target, () => {
-      PhysicsService.disposeBody(this);
-      this.dispose();
-    });
-  }
-
-  enableNavmaps() {
-    this.simpleVelocity = MathService.getVec3(0.0, 0.0, 0.0, 'physics-wrapper-2');
-    this.simpleGravity = MathService.getVec3(0.0, 0.0, 0.0, 'physics-wrapper-3');
-  }
-
-  enableNoClip() {
-    this.noClip = true;
-  }
-
-  disableNoClip() {
-    this.noClip = false;
-  }
-
-  enablePhysics() {// FIXME Implement CannonES instead: https://pmndrs.github.io/cannon-es/
-  }
-
-  enableDynamicCollisions(callback) {
-    this.dynamicCollisions = true;
-    this.boundingBox = UtilsService.getBox3();
-    PhysicsService.registerDynamicCollisionBody(this, callback);
-  }
-
-  disableDynamicCollisions() {
-    this.dynamicCollisions = false;
-
-    if (this.boundingBox) {
-      UtilsService.releaseBox3(this.boundingBox);
-    }
-  }
-
-  disablePhysics() {
-    if (this.simpleVelocity) {
-      MathService.releaseVec3(this.simpleVelocity);
-      delete this.simpleVelocity;
-    }
-
-    if (this.simpleGravity) {
-      MathService.releaseVec3(this.simpleGravity);
-      delete this.simpleGravity;
-    }
-  }
-
-  getSimpleVelocity() {
-    return this.simpleVelocity;
-  }
-
-  setSimpleVelocity(value) {
-    this.simpleVelocity.copy(value);
-  }
-
-  onCollision(listener) {
-    this.collisionListener = listener;
-  }
-
-  dispose() {
-    delete this.collisionListener;
-    this.disablePhysics();
-    this.disableDynamicCollisions();
-
-    if (this.target) {
-      delete this.target;
-    }
-
-    delete this.surfaceCollisions;
-  }
-
 }
 
 class Preloader extends GameObjectClass {
@@ -5655,13 +5821,10 @@ class Preloader extends GameObjectClass {
     spinnerTexture
   } = {}) {
     super();
-
     _defineProperty(this, "spinnerTexture", null);
-
     this.spinnerTexture = spinnerTexture || GameInfoService.config.textures.spinner || null;
     Promise.all([...(requireAssets || []), TimeService.createTimeoutPromise(3000)]).then(assets => {
       const complete = onComplete(assets);
-
       if (complete && complete.then) {
         complete.then(() => this.onLoaded());
       } else {
@@ -5674,16 +5837,15 @@ class Preloader extends GameObjectClass {
     });
     this.onCreate();
   }
-
   async onCreate() {
     GameObjectClass.prototype.onCreate.call(this);
     const camera = RenderService.getNativeCamera();
-    const background = new Three.Mesh(new Three.PlaneBufferGeometry(1.0, 1.0), new Three.MeshBasicMaterial({
+    const background = new Three$2.Mesh(new Three$2.PlaneGeometry(1.0, 1.0), new Three$2.MeshBasicMaterial({
       color: 0x000000,
       transparent: true
     }));
     background.name = 'background';
-    const spinner = new Three.Mesh(new Three.PlaneBufferGeometry(1.0, 1.0), new Three.MeshBasicMaterial({
+    const spinner = new Three$2.Mesh(new Three$2.PlaneGeometry(1.0, 1.0), new Three$2.MeshBasicMaterial({
       map: await AssetsService.getTexture(this.spinnerTexture),
       transparent: true
     }));
@@ -5691,98 +5853,81 @@ class Preloader extends GameObjectClass {
     this.add(spinner);
     this.add(background);
     this.position.z -= 5.0;
-    this.lookAt(new Three.Vector3(0, 0, 0));
+    this.lookAt(new Three$2.Vector3(0, 0, 0));
     TimeService.registerFrameListener(() => {
       const spinner = this.getObjectByName('spinner');
       const background = this.getObjectByName('background');
-
       if (!background || !spinner || !camera) {
         return false;
       }
-
       fitToCamera(background, camera);
       spinner.rotation.z -= 0.1;
     });
     camera.add(this);
   }
-
   onLoaded() {
     const camera = RenderService.getNativeCamera();
     const spinner = this.getObjectByName('spinner');
-
     if (spinner) {
       this.remove(spinner);
       AssetsService.disposeAsset(spinner);
     }
-
     AnimationService.registerAnimation({
       target: this,
       onStep: ({
         target
       }) => {
         const background = target.getObjectByName('background');
-
         if (!background) {
           return;
         }
-
         if (background.material.opacity <= 0.0) {
           AssetsService.disposeAsset(target);
           return false;
         }
-
         fitToCamera(background, camera);
         background.material.opacity -= 0.05;
       }
     });
   }
-
   dispose() {
     GameObjectClass.prototype.dispose.call(this);
-
     if (this.spinnerTexture) {
       AssetsService.disposeAsset(this.spinnerTexture);
       this.spinnerTexture = null;
     }
   }
-
 }
 
 class SkinnedGameObject extends GameObjectClass {
   constructor(...args) {
     super(...args);
-
     _defineProperty(this, "mixer", null);
-
     _defineProperty(this, "mixerActions", {});
-
     _defineProperty(this, "mixerClips", []);
   }
-
   onCreate(model) {
     GameObjectClass.prototype.onCreate.call(this);
     const {
       userData
     } = model;
-
     if (!userData.skinnedAnimations) {
       console.warn('SkinnedGameObject', 'onLoaded', 'model does not have animations');
       return;
     }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
+    if (DebugService.get(DebugFlags.DEBUG_SKINNING_SKELETONS)) {
       const scene = RenderService.getScene();
-      const skeletorHelper = new Three.SkeletonHelper(model);
+      const skeletorHelper = new Three$2.SkeletonHelper(model);
       scene.add(skeletorHelper);
       AssetsService.registerDisposable(skeletorHelper);
     }
-
-    this.mixer = new Three.AnimationMixer(model);
+    this.mixer = new Three$2.AnimationMixer(model);
     userData.skinnedAnimations.forEach(clip => {
       const action = this.mixer.clipAction(clip);
       action.reset();
-      action.play(); // NOTE Internal only
+      action.play();
 
+      // NOTE Internal only
       this.mixerActions[clip.name] = action;
       this.mixerClips.push(clip);
     });
@@ -5793,61 +5938,50 @@ class SkinnedGameObject extends GameObjectClass {
       if (!this.mixer) {
         return;
       }
-
       this.mixer.update(dt);
     });
   }
-
   playAnimation(name, tweenDuration = 1000) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'playAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeIn(tweenDuration / 1000.0);
   }
-
   stopAnimation(name, tweenDuration = 1000) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'stopAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
     action.enabled = true;
     action.setEffectiveTimeScale(1.0);
     action.fadeOut(tweenDuration / 1000.0);
   }
-
   blendInAnimation(name, blendWeight = 0.0) {
     if (!this.mixerActions[name]) {
       console.warn('SkinnedGameObject', 'blendInAnimation', `animation "${name}" does not exist`);
       return;
     }
-
     const action = this.mixerActions[name];
     action.enabled = true;
     action.setEffectiveWeight(blendWeight);
   }
-
   playAllAnimations(tweenDuration = 0) {
     Object.keys(this.mixerActions).forEach(name => {
       this.playAnimation(name, tweenDuration);
     });
   }
-
   stopAllAnimations(tweenDuration = 0) {
     Object.keys(this.mixerActions).forEach(name => {
       this.stopAnimation(name, tweenDuration);
     });
   }
-
   dispose() {
     GameObjectClass.prototype.dispose.call(this);
-
     if (this.mixer) {
       this.mixer.stopAllAction();
       Object.keys(this.mixerActions).forEach(name => this.mixer.uncacheAction(this.mixerActions[name]));
@@ -5858,267 +5992,13 @@ class SkinnedGameObject extends GameObjectClass {
       delete this.mixer;
     }
   }
-
 }
 
-const IntroFadeShader = ({
-  target
-}) => {
-  const shader = {
-    uniforms: {
-      tMap: {
-        value: AssetsService.getMaterial('shader-map').map
-      },
-      tDiffuse: {
-        value: target.material.map.clone()
-      },
-      fTime: {
-        value: 0.0
-      }
-    },
-    vertexShader: `
-      varying vec2 vUV;
+// NOTE Core functionality
 
-      void main() {
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
-        vUV = uv;
-      }
-    `,
-    fragmentShader: `
-      varying vec2 vUV;
+// NOTE Export internal Three.js instance
 
-      uniform sampler2D tMap;
-      uniform sampler2D tDiffuse;
-      uniform float fTime;
+const Three$1 = Three$2;
+const Cannon = Cannon$1;
 
-      void main() {
-        vec4 tFadeInMap = texture2D(tMap, vUV);
-        vec4 tDiffuseMap = texture2D(tDiffuse, vUV);
-
-        float avgFade = (tFadeInMap.x + tFadeInMap.y + tFadeInMap.z) / 3.0;
-        float avgDiff = fTime - avgFade;
-        
-        if (avgDiff > 0.12) {
-          gl_FragColor = tDiffuseMap;
-        } else if (avgDiff > 0.08) {
-          gl_FragColor = vec4(0.0, tDiffuseMap.g * 0.6, 0.0, 1.0);
-        } else if (avgDiff > 0.04) {
-          gl_FragColor = vec4(0.0, 0.0, tDiffuseMap.b * 0.4, 1.0);
-        } else if (avgDiff > 0.0) {
-          gl_FragColor = vec4(tDiffuseMap.r * 0.2, 0.0, 0.0, 1.0);
-        } else {
-          discard;
-        }
-      }
-    `,
-    transparent: true
-  };
-  return shader;
-};
-
-GameInfoService.shader('introFade', IntroFadeShader);
-class IntroView extends ViewClass {
-  constructor(nextView) {
-    super();
-
-    _defineProperty(this, "nextView", null);
-
-    this.nextView = nextView;
-  }
-
-  onCreate() {
-    const scene = RenderService.getScene();
-    const {
-      camera
-    } = CameraService;
-    const cameraTarget = MathService.getVec3(0, 0, 0);
-    camera.lookAt(cameraTarget);
-    MathService.releaseVec3(cameraTarget);
-    const ambientLight = AssetsService.getAmbientLight();
-    scene.add(ambientLight);
-    AssetsService.getModel(GameInfoService.config.models.intro).then(introModel => {
-      SceneService.parseScene({
-        target: introModel,
-        actions: {
-          'skip': () => {
-            this.onPlaquesShown();
-          }
-        },
-        onCreate: ({
-          gameObjectRefs
-        }) => {
-          CameraService.useCamera(CameraService.getCamera('intro'), true);
-          scene.add(introModel);
-          Promise.all([VarService.registerPersistentVar('playerBike', 'fusion'), VarService.registerPersistentVar('playerOutfit', 'safety'), VarService.registerPersistentVar('playerPoints', 0), VarService.registerPersistentVar('playerSunracePoints', 0), VarService.registerPersistentVar('playerTierUnlocks', [3, 0, 0, 0]), VarService.registerPersistentVar('playerMapRecords', []), VarService.registerPersistentVar('optionsShowDriver', true), VarService.registerPersistentVar('optionsAudioVolume', 0.2), VarService.registerPersistentVar('optionsPerformanceMode', false), VarService.registerPersistentVar('statsTotalPlaytime', 0), VarService.registerPersistentVar('statsMapPlays', [])]).then(() => {
-            this.showPlaques(['plaque-1', 'plaque-2'], gameObjectRefs);
-          });
-        }
-      });
-    });
-  }
-
-  showPlaques(queue, gameObjectRefs) {
-    const plaque = gameObjectRefs[queue.shift()];
-
-    if (!plaque) {
-      this.onPlaquesShown();
-      return;
-    }
-
-    AnimationService.registerAnimation({
-      target: plaque,
-      override: AnimationOverrideType.overrideIfExists,
-      onStep: ({
-        target,
-        animationTime
-      }) => {
-        if (animationTime > 1 && target.material.uniforms.fTime.value >= 2.0) {
-          setTimeout(() => {
-            this.hidePlaques(target, queue, gameObjectRefs);
-          }, 0);
-          return false;
-        }
-
-        target.material.uniforms.fTime.value += Math.sin(target.material.uniforms.fTime.value / 60 + 0.01);
-
-        if (target.material.uniforms.fTime.value > 3.0) {
-          target.material.uniforms.fTime.value = 3.0;
-        }
-      }
-    });
-  }
-
-  hidePlaques(plaque, queue, gameObjectRefs) {
-    AnimationService.registerAnimation({
-      target: plaque,
-      override: AnimationOverrideType.overrideIfExists,
-      onStep: ({
-        target,
-        animationTime
-      }) => {
-        if (animationTime > 1 && target.material.uniforms.fTime.value <= 0) {
-          setTimeout(() => {
-            this.showPlaques(queue, gameObjectRefs);
-          }, 0);
-          return false;
-        }
-
-        target.material.uniforms.fTime.value -= 0.01;
-      }
-    });
-  }
-
-  onPlaquesShown() {
-    if (this.nextView) {
-      RenderService.renderView(this.nextView);
-    }
-  }
-
-}
-
-// NOTE Template only
-const parse = (object, payload) => {
-  const {
-    userData
-  } = object;
-
-  if (isDefined$1(userData.key)) {
-    AssetsService$1.registerDisposeCallback(object, () => {});
-  }
-};
-
-const {
-  App,
-  StatusBar
-} = Plugins;
-
-class SystemServiceClass {
-  constructor() {
-    _defineProperty(this, "isCordova", false);
-
-    _defineProperty(this, "appStateListeners", []);
-
-    _defineProperty(this, "promised", []);
-
-    this.isCordova = typeof cordova !== 'undefined';
-  }
-
-  init({
-    statusBar
-  } = {}) {
-    StorageService.init();
-    App.addListener('appStateChange', state => {
-      this.appStateListeners.forEach(callback => {
-        if (typeof callback === 'function') {
-          callback(state);
-        }
-      });
-    });
-
-    if (statusBar !== true) {
-      SystemService.hideStatusBar();
-    }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_ENABLE)) {
-      DummyDebug.showStats();
-    }
-
-    if (DummyDebug.get(DebugFlags.DEBUG_LIVE)) {
-      DummyDebug.showLogs();
-    }
-
-    this.promised.push(VarService.retrievePersistentVars());
-
-    if (GameInfoService.config.system.postprocessing) {
-      this.promised.push(RenderService.createSMAATextures());
-    }
-
-    if (this.isCordova) {
-      this.promised.push(new Promise(resolve => {
-        document.addEventListener('deviceready', () => resolve(), false);
-      }));
-    }
-  }
-
-  hideStatusBar() {
-    try {
-      NavigationBar.setUp(true);
-      setTimeout(() => {
-        StatusBar.hide();
-        StatusBar.setOverlaysWebView(false);
-      }, 500);
-      this.appStateListeners.push(({
-        isActive
-      }) => {
-        if (isActive) {
-          StatusBar.hide();
-        }
-      });
-    } catch {}
-  }
-
-  lockOrientation(orientation = ScreenOrientation.ORIENTATIONS.LANDSCAPE) {
-    if (this.isCordova) {
-      ScreenOrientation.lock(orientation);
-    }
-  }
-
-  onReady(then) {
-    if (!then) {
-      return;
-    }
-
-    Promise.all(this.promised).then(() => {
-      then();
-    });
-  }
-
-  disposeAll() {
-    this.appStateListeners = [];
-  }
-
-}
-
-const SystemService = new SystemServiceClass();
-
-export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraService, DebugFlags, DummyDebug, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, IntroFadeShader, IntroView, MathService, MathUtils, OcclusionStepEnum, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, StorageService, SystemService, Text, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };
+export { AiService, AiWrapper, AnimationOverrideType, AnimationService, AnimationWrapper, AssetsService, AudioChannelEnums, AudioService, CameraMovementTypeEnums, CameraService, Cannon, DQ, DebugFlags, DebugService, GameInfoService, GameObjectClass, InputService, InteractionEnums, InteractionsService, MathService, MathUtils, NetworkEnums, NetworkServerSideInstanceUserAgent, NetworkService, ParserService, ParticleService, PhysicsService, PhysicsWrapper, Preloader, RenderService, SceneService, SceneServiceClass, ScrollList, SkinnedGameObject, SpawnService, StorageService, SystemService, Text, Three$1 as Three, TimeService, UiService, UtilsService, VarService, ViewClass, animateDelay, animateLinear, animateLinearInverse, axisX, axisY, axisZ, cloneValue, convertMaterialType, createArrowHelper, createBoxHelper, createDefaultCube, defaultTo, fitToCamera, fitToScreen, forAllMaterialTextures, get3dScreenHeight, get3dScreenWidth, getRandomColor, getRandomElement, hidePlaceholder, isDefined, math2Pi, mathPi2, mathPi4, mathPi8, moduloAngle, parse, parseIf, parseIfNot, parseLabel, parseLandscape, parseMaterial, parseNavmap, parseRotateXYZ, parseScroll, parseShader, parseShading, parseSlideshow, parseSurface, removePlaceholder, replacePlaceholder, spliceRandomElement, swapVectors };

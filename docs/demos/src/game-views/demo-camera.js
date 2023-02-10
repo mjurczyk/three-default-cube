@@ -11,7 +11,8 @@ import {
   MathService,
   replacePlaceholder,
   AnimationWrapper,
-  MathUtils
+  MathUtils,
+  Three
 } from 'three-default-cube';
 
 export class DemoCamera extends ViewClass {
@@ -20,6 +21,8 @@ export class DemoCamera extends ViewClass {
 
     const ambientLight = AssetsService.getAmbientLight(0xffffcc, 0x0000ff, 7.0);
     scene.add(ambientLight);
+    
+    let playerCameraHandle;
 
     new Preloader({
       requireAssets: [
@@ -37,17 +40,20 @@ export class DemoCamera extends ViewClass {
             'player': (object) => {
               replacePlaceholder(object, characterModel);
 
+              playerCameraHandle = new Three.Object3D();
+              playerCameraHandle.position.y = 2.0;
+              characterModel.add(playerCameraHandle);
+              CameraService.ignoreCameraCollisions(characterModel);
+
               const animations = new AnimationWrapper(characterModel);
               animations.playAnimation('idle');
+              animations.blendInAnimation('idle', 1.0);
 
               const physics = new PhysicsWrapper(object);
               physics.enableNavmaps();
 
               let playerSpeed = 0.0;
-              const maxPlayerSpeed = 0.04;
-
-              CameraService.follow(object);
-              CameraService.followPivotPosition.set(0.0, 2.0, 2.0);
+              const maxPlayerSpeed = 0.05;
 
               TimeService.registerFrameListener(() => {
                 const keyUp = InputService.keys['w'];
@@ -56,11 +62,11 @@ export class DemoCamera extends ViewClass {
                 const keyRight = InputService.keys['d'];
 
                 if (keyLeft) {
-                  object.rotation.y -= 0.025;
+                  object.rotation.y -= 0.05;
                 }
 
                 if (keyRight) {
-                  object.rotation.y += 0.025;
+                  object.rotation.y += 0.05;
                 }
 
                 if (keyUp) {
@@ -86,6 +92,19 @@ export class DemoCamera extends ViewClass {
           },
           onCreate: () => {
             scene.add(worldModel);
+
+            // NOTE Third-person mode
+            CameraService.useThirdPersonCamera(playerCameraHandle, new Three.Vector3(0.0, 4.0, -3.0), true);
+            CameraService.lockRotation();
+
+            // NOTE First-person mode 
+
+            // CameraService.useFirstPersonCamera(playerCameraHandle);
+            // characterModel.parent.visible = false;
+
+            // TimeService.registerFrameListener(() => {
+            //   RenderService.getNativeCamera().getWorldQuaternion(characterModel.parent.quaternion);
+            // });
           }
         });
       }
